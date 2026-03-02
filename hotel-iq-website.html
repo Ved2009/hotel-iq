@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Hotel IQ — Revenue Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Tenor+Sans&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --gold: #C9A84C;
+    --gold-light: #E8C97A;
+    --gold-pale: #F5E6C0;
+    --black: #08080A;
+    --dark: #0F0F12;
+    --dark2: #16161A;
+    --cream: #F7F3EC;
+    --text: #C8C4BC;
+    --white: #FDFCFA;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 300;
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* Custom Cursor */
+  .cursor {
+    width: 8px; height: 8px;
+    background: var(--gold);
+    border-radius: 50%;
+    position: fixed;
+    pointer-events: none;
+    z-index: 9999;
+    transition: transform 0.1s;
+    transform: translate(-50%, -50%);
+  }
+  .cursor-ring {
+    width: 36px; height: 36px;
+    border: 1px solid rgba(201,168,76,0.4);
+    border-radius: 50%;
+    position: fixed;
+    pointer-events: none;
+    z-index: 9998;
+    transition: all 0.15s ease;
+    transform: translate(-50%, -50%);
+  }
+
+  /* Noise texture overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.4;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0;
+    z-index: 100;
+    padding: 28px 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(to bottom, rgba(8,8,10,0.95), transparent);
+    transition: all 0.4s;
+  }
+  nav.scrolled {
+    padding: 18px 60px;
+    background: rgba(8,8,10,0.97);
+    border-bottom: 1px solid rgba(201,168,76,0.1);
+    backdrop-filter: blur(20px);
+  }
+  .logo {
+    display: flex; align-items: center; gap: 12px;
+    text-decoration: none;
+  }
+  .logo-mark {
+    width: 38px; height: 38px;
+    border: 1px solid var(--gold);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px; font-weight: 600;
+    color: var(--gold);
+    letter-spacing: 1px;
+  }
+  .logo-text {
+    font-family: 'Tenor Sans', sans-serif;
+    font-size: 20px;
+    letter-spacing: 4px;
+    color: var(--white);
+    text-transform: uppercase;
+  }
+  .logo-text span { color: var(--gold); }
+  .nav-links { display: flex; gap: 40px; align-items: center; }
+  .nav-links a {
+    font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase;
+    color: var(--text); text-decoration: none;
+    transition: color 0.3s;
+    font-weight: 400;
+  }
+  .nav-links a:hover { color: var(--gold); }
+  .nav-cta {
+    background: transparent !important;
+    border: 1px solid var(--gold) !important;
+    color: var(--gold) !important;
+    padding: 10px 24px !important;
+    transition: all 0.3s !important;
+  }
+  .nav-cta:hover {
+    background: var(--gold) !important;
+    color: var(--black) !important;
+  }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center;
+    padding: 120px 60px 80px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-bg {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 50% 40%, rgba(201,168,76,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 40% at 20% 80%, rgba(201,168,76,0.04) 0%, transparent 50%),
+      radial-gradient(ellipse 40% 40% at 80% 20%, rgba(201,168,76,0.03) 0%, transparent 50%);
+  }
+  .hero-line {
+    width: 1px; height: 80px;
+    background: linear-gradient(to bottom, transparent, var(--gold), transparent);
+    margin: 0 auto 48px;
+    animation: fadeDown 1.2s ease forwards;
+    opacity: 0;
+  }
+  .hero-eyebrow {
+    font-size: 10px; letter-spacing: 5px; text-transform: uppercase;
+    color: var(--gold); margin-bottom: 28px;
+    font-weight: 400;
+    animation: fadeUp 1s ease 0.3s forwards; opacity: 0;
+  }
+  .hero h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(52px, 8vw, 100px);
+    font-weight: 300;
+    line-height: 1.0;
+    letter-spacing: -1px;
+    margin-bottom: 12px;
+    animation: fadeUp 1s ease 0.5s forwards; opacity: 0;
+  }
+  .hero h1 em {
+    font-style: italic;
+    color: var(--gold);
+  }
+  .hero-sub {
+    font-size: clamp(13px, 1.5vw, 16px);
+    color: var(--text);
+    max-width: 560px;
+    line-height: 1.9;
+    margin: 28px auto 52px;
+    font-weight: 300;
+    letter-spacing: 0.5px;
+    animation: fadeUp 1s ease 0.7s forwards; opacity: 0;
+  }
+  .hero-actions {
+    display: flex; gap: 20px; align-items: center; justify-content: center;
+    animation: fadeUp 1s ease 0.9s forwards; opacity: 0;
+  }
+  .btn-primary {
+    background: var(--gold);
+    color: var(--black);
+    border: none;
+    padding: 16px 40px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 11px; letter-spacing: 2.5px;
+    text-transform: uppercase;
+    cursor: none;
+    transition: all 0.3s;
+    font-weight: 500;
+    text-decoration: none;
+    display: inline-block;
+  }
+  .btn-primary:hover { background: var(--gold-light); transform: translateY(-1px); }
+  .btn-ghost {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid rgba(255,255,255,0.15);
+    padding: 16px 40px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 11px; letter-spacing: 2.5px;
+    text-transform: uppercase;
+    cursor: none;
+    transition: all 0.3s;
+    font-weight: 400;
+    text-decoration: none;
+    display: inline-block;
+  }
+  .btn-ghost:hover { border-color: var(--gold); color: var(--gold); }
+
+  .hero-stats {
+    display: flex; gap: 64px;
+    margin-top: 80px;
+    padding-top: 48px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    animation: fadeUp 1s ease 1.1s forwards; opacity: 0;
+  }
+  .stat-item { text-align: center; }
+  .stat-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 42px; font-weight: 300;
+    color: var(--gold); display: block;
+    line-height: 1;
+  }
+  .stat-label {
+    font-size: 10px; letter-spacing: 2px;
+    text-transform: uppercase; color: #555;
+    margin-top: 8px; display: block;
+  }
+
+  /* DIVIDER */
+  .divider {
+    display: flex; align-items: center; gap: 24px;
+    padding: 0 60px; margin: 0 auto;
+    max-width: 1200px;
+  }
+  .divider-line { flex: 1; height: 1px; background: rgba(255,255,255,0.06); }
+  .divider-ornament {
+    color: var(--gold); font-size: 18px;
+    font-family: 'Cormorant Garamond', serif;
+  }
+
+  /* SECTION BASE */
+  section { position: relative; z-index: 2; }
+
+  /* HOW WE WORK */
+  .how {
+    padding: 120px 60px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .section-label {
+    font-size: 10px; letter-spacing: 5px;
+    text-transform: uppercase; color: var(--gold);
+    margin-bottom: 20px; display: block;
+  }
+  .section-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(36px, 5vw, 60px);
+    font-weight: 300; line-height: 1.15;
+    margin-bottom: 16px;
+  }
+  .section-title em { font-style: italic; color: var(--gold); }
+  .section-body {
+    font-size: 15px; color: var(--text);
+    line-height: 1.9; max-width: 560px;
+    font-weight: 300;
+  }
+
+  .how-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    margin-top: 80px;
+    align-items: start;
+  }
+  .how-left { position: sticky; top: 120px; }
+  .how-steps { display: flex; flex-direction: column; gap: 0; }
+  .how-step {
+    display: flex; gap: 32px;
+    padding: 40px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    opacity: 0.4;
+    transition: opacity 0.4s;
+  }
+  .how-step:hover { opacity: 1; }
+  .how-step:first-child { padding-top: 0; }
+  .step-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 48px; font-weight: 300;
+    color: rgba(201,168,76,0.2);
+    line-height: 1; min-width: 60px;
+    transition: color 0.4s;
+  }
+  .how-step:hover .step-num { color: var(--gold); }
+  .step-content h3 {
+    font-family: 'Tenor Sans', sans-serif;
+    font-size: 16px; letter-spacing: 1px;
+    margin-bottom: 12px; color: var(--white);
+  }
+  .step-content p {
+    font-size: 14px; color: var(--text);
+    line-height: 1.8; font-weight: 300;
+  }
+
+  /* FEATURES */
+  .features {
+    padding: 120px 60px;
+    background: var(--dark);
+    border-top: 1px solid rgba(255,255,255,0.04);
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .features-inner { max-width: 1200px; margin: 0 auto; }
+  .features-header {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 60px; align-items: end;
+    margin-bottom: 80px;
+  }
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2px;
+  }
+  .feature-card {
+    background: var(--dark2);
+    padding: 48px 44px;
+    position: relative; overflow: hidden;
+    transition: all 0.4s;
+    cursor: none;
+  }
+  .feature-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 2px;
+    background: linear-gradient(to right, transparent, var(--gold), transparent);
+    transform: scaleX(0);
+    transition: transform 0.4s;
+  }
+  .feature-card:hover::before { transform: scaleX(1); }
+  .feature-card:hover { background: rgba(22,22,26,0.9); }
+  .feature-icon {
+    font-size: 28px; margin-bottom: 28px;
+    display: block;
+  }
+  .feature-card h3 {
+    font-family: 'Tenor Sans', sans-serif;
+    font-size: 16px; letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 16px; color: var(--white);
+  }
+  .feature-card p {
+    font-size: 14px; color: var(--text);
+    line-height: 1.8; font-weight: 300;
+  }
+  .feature-tag {
+    display: inline-block;
+    margin-top: 20px;
+    font-size: 10px; letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--gold);
+    border-bottom: 1px solid rgba(201,168,76,0.3);
+    padding-bottom: 2px;
+  }
+
+  /* CONTACT */
+  .contact {
+    padding: 120px 60px;
+    max-width: 1200px; margin: 0 auto;
+  }
+  .contact-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 100px; align-items: start;
+    margin-top: 60px;
+  }
+  .contact-info p {
+    font-size: 15px; color: var(--text);
+    line-height: 1.9; font-weight: 300;
+    margin-bottom: 40px;
+  }
+  .contact-detail {
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .contact-item {
+    display: flex; gap: 16px; align-items: center;
+    font-size: 13px; color: var(--text);
+    letter-spacing: 0.5px;
+  }
+  .contact-item-icon { color: var(--gold); font-size: 16px; min-width: 20px; }
+
+  .form-group { margin-bottom: 28px; }
+  .form-group label {
+    display: block;
+    font-size: 10px; letter-spacing: 2.5px;
+    text-transform: uppercase; color: #666;
+    margin-bottom: 10px; font-weight: 400;
+  }
+  .form-group input,
+  .form-group textarea,
+  .form-group select {
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(255,255,255,0.12);
+    padding: 12px 0;
+    color: var(--white);
+    font-family: 'Montserrat', sans-serif;
+    font-size: 14px; font-weight: 300;
+    outline: none;
+    transition: border-color 0.3s;
+    -webkit-appearance: none;
+  }
+  .form-group input:focus,
+  .form-group textarea:focus,
+  .form-group select:focus {
+    border-bottom-color: var(--gold);
+  }
+  .form-group textarea { resize: none; height: 80px; }
+  .form-group select { background: var(--black); cursor: none; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+
+  /* LOGIN MODAL */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(8,8,10,0.95);
+    backdrop-filter: blur(20px);
+    z-index: 500;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.4s;
+  }
+  .modal-overlay.active { opacity: 1; pointer-events: all; }
+  .modal {
+    background: var(--dark);
+    border: 1px solid rgba(201,168,76,0.2);
+    padding: 60px;
+    width: 100%; max-width: 460px;
+    position: relative;
+    transform: translateY(20px);
+    transition: transform 0.4s;
+  }
+  .modal-overlay.active .modal { transform: translateY(0); }
+  .modal-close {
+    position: absolute; top: 24px; right: 28px;
+    background: none; border: none;
+    color: #555; font-size: 22px; cursor: none;
+    transition: color 0.3s;
+  }
+  .modal-close:hover { color: var(--gold); }
+  .modal-logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 28px; font-weight: 300;
+    margin-bottom: 8px; color: var(--white);
+  }
+  .modal-logo span { color: var(--gold); font-style: italic; }
+  .modal-sub {
+    font-size: 11px; letter-spacing: 2px;
+    text-transform: uppercase; color: #555;
+    margin-bottom: 44px;
+  }
+  .modal-tabs {
+    display: flex; gap: 0;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    margin-bottom: 36px;
+  }
+  .modal-tab {
+    padding: 12px 24px;
+    font-size: 11px; letter-spacing: 2px;
+    text-transform: uppercase; color: #555;
+    cursor: none; background: none; border: none;
+    border-bottom: 2px solid transparent;
+    transition: all 0.3s;
+    font-family: 'Montserrat', sans-serif;
+    margin-bottom: -1px;
+  }
+  .modal-tab.active {
+    color: var(--gold);
+    border-bottom-color: var(--gold);
+  }
+
+  /* FOOTER */
+  footer {
+    border-top: 1px solid rgba(255,255,255,0.06);
+    padding: 60px;
+    display: flex; align-items: center;
+    justify-content: space-between;
+  }
+  .footer-copy {
+    font-size: 12px; color: #444;
+    letter-spacing: 1px;
+  }
+  .footer-links { display: flex; gap: 32px; }
+  .footer-links a {
+    font-size: 11px; letter-spacing: 2px;
+    text-transform: uppercase; color: #444;
+    text-decoration: none; transition: color 0.3s;
+  }
+  .footer-links a:hover { color: var(--gold); }
+
+  /* ANIMATIONS */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .reveal {
+    opacity: 0; transform: translateY(32px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+  }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+
+  /* GOLD ORNAMENT LINE */
+  .ornament {
+    display: flex; align-items: center; gap: 16px;
+    margin-bottom: 32px;
+  }
+  .ornament-line { width: 40px; height: 1px; background: var(--gold); }
+  .ornament-text {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 13px; font-style: italic; color: var(--gold);
+    letter-spacing: 1px;
+  }
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<!-- NAV -->
+<nav id="navbar">
+  <a href="#" class="logo">
+    <div class="logo-mark">IQ</div>
+    <div class="logo-text">Hotel<span>IQ</span></div>
+  </a>
+  <div class="nav-links">
+    <a href="#how">How It Works</a>
+    <a href="#features">Features</a>
+    <a href="#contact">Contact</a>
+    <a href="#" class="nav-cta" onclick="openLogin()">Sign In</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-line"></div>
+  <p class="hero-eyebrow">AI-Powered Revenue Intelligence</p>
+  <h1>The <em>Intelligence</em><br>Your Hotel Deserves</h1>
+  <p class="hero-sub">Hotel IQ transforms raw booking data into precise revenue decisions — dynamically pricing every room, forecasting demand 14 days ahead, and outmaneuvering your competition in real time.</p>
+  <div class="hero-actions">
+    <a href="#contact" class="btn-primary">Request a Demo</a>
+    <a href="#how" class="btn-ghost">How It Works</a>
+  </div>
+  <div class="hero-stats">
+    <div class="stat-item">
+      <span class="stat-num">23%</span>
+      <span class="stat-label">Avg Revenue Lift</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-num">94%</span>
+      <span class="stat-label">Forecast Accuracy</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-num">8</span>
+      <span class="stat-label">Hotels Live</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-num">< 1h</span>
+      <span class="stat-label">Setup Time</span>
+    </div>
+  </div>
+</section>
+
+<!-- HOW WE WORK -->
+<section class="how" id="how">
+  <div class="how-grid">
+    <div class="how-left reveal">
+      <div class="ornament">
+        <div class="ornament-line"></div>
+        <span class="ornament-text">The Process</span>
+      </div>
+      <span class="section-label">How We Work</span>
+      <h2 class="section-title">Revenue science,<br><em>made simple</em></h2>
+      <p class="section-body">Hotel IQ works quietly in the background — ingesting your data, reading the market, and surfacing the decisions that matter. Your team stays in control. The AI does the heavy lifting.</p>
+    </div>
+    <div class="how-steps reveal">
+      <div class="how-step">
+        <div class="step-num">01</div>
+        <div class="step-content">
+          <h3>Connect Your Property</h3>
+          <p>Hotel IQ integrates with your existing Property Management System in under an hour. No data migration. No IT headaches. Just plug in and go.</p>
+        </div>
+      </div>
+      <div class="how-step">
+        <div class="step-num">02</div>
+        <div class="step-content">
+          <h3>AI Learns Your Hotel</h3>
+          <p>Our engine analyzes your historical booking patterns, seasonal trends, and local demand signals to build a model unique to your property.</p>
+        </div>
+      </div>
+      <div class="how-step">
+        <div class="step-num">03</div>
+        <div class="step-content">
+          <h3>Receive Daily Intelligence</h3>
+          <p>Every morning, Hotel IQ delivers a prioritized set of pricing recommendations, demand alerts, and competitor movements — ranked by revenue impact.</p>
+        </div>
+      </div>
+      <div class="how-step">
+        <div class="step-num">04</div>
+        <div class="step-content">
+          <h3>Approve & Publish</h3>
+          <p>With one click, approved rates are pushed directly to your OTA channels. No manual entry. No delays. Your optimal rate is live within seconds.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"><div class="divider-line"></div><div class="divider-ornament">✦</div><div class="divider-line"></div></div>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+  <div class="features-inner">
+    <div class="features-header reveal">
+      <div>
+        <span class="section-label">Capabilities</span>
+        <h2 class="section-title">Every tool a<br><em>revenue manager</em><br>needs</h2>
+      </div>
+      <p class="section-body" style="align-self:end;">Built specifically for independent and boutique hotels who demand the same intelligence as global chains — without the enterprise price tag.</p>
+    </div>
+    <div class="features-grid reveal">
+      <div class="feature-card">
+        <span class="feature-icon">◈</span>
+        <h3>Dynamic Pricing</h3>
+        <p>AI-generated room rate recommendations updated daily, based on demand signals, booking pace, competitor rates, and local events.</p>
+        <span class="feature-tag">Real-time</span>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">◉</span>
+        <h3>Demand Forecasting</h3>
+        <p>14-day occupancy predictions with confidence intervals. Know your busy periods before they arrive and price accordingly.</p>
+        <span class="feature-tag">94% Accuracy</span>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">◎</span>
+        <h3>Competitor Intelligence</h3>
+        <p>Live rate tracking across your entire comp set. Instantly see where you're priced too high, too low, or perfectly positioned.</p>
+        <span class="feature-tag">Live Data</span>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">✦</span>
+        <h3>AI Revenue Analyst</h3>
+        <p>Ask anything. Your built-in AI analyst answers questions about pricing strategy, market conditions, and revenue optimization in plain English.</p>
+        <span class="feature-tag">Powered by Claude</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section class="contact" id="contact">
+  <div class="reveal">
+    <div class="ornament">
+      <div class="ornament-line"></div>
+      <span class="ornament-text">Get Started</span>
+    </div>
+    <span class="section-label">Request a Demo</span>
+    <h2 class="section-title">Let's grow your<br><em>revenue together</em></h2>
+  </div>
+  <div class="contact-grid">
+    <div class="contact-info reveal">
+      <p>We work closely with each property to ensure Hotel IQ delivers measurable results within the first 30 days. Fill out the form and our team will reach out within 24 hours.</p>
+      <div class="contact-detail">
+        <div class="contact-item">
+          <span class="contact-item-icon">✉</span>
+          <span>hello@hoteliq.ai</span>
+        </div>
+        <div class="contact-item">
+          <span class="contact-item-icon">◎</span>
+          <span>Available globally · Remote onboarding</span>
+        </div>
+        <div class="contact-item">
+          <span class="contact-item-icon">◈</span>
+          <span>Setup in under 1 hour</span>
+        </div>
+      </div>
+    </div>
+    <div class="reveal">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Your Name</label>
+          <input type="text" placeholder="John Smith"/>
+        </div>
+        <div class="form-group">
+          <label>Hotel Name</label>
+          <input type="text" placeholder="The Grand Hotel"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" placeholder="john@thehotel.com"/>
+      </div>
+      <div class="form-group">
+        <label>Number of Rooms</label>
+        <select>
+          <option value="">Select range</option>
+          <option>Under 50 rooms</option>
+          <option>50 – 150 rooms</option>
+          <option>150 – 300 rooms</option>
+          <option>300+ rooms</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Message (optional)</label>
+        <textarea placeholder="Tell us about your property..."></textarea>
+      </div>
+      <button class="btn-primary" style="width:100%; text-align:center; border:none;">Request Demo</button>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-copy">© 2026 Hotel IQ. All rights reserved.</div>
+  <div class="footer-links">
+    <a href="#how">How It Works</a>
+    <a href="#features">Features</a>
+    <a href="#contact">Contact</a>
+    <a href="#" onclick="openLogin()">Sign In</a>
+  </div>
+</footer>
+
+<!-- LOGIN MODAL -->
+<div class="modal-overlay" id="loginModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeLogin()">✕</button>
+    <div class="modal-logo">Hotel<span>IQ</span></div>
+    <div class="modal-sub">Revenue Intelligence Platform</div>
+    <div class="modal-tabs">
+      <button class="modal-tab active" onclick="switchTab('login')">Sign In</button>
+      <button class="modal-tab" onclick="switchTab('register')">Register</button>
+    </div>
+    <div id="loginForm">
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" placeholder="your@hotel.com"/>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" placeholder="••••••••"/>
+      </div>
+      <button class="btn-primary" style="width:100%;border:none;margin-top:8px;">Access Dashboard</button>
+      <p style="text-align:center;margin-top:20px;font-size:12px;color:#444;">
+        <a href="#" style="color:var(--gold);text-decoration:none;letter-spacing:1px;">Forgot password?</a>
+      </p>
+    </div>
+    <div id="registerForm" style="display:none;">
+      <div class="form-row">
+        <div class="form-group">
+          <label>First Name</label>
+          <input type="text" placeholder="John"/>
+        </div>
+        <div class="form-group">
+          <label>Last Name</label>
+          <input type="text" placeholder="Smith"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Hotel Name</label>
+        <input type="text" placeholder="The Grand Hotel"/>
+      </div>
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" placeholder="john@hotel.com"/>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" placeholder="Create password"/>
+      </div>
+      <button class="btn-primary" style="width:100%;border:none;margin-top:8px;">Create Account</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Custom cursor
+  const cursor = document.getElementById('cursor');
+  const ring = document.getElementById('cursorRing');
+  let rx = 0, ry = 0;
+  document.addEventListener('mousemove', e => {
+    cursor.style.left = e.clientX + 'px';
+    cursor.style.top = e.clientY + 'px';
+    setTimeout(() => {
+      ring.style.left = e.clientX + 'px';
+      ring.style.top = e.clientY + 'px';
+    }, 80);
+  });
+
+  // Navbar scroll
+  window.addEventListener('scroll', () => {
+    document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 60);
+  });
+
+  // Reveal on scroll
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach((e, i) => {
+      if (e.isIntersecting) {
+        setTimeout(() => e.target.classList.add('visible'), i * 100);
+      }
+    });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  // Login modal
+  function openLogin() {
+    document.getElementById('loginModal').classList.add('active');
+  }
+  function closeLogin() {
+    document.getElementById('loginModal').classList.remove('active');
+  }
+  function switchTab(tab) {
+    document.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById('loginForm').style.display = tab === 'login' ? 'block' : 'none';
+    document.getElementById('registerForm').style.display = tab === 'register' ? 'block' : 'none';
+  }
+  document.getElementById('loginModal').addEventListener('click', function(e) {
+    if (e.target === this) closeLogin();
+  });
+</script>
+</body>
+</html>
