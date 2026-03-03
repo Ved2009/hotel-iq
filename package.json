@@ -8,7 +8,9 @@
     "start:frontend": "cd src/frontend && npx parcel index.html --port 1234",
     "build:frontend": "cd src/frontend && npx parcel build index.html --dist-dir build --public-url ./",
     "install:all":    "cd src/backend && npm install && cd ../frontend && npm install",
-    "dev":            "concurrently \"npm run dev:backend\" \"npm run start:frontend\""
+    "dev":            "concurrently \"npm run dev:backend\" \"npm run start:frontend\"",
+    "railway:build":  "cd src/backend && npm install && cd ../frontend && npm install && npx parcel build index.html --dist-dir build --public-url /",
+    "start":          "node src/backend/server.js"
   },
   "dependencies": {
     "concurrently": "^8.2.2"
