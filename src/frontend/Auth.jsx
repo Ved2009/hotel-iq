@@ -19,8 +19,8 @@ const inputStyle = {
   WebkitAppearance: "none",
 };
 
-export default function Auth({ apiBase, onLogin, onClose, initialTab = "login" }) {
-  const [tab, setTab] = useState(initialTab);
+export default function Auth({ apiBase, onLogin }) {
+  const [tab, setTab] = useState("login");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -68,21 +68,24 @@ export default function Auth({ apiBase, onLogin, onClose, initialTab = "login" }
   };
 
   return (
-    <div style={{ fontFamily: "'Montserrat', sans-serif" }}>
+    <div style={{
+      minHeight: "100vh", background: dark,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      fontFamily: "'Montserrat', sans-serif",
+    }}>
       <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Tenor+Sans&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+      {/* Ambient glow */}
+      <div style={{
+        position: "fixed", inset: 0, pointerEvents: "none",
+        background: "radial-gradient(ellipse 60% 50% at 50% 50%, rgba(201,168,76,0.05) 0%, transparent 70%)",
+      }} />
 
       <div style={{
         background: dark2, border: `1px solid rgba(201,168,76,0.2)`,
         padding: "60px", width: "100%", maxWidth: 460,
-        position: "relative",
+        position: "relative", zIndex: 1,
       }}>
-        {onClose && (
-          <button onClick={onClose} style={{
-            position: "absolute", top: 16, right: 20,
-            background: "none", border: "none", color: "#666",
-            fontSize: 22, cursor: "pointer", lineHeight: 1,
-          }}>✕</button>
-        )}
         {/* Logo */}
         <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 28, fontWeight: 300, color: "#fff", marginBottom: 6 }}>
           Hotel<span style={{ color: gold, fontStyle: "italic" }}>IQ</span>

@@ -25,13 +25,9 @@ export default function App() {
       .finally(() => setLoading(false));
   }, []);
 
-  const [showAuth, setShowAuth] = useState(false);
-  const [authTab, setAuthTab] = useState("login");
-
   const handleLogin = (token, userData) => {
     localStorage.setItem("hiq-token", token);
     setUser(userData);
-    setShowAuth(false);
   };
 
   const handleLogout = () => {
@@ -39,27 +35,9 @@ export default function App() {
     setUser(null);
   };
 
-  const handleShowAuth = (tab = "login") => {
-    setAuthTab(tab);
-    setShowAuth(true);
-  };
-
   if (loading) return <LoadingScreen />;
-
-  return (
-    <>
-      <HotelIQ user={user} apiBase={API_BASE} onLogout={handleLogout} onShowAuth={handleShowAuth} />
-      {showAuth && (
-        <div style={{
-          position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          zIndex: 1000,
-        }}>
-          <Auth apiBase={API_BASE} onLogin={handleLogin} initialTab={authTab} onClose={() => setShowAuth(false)} />
-        </div>
-      )}
-    </>
-  );
+  if (!user) return <Auth apiBase={API_BASE} onLogin={handleLogin} />;
+  return <HotelIQ user={user} apiBase={API_BASE} onLogout={handleLogout} />;
 }
 
 function LoadingScreen() {

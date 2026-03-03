@@ -98,7 +98,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 // ── Main Dashboard ────────────────────────────────────────────────────────────
-export default function HotelIQ({ user, apiBase, onLogout, onShowAuth }) {
+export default function HotelIQ({ user, apiBase, onLogout }) {
   const [activeTab, setActiveTab] = useState("overview");
   const [theme, setTheme] = useState(() => localStorage.getItem("hiq-theme") || "dark");
   const isDark = theme === "dark";
@@ -272,37 +272,21 @@ Be concise, data-driven, give specific actionable advice. Use $ and %.`;
           </div>
 
           {/* Ask AI */}
-          <button onClick={() => user ? setAiOpen(o => !o) : onShowAuth?.("login")} style={{
+          <button onClick={() => setAiOpen(o => !o)} style={{
             background: "linear-gradient(135deg, #E8C547, #F97316)",
             border: "none", color: "#000", padding: "8px 16px",
             borderRadius: 8, cursor: "pointer", fontSize: 12,
             fontWeight: 700, fontFamily: "'Space Mono', monospace", letterSpacing: 0.5,
           }}>✦ ASK AI</button>
 
-          {/* Auth buttons or Logout */}
-          {user ? (
-            <button onClick={onLogout} title="Sign out" style={{
-              background: "transparent",
-              border: "1px solid rgba(255,255,255,0.1)",
-              color: "#555", padding: "7px 12px", borderRadius: 8,
-              cursor: "pointer", fontSize: 12, fontFamily: "'DM Sans', sans-serif",
-              transition: "all 0.2s",
-            }}>Sign Out</button>
-          ) : (
-            <div style={{ display: "flex", gap: 8 }}>
-              <button onClick={() => onShowAuth?.("login")} style={{
-                background: "transparent", border: "1px solid #C9A84C",
-                color: "#C9A84C", padding: "7px 14px", borderRadius: 8,
-                cursor: "pointer", fontSize: 12, fontFamily: "'DM Sans', sans-serif",
-              }}>Sign In</button>
-              <button onClick={() => onShowAuth?.("register")} style={{
-                background: "#C9A84C", border: "none",
-                color: "#000", padding: "7px 14px", borderRadius: 8,
-                cursor: "pointer", fontSize: 12, fontFamily: "'DM Sans', sans-serif",
-                fontWeight: 600,
-              }}>Register</button>
-            </div>
-          )}
+          {/* Logout */}
+          <button onClick={onLogout} title="Sign out" style={{
+            background: "transparent",
+            border: "1px solid rgba(255,255,255,0.1)",
+            color: "#555", padding: "7px 12px", borderRadius: 8,
+            cursor: "pointer", fontSize: 12, fontFamily: "'DM Sans', sans-serif",
+            transition: "all 0.2s",
+          }}>Sign Out</button>
         </div>
       </header>
 
