@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import Auth from "./Auth";
-import HotelIQ from "../../hotel-iq-dashboard";
+import HotelIQ from "./hotel-iq-dashboard";
 
 const API_BASE = "http://localhost:5000";
 
