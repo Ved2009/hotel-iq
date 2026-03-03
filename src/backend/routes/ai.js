@@ -25,24 +25,28 @@ router.post('/chat', requireAuth, async (req, res) => {
     return res.status(400).json({ error: 'messages array is required' });
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    return res.status(503).json({ error: 'AI service not configured — add ANTHROPIC_API_KEY to .env' });
+    return res.status(503).json({ error: 'AI service not configured — add GEMINI_API_KEY to .env' });
   }
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
+    // Gemini uses "model" instead of "assistant"
+    const contents = messages.map(m => ({
+      role: m.role === 'assistant' ? 'model' : m.role,
+      parts: [{ text: m.content }],
+    }));
+
+    const response = await fetch(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 1024,
-        system: context || 'You are Hotel IQ, an expert hotel revenue management AI analyst. Be concise and data-driven.',
-        messages,
+        system_instruction: {
+          parts: [{ text: context || 'You are Hotel IQ, an expert hotel revenue management AI analyst. Be concise and data-driven.' }],
+        },
+        contents,
       }),
     });
 
@@ -52,7 +56,8 @@ router.post('/chat', requireAuth, async (req, res) => {
     }
 
     const data = await response.json();
-    res.json({ reply: data.content?.[0]?.text || '' });
+    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    res.json({ reply });
   } catch (err) {
     res.status(500).json({ error: 'Failed to reach AI service' });
   }
