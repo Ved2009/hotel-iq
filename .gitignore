@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+.parcel-cache/
+.cache/
+
+# Build output
+dist/
+build/
+src/frontend/build/
+
+# Environment secrets — NEVER commit these
+.env
+src/backend/.env
+
+# User data (JSON file store)
+src/backend/data/users.json
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+*.log
+npm-debug.log*
+
+# Sessions scratch (keep session notes, not temp files)
+sessions/*.tmp

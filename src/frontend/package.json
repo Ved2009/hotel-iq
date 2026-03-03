@@ -1,16 +1,20 @@
 {
   "name": "hotel-iq-frontend",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
+  "scripts": {
+    "start": "parcel index.html --port 1234",
+    "build": "parcel build index.html --dist-dir build --public-url ./"
+  },
   "dependencies": {
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
-  },
-  "scripts": {
-    "start": "parcel index.html --open",
-    "build": "parcel build index.html --public-url ./"
+    "react-dom": "^18.2.0",
+    "recharts": "^2.10.3"
   },
   "devDependencies": {
-    "parcel": "^2.9.3"
-  }
+    "parcel": "^2.12.0",
+    "@parcel/transformer-react-refresh-wrap": "^2.12.0",
+    "process": "^0.11.10"
+  },
+  "browserslist": "> 0.5%, last 2 versions, not dead"
 }

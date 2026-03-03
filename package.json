@@ -1,18 +1,19 @@
 {
   "name": "hotel-iq",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
-    "start:frontend": "cd src/frontend && npm start",
-    "build:frontend": "cd src/frontend && npm run build",
-    "start:backend": "cd src/backend && node server.js",
-    "dev": "concurrently \"npm run start:frontend\" \"npm run start:backend\""
+    "start:backend":  "cd src/backend && node server.js",
+    "dev:backend":    "cd src/backend && npx nodemon server.js",
+    "start:frontend": "cd src/frontend && npx parcel index.html --port 1234",
+    "build:frontend": "cd src/frontend && npx parcel build index.html --dist-dir build --public-url ./",
+    "install:all":    "cd src/backend && npm install && cd ../frontend && npm install",
+    "dev":            "concurrently \"npm run dev:backend\" \"npm run start:frontend\""
   },
   "dependencies": {
-    "concurrently": "^7.6.0",
-    "express": "^4.18.2"
+    "concurrently": "^8.2.2"
   },
   "engines": {
-    "node": ">=14"
+    "node": ">=18"
   }
 }
