@@ -1,47 +1,23 @@
 import { useState } from "react";
 
-const gold = "#C9A84C";
-const dark = "#08080A";
-const dark2 = "#0F0F12";
-
-const labelStyle = {
-  display: "block",
-  fontSize: 10, letterSpacing: "2.5px",
-  textTransform: "uppercase", color: "#666",
-  marginBottom: 10, fontFamily: "'Montserrat', sans-serif", fontWeight: 400,
-};
-const inputStyle = {
-  width: "100%", background: "transparent", border: "none",
-  borderBottom: "1px solid rgba(255,255,255,0.12)",
-  padding: "12px 0", color: "#fff",
-  fontFamily: "'Montserrat', sans-serif", fontSize: 14, fontWeight: 300,
-  outline: "none", transition: "border-color 0.3s",
-  WebkitAppearance: "none",
-};
-
-export default function Auth({ apiBase, onLogin }) {
-  const [tab, setTab] = useState("login");
+export default function Auth({ apiBase, onLogin, initialTab = "login", onBack }) {
+  const [tab, setTab]       = useState(initialTab);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError]   = useState("");
 
-  // Login fields
   const [loginEmail, setLoginEmail] = useState("");
-  const [loginPwd, setLoginPwd] = useState("");
-
-  // Register fields
-  const [regFirst, setRegFirst] = useState("");
-  const [regLast, setRegLast] = useState("");
-  const [regHotel, setRegHotel] = useState("");
-  const [regEmail, setRegEmail] = useState("");
-  const [regPwd, setRegPwd] = useState("");
+  const [loginPwd,   setLoginPwd]   = useState("");
+  const [regFirst,   setRegFirst]   = useState("");
+  const [regLast,    setRegLast]    = useState("");
+  const [regHotel,   setRegHotel]   = useState("");
+  const [regEmail,   setRegEmail]   = useState("");
+  const [regPwd,     setRegPwd]     = useState("");
 
   const submit = async (endpoint, body) => {
-    setLoading(true);
-    setError("");
+    setLoading(true); setError("");
     try {
-      const res = await fetch(`${apiBase}/api/auth/${endpoint}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res  = await fetch(`${apiBase}/api/auth/${endpoint}`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
       const data = await res.json();
@@ -54,140 +30,143 @@ export default function Auth({ apiBase, onLogin }) {
     }
   };
 
-  const handleLogin = e => {
-    e.preventDefault();
-    submit("login", { email: loginEmail, password: loginPwd });
-  };
-
-  const handleRegister = e => {
-    e.preventDefault();
-    submit("register", {
-      firstName: regFirst, lastName: regLast,
-      hotelName: regHotel, email: regEmail, password: regPwd,
-    });
-  };
+  const Field = ({ label, type = "text", value, onChange, placeholder, required, minLength }) => (
+    <div style={{ marginBottom: 22 }}>
+      <label style={{ display: "block", fontSize: 11, letterSpacing: "1.5px",
+        textTransform: "uppercase", color: "#4B5563", marginBottom: 8,
+        fontFamily: "'Space Mono', monospace" }}>{label}</label>
+      <input
+        type={type} value={value} onChange={e => onChange(e.target.value)}
+        placeholder={placeholder} required={required} minLength={minLength}
+        style={{
+          width: "100%", background: "rgba(255,255,255,0.04)",
+          border: "1px solid rgba(255,255,255,0.09)",
+          borderRadius: 8, padding: "12px 14px", color: "#E2E8F0",
+          fontFamily: "'DM Sans', sans-serif", fontSize: 14, outline: "none",
+          transition: "border-color 0.2s",
+        }}
+        onFocus={e  => e.target.style.borderColor = "rgba(75,142,245,0.5)"}
+        onBlur={e   => e.target.style.borderColor = "rgba(255,255,255,0.09)"}
+      />
+    </div>
+  );
 
   return (
     <div style={{
-      minHeight: "100vh", background: dark,
+      minHeight: "100vh", background: "#06090F",
       display: "flex", alignItems: "center", justifyContent: "center",
-      fontFamily: "'Montserrat', sans-serif",
+      fontFamily: "'DM Sans', sans-serif", padding: "40px 20px",
     }}>
-      <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Tenor+Sans&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet" />
+      <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Space+Mono:wght@400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 
-      {/* Ambient glow */}
+      {/* Background glow */}
       <div style={{
         position: "fixed", inset: 0, pointerEvents: "none",
-        background: "radial-gradient(ellipse 60% 50% at 50% 50%, rgba(201,168,76,0.05) 0%, transparent 70%)",
+        background: "radial-gradient(ellipse 50% 40% at 50% 50%, rgba(75,142,245,0.07) 0%, transparent 70%)",
       }} />
 
-      <div style={{
-        background: dark2, border: `1px solid rgba(201,168,76,0.2)`,
-        padding: "60px", width: "100%", maxWidth: 460,
-        position: "relative", zIndex: 1,
-      }}>
-        {/* Logo */}
-        <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 28, fontWeight: 300, color: "#fff", marginBottom: 6 }}>
-          Hotel<span style={{ color: gold, fontStyle: "italic" }}>IQ</span>
-        </div>
-        <div style={{ fontSize: 11, letterSpacing: "2px", textTransform: "uppercase", color: "#555", marginBottom: 44 }}>
-          Revenue Intelligence Platform
-        </div>
-
-        {/* Tabs */}
-        <div style={{ display: "flex", borderBottom: "1px solid rgba(255,255,255,0.08)", marginBottom: 36 }}>
-          {[["login", "Sign In"], ["register", "Register"]].map(([key, label]) => (
-            <button key={key} onClick={() => { setTab(key); setError(""); }} style={{
-              padding: "12px 24px", fontSize: 11, letterSpacing: "2px",
-              textTransform: "uppercase", color: tab === key ? gold : "#555",
-              cursor: "pointer", background: "none", border: "none",
-              borderBottom: tab === key ? `2px solid ${gold}` : "2px solid transparent",
-              marginBottom: -1, fontFamily: "'Montserrat', sans-serif",
-              transition: "all 0.3s", fontWeight: 400,
-            }}>{label}</button>
-          ))}
-        </div>
-
-        {/* Error */}
-        {error && (
-          <div style={{
-            fontSize: 12, color: "#F87171", marginBottom: 20,
-            padding: "10px 14px", background: "rgba(248,113,113,0.08)",
-            border: "1px solid rgba(248,113,113,0.2)", borderRadius: 4, letterSpacing: "0.3px",
+      <div style={{ position: "relative", width: "100%", maxWidth: 460 }}>
+        {/* Back to landing */}
+        {onBack && (
+          <button onClick={onBack} style={{
+            background: "transparent", border: "none", color: "#374151",
+            fontSize: 13, cursor: "pointer", marginBottom: 24,
+            display: "flex", alignItems: "center", gap: 6,
+            fontFamily: "'DM Sans', sans-serif", padding: 0,
           }}>
-            {error}
+            ← Back to Hotel IQ
+          </button>
+        )}
+
+        <div style={{
+          background: "rgba(255,255,255,0.03)",
+          border: "1px solid rgba(255,255,255,0.08)",
+          borderRadius: 16, padding: "44px 44px 40px",
+        }}>
+          {/* Logo */}
+          <div style={{ marginBottom: 32 }}>
+            <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 24,
+              letterSpacing: -0.5, marginBottom: 4 }}>
+              Hotel<span style={{ color: "#C9A55A" }}>IQ</span>
+            </div>
+            <div style={{ fontSize: 13, color: "#4B5563" }}>
+              {tab === "login" ? "Sign in to your revenue dashboard" : "Create your free account"}
+            </div>
           </div>
-        )}
 
-        {/* Login Form */}
-        {tab === "login" && (
-          <form onSubmit={handleLogin}>
-            <div style={{ marginBottom: 28 }}>
-              <label style={labelStyle}>Email Address</label>
-              <input type="email" value={loginEmail} onChange={e => setLoginEmail(e.target.value)}
-                placeholder="your@hotel.com" required style={inputStyle} />
-            </div>
-            <div style={{ marginBottom: 28 }}>
-              <label style={labelStyle}>Password</label>
-              <input type="password" value={loginPwd} onChange={e => setLoginPwd(e.target.value)}
-                placeholder="••••••••" required style={inputStyle} />
-            </div>
-            <button type="submit" disabled={loading} style={{
-              width: "100%", background: gold, color: dark, border: "none",
-              padding: "16px 40px", fontFamily: "'Montserrat', sans-serif",
-              fontSize: 11, letterSpacing: "2.5px", textTransform: "uppercase",
-              cursor: loading ? "not-allowed" : "pointer", fontWeight: 500, marginTop: 8,
-              opacity: loading ? 0.7 : 1, transition: "all 0.3s",
-            }}>
-              {loading ? "Signing in…" : "Access Dashboard"}
-            </button>
-            <p style={{ textAlign: "center", marginTop: 20, fontSize: 12, color: "#444" }}>
-              <a href="#" style={{ color: gold, textDecoration: "none", letterSpacing: "1px" }}>Forgot password?</a>
-            </p>
-          </form>
-        )}
+          {/* Tabs */}
+          <div style={{ display: "flex", marginBottom: 32,
+            borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+            {[["login","Sign In"], ["register","Register"]].map(([key, label]) => (
+              <button key={key} onClick={() => { setTab(key); setError(""); }} style={{
+                padding: "10px 20px", fontSize: 13, fontWeight: 500,
+                color: tab === key ? "#E2E8F0" : "#4B5563",
+                cursor: "pointer", background: "none", border: "none",
+                borderBottom: tab === key ? "2px solid #4B8EF5" : "2px solid transparent",
+                marginBottom: -1, fontFamily: "'DM Sans', sans-serif",
+                transition: "all 0.2s",
+              }}>{label}</button>
+            ))}
+          </div>
 
-        {/* Register Form */}
-        {tab === "register" && (
-          <form onSubmit={handleRegister}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, marginBottom: 28 }}>
-              <div>
-                <label style={labelStyle}>First Name</label>
-                <input type="text" value={regFirst} onChange={e => setRegFirst(e.target.value)}
-                  placeholder="John" required style={inputStyle} />
-              </div>
-              <div>
-                <label style={labelStyle}>Last Name</label>
-                <input type="text" value={regLast} onChange={e => setRegLast(e.target.value)}
-                  placeholder="Smith" style={inputStyle} />
-              </div>
-            </div>
-            <div style={{ marginBottom: 28 }}>
-              <label style={labelStyle}>Hotel Name</label>
-              <input type="text" value={regHotel} onChange={e => setRegHotel(e.target.value)}
-                placeholder="The Grand Hotel" required style={inputStyle} />
-            </div>
-            <div style={{ marginBottom: 28 }}>
-              <label style={labelStyle}>Email Address</label>
-              <input type="email" value={regEmail} onChange={e => setRegEmail(e.target.value)}
-                placeholder="john@hotel.com" required style={inputStyle} />
-            </div>
-            <div style={{ marginBottom: 28 }}>
-              <label style={labelStyle}>Password</label>
-              <input type="password" value={regPwd} onChange={e => setRegPwd(e.target.value)}
-                placeholder="At least 6 characters" required minLength={6} style={inputStyle} />
-            </div>
-            <button type="submit" disabled={loading} style={{
-              width: "100%", background: gold, color: dark, border: "none",
-              padding: "16px 40px", fontFamily: "'Montserrat', sans-serif",
-              fontSize: 11, letterSpacing: "2.5px", textTransform: "uppercase",
-              cursor: loading ? "not-allowed" : "pointer", fontWeight: 500, marginTop: 8,
-              opacity: loading ? 0.7 : 1, transition: "all 0.3s",
+          {/* Error */}
+          {error && (
+            <div style={{
+              fontSize: 13, color: "#EF4444", marginBottom: 20,
+              padding: "10px 14px",
+              background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)",
+              borderRadius: 8,
+            }}>{error}</div>
+          )}
+
+          {/* Login Form */}
+          {tab === "login" && (
+            <form onSubmit={e => { e.preventDefault(); submit("login", { email: loginEmail, password: loginPwd }); }}>
+              <Field label="Email Address" type="email" value={loginEmail} onChange={setLoginEmail} placeholder="you@hotel.com" required />
+              <Field label="Password" type="password" value={loginPwd} onChange={setLoginPwd} placeholder="••••••••" required />
+              <button type="submit" disabled={loading} style={{
+                width: "100%", background: loading ? "rgba(75,142,245,0.5)" : "linear-gradient(135deg, #4B8EF5, #2563EB)",
+                border: "none", color: "#fff", padding: "13px",
+                borderRadius: 8, cursor: loading ? "not-allowed" : "pointer",
+                fontSize: 14, fontWeight: 600, fontFamily: "'DM Sans', sans-serif",
+                marginTop: 6, letterSpacing: 0.3,
+              }}>
+                {loading ? "Signing in…" : "Access Dashboard"}
+              </button>
+              <p style={{ textAlign: "center", marginTop: 18, fontSize: 13, color: "#374151" }}>
+                <a href="#" style={{ color: "#4B8EF5", textDecoration: "none" }}>Forgot password?</a>
+              </p>
+            </form>
+          )}
+
+          {/* Register Form */}
+          {tab === "register" && (
+            <form onSubmit={e => {
+              e.preventDefault();
+              submit("register", { firstName: regFirst, lastName: regLast, hotelName: regHotel, email: regEmail, password: regPwd });
             }}>
-              {loading ? "Creating account…" : "Create Account"}
-            </button>
-          </form>
-        )}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                <Field label="First Name" value={regFirst} onChange={setRegFirst} placeholder="Jane" required />
+                <Field label="Last Name"  value={regLast}  onChange={setRegLast}  placeholder="Smith" />
+              </div>
+              <Field label="Hotel Name"     value={regHotel}  onChange={setRegHotel}  placeholder="The Grand Hotel" required />
+              <Field label="Email Address"  type="email"    value={regEmail}  onChange={setRegEmail}  placeholder="jane@hotel.com" required />
+              <Field label="Password"       type="password" value={regPwd}    onChange={setRegPwd}    placeholder="At least 6 characters" required minLength={6} />
+              <button type="submit" disabled={loading} style={{
+                width: "100%", background: loading ? "rgba(75,142,245,0.5)" : "linear-gradient(135deg, #4B8EF5, #2563EB)",
+                border: "none", color: "#fff", padding: "13px",
+                borderRadius: 8, cursor: loading ? "not-allowed" : "pointer",
+                fontSize: 14, fontWeight: 600, fontFamily: "'DM Sans', sans-serif", marginTop: 4,
+              }}>
+                {loading ? "Creating account…" : "Create Free Account"}
+              </button>
+            </form>
+          )}
+        </div>
+
+        <p style={{ textAlign: "center", marginTop: 20, fontSize: 12, color: "#1F2937" }}>
+          By continuing you agree to Hotel IQ's Terms of Service and Privacy Policy.
+        </p>
       </div>
     </div>
   );

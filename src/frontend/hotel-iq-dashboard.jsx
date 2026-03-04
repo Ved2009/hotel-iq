@@ -7,8 +7,15 @@ import {
 
 // ── Design Tokens ─────────────────────────────────────────────────────────────
 const C = {
-  gold: "#E8C547", orange: "#F97316", blue: "#60A5FA",
-  green: "#4ADE80", red: "#F87171", purple: "#A78BFA", pink: "#F472B6",
+  gold:   "#C9A55A",  // muted gold — revenue metrics
+  blue:   "#4B8EF5",  // primary action
+  green:  "#22C55E",  // positive/success
+  red:    "#EF4444",  // negative/alert
+  amber:  "#F59E0B",  // warning
+  purple: "#8B5CF6",  // secondary metric
+  teal:   "#14B8A6",  // tertiary
+  orange: "#F59E0B",  // alias for amber (used in some gradients)
+  pink:   "#EC4899",  // GOPPAR accent
 };
 
 // ── Deterministic pseudo-random (avoids hydration mismatch) ──────────────────
@@ -1023,14 +1030,14 @@ Be concise, data-driven, give specific actionable advice with $ and % figures.`;
   return (
     <div style={{
       position: "fixed", bottom: 24, right: 24, width: 420, height: 580,
-      background: "#0D0D10", border: "1px solid rgba(232,197,71,0.22)",
+      background: "#080D18", border: "1px solid rgba(75,142,245,0.2)",
       borderRadius: 20, display: "flex", flexDirection: "column",
       boxShadow: "0 32px 80px rgba(0,0,0,0.85)", zIndex: 300, overflow: "hidden",
     }}>
       <div style={{
         padding: "14px 18px", borderBottom: "1px solid rgba(255,255,255,0.07)",
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        background: "linear-gradient(135deg, rgba(232,197,71,0.07), rgba(249,115,22,0.06))",
+        background: "rgba(75,142,245,0.06)",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ width: 32, height: 32, borderRadius: 9, background: `linear-gradient(135deg, ${C.gold}, ${C.orange})`,
@@ -1110,7 +1117,7 @@ const NAV = [
 function Sidebar({ active, setTab }) {
   return (
     <aside style={{
-      width: 210, flexShrink: 0, background: "#0D0D10",
+      width: 210, flexShrink: 0, background: "#080D18",
       borderRight: "1px solid rgba(255,255,255,0.06)",
       display: "flex", flexDirection: "column", padding: "20px 0",
       position: "sticky", top: 62, height: "calc(100vh - 62px)", overflowY: "auto",
@@ -1121,10 +1128,10 @@ function Sidebar({ active, setTab }) {
           <button key={n.id} onClick={() => setTab(n.id)} style={{
             display: "flex", alignItems: "center", gap: 12,
             padding: "11px 20px", cursor: "pointer",
-            background: isActive ? "rgba(232,197,71,0.08)" : "transparent",
+            background: isActive ? "rgba(75,142,245,0.1)" : "transparent",
             border: "none",
-            borderLeft: isActive ? `3px solid ${C.gold}` : "3px solid transparent",
-            color: isActive ? C.gold : "#555",
+            borderLeft: isActive ? `3px solid ${C.blue}` : "3px solid transparent",
+            color: isActive ? "#E2E8F0" : "#4B5563",
             fontSize: 13, fontFamily: "'DM Sans', sans-serif", fontWeight: isActive ? 600 : 400,
             textAlign: "left", transition: "all 0.15s", width: "100%",
           }}>
@@ -1190,21 +1197,21 @@ export default function HotelIQ({ user, apiBase, onLogout }) {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#09090B", color: "#EFEFEF", fontFamily: "'DM Sans', sans-serif" }}>
+    <div style={{ minHeight: "100vh", background: "#06090F", color: "#E2E8F0", fontFamily: "'DM Sans', sans-serif" }}>
       <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 
       {/* ── Header ── */}
       <header style={{
         height: 62, padding: "0 28px", display: "flex", alignItems: "center",
         justifyContent: "space-between", position: "sticky", top: 0, zIndex: 200,
-        background: "rgba(9,9,11,0.97)", backdropFilter: "blur(20px)",
+        background: "rgba(6,9,15,0.97)", backdropFilter: "blur(20px)",
         borderBottom: "1px solid rgba(255,255,255,0.06)",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <div style={{ width: 34, height: 34, borderRadius: 10,
-            background: `linear-gradient(135deg, ${C.gold}, ${C.orange})`,
+            background: "linear-gradient(135deg, #C9A55A, #4B8EF5)",
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 15, fontWeight: 800, color: "#000", fontFamily: "'Syne', sans-serif" }}>IQ</div>
+            fontSize: 15, fontWeight: 800, color: "#fff", fontFamily: "'Syne', sans-serif" }}>IQ</div>
           <div>
             <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 17, letterSpacing: -0.5, lineHeight: 1.2 }}>
               Hotel<span style={{ color: C.gold }}>IQ</span>
@@ -1280,9 +1287,9 @@ export default function HotelIQ({ user, apiBase, onLogout }) {
 
           {/* AI button */}
           <button onClick={() => setAiOpen(o => !o)} style={{
-            background: aiOpen ? "rgba(232,197,71,0.12)" : `linear-gradient(135deg, ${C.gold}, ${C.orange})`,
-            border: aiOpen ? `1px solid rgba(232,197,71,0.35)` : "none",
-            color: aiOpen ? C.gold : "#000",
+            background: aiOpen ? "rgba(75,142,245,0.12)" : `linear-gradient(135deg, ${C.blue}, #2563EB)`,
+            border: aiOpen ? `1px solid rgba(75,142,245,0.35)` : "none",
+            color: aiOpen ? C.blue : "#fff",
             padding: "8px 16px", borderRadius: 8, cursor: "pointer",
             fontSize: 12, fontWeight: 700, fontFamily: "'Space Mono', monospace", letterSpacing: 0.5,
           }}>✦ ASK AI</button>
