@@ -2,7 +2,10 @@ import { useState, useEffect } from "react";
 import Auth from "./Auth";
 import HotelIQ from "./hotel-iq-dashboard";
 
-const API_BASE = process.env.API_BASE || "http://localhost:5000";
+// On localhost use the separate dev backend; in production the backend serves the frontend (relative URLs)
+const API_BASE = typeof window !== "undefined" && window.location.hostname !== "localhost"
+  ? ""
+  : "http://localhost:5000";
 
 export default function App() {
   const [user, setUser] = useState(null);
