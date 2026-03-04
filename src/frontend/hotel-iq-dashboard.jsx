@@ -34,11 +34,6 @@ const monthlyData = MONTHS.map((m, i) => ({
   revenue:   Math.round(280000 + Math.sin(i * 0.6) * 80000 + rng(i + 4) * 40000),
 }));
 
-const weeklyRevpar = DAYS_SHORT.map((d, i) => ({
-  day: d,
-  revpar: Math.round(110 + rng(i) * 90 + (i >= 4 ? 40 : 0)),
-  adr:    Math.round(170 + rng(i + 7) * 60 + (i >= 4 ? 30 : 0)),
-}));
 
 const weeklyRevenue = DAYS_SHORT.map((d, i) => ({
   day: d,
@@ -1145,7 +1140,7 @@ function Sidebar({ active, setTab }) {
 }
 
 // ── Main Dashboard ────────────────────────────────────────────────────────────
-export default function HotelIQ({ user, apiBase, onLogout }) {
+export default function HotelIQ({ user, apiBase, onLogout, onShowAuth }) {
   const [activeTab, setActiveTab] = useState("overview");
   const [theme, setTheme] = useState(() => localStorage.getItem("hiq-theme") || "dark");
   const [aiOpen, setAiOpen] = useState(false);
@@ -1272,21 +1267,8 @@ export default function HotelIQ({ user, apiBase, onLogout }) {
             )}
           </div>
 
-          {/* User avatar */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{ width: 28, height: 28, borderRadius: "50%",
-              background: `linear-gradient(135deg, ${C.gold}, ${C.orange})`,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 11, fontWeight: 800, color: "#000", fontFamily: "'Syne', sans-serif" }}>
-              {(user?.firstName?.[0] || "H").toUpperCase()}
-            </div>
-            <span style={{ fontSize: 12, color: "#444", fontFamily: "'Space Mono', monospace" }}>
-              {user?.firstName ? `Hi, ${user.firstName}` : ""}
-            </span>
-          </div>
-
           {/* AI button */}
-          <button onClick={() => setAiOpen(o => !o)} style={{
+          <button onClick={() => user ? setAiOpen(o => !o) : onShowAuth?.("login")} style={{
             background: aiOpen ? "rgba(75,142,245,0.12)" : `linear-gradient(135deg, ${C.blue}, #2563EB)`,
             border: aiOpen ? `1px solid rgba(75,142,245,0.35)` : "none",
             color: aiOpen ? C.blue : "#fff",
@@ -1294,11 +1276,41 @@ export default function HotelIQ({ user, apiBase, onLogout }) {
             fontSize: 12, fontWeight: 700, fontFamily: "'Space Mono', monospace", letterSpacing: 0.5,
           }}>✦ ASK AI</button>
 
-          <button onClick={onLogout} style={{
-            background: "transparent", border: "1px solid rgba(255,255,255,0.07)",
-            color: "#444", padding: "7px 14px", borderRadius: 8, cursor: "pointer",
-            fontSize: 12, fontFamily: "'DM Sans', sans-serif",
-          }}>Sign Out</button>
+          {user ? (
+            <>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ width: 28, height: 28, borderRadius: "50%",
+                  background: `linear-gradient(135deg, ${C.gold}, ${C.orange})`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 11, fontWeight: 800, color: "#000", fontFamily: "'Syne', sans-serif" }}>
+                  {(user.firstName?.[0] || "H").toUpperCase()}
+                </div>
+                <span style={{ fontSize: 12, color: "#666", fontFamily: "'Space Mono', monospace" }}>
+                  Hi, {user.firstName}
+                </span>
+              </div>
+              <button onClick={onLogout} style={{
+                background: "transparent", border: "1px solid rgba(255,255,255,0.07)",
+                color: "#444", padding: "7px 14px", borderRadius: 8, cursor: "pointer",
+                fontSize: 12, fontFamily: "'DM Sans', sans-serif",
+              }}>Sign Out</button>
+            </>
+          ) : (
+            <>
+              <button onClick={() => onShowAuth?.("login")} style={{
+                background: "transparent",
+                border: `1px solid rgba(201,165,90,0.4)`,
+                color: C.gold, padding: "7px 16px", borderRadius: 8, cursor: "pointer",
+                fontSize: 12, fontWeight: 600, fontFamily: "'DM Sans', sans-serif",
+              }}>Sign In</button>
+              <button onClick={() => onShowAuth?.("register")} style={{
+                background: `linear-gradient(135deg, ${C.gold}, #B8924A)`,
+                border: "none",
+                color: "#000", padding: "7px 16px", borderRadius: 8, cursor: "pointer",
+                fontSize: 12, fontWeight: 700, fontFamily: "'DM Sans', sans-serif",
+              }}>Register Free</button>
+            </>
+          )}
         </div>
       </header>
 

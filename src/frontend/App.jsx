@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import Landing from "./Landing";
 import Auth from "./Auth";
 import HotelIQ from "./hotel-iq-dashboard";
 
@@ -7,58 +6,72 @@ const API_BASE = typeof window !== "undefined" && window.location.hostname !== "
   ? ""
   : "http://localhost:5000";
 
-// view: "landing" | "auth" | "app" | "loading"
 export default function App() {
-  const [view, setView]   = useState("loading");
-  const [authTab, setAuthTab] = useState("login"); // which tab Auth opens on
-  const [user, setUser]   = useState(null);
+  const [user, setUser]         = useState(null);
+  const [showAuth, setShowAuth] = useState(false);
+  const [authTab, setAuthTab]   = useState("login");
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
     const token = localStorage.getItem("hiq-token");
-    if (!token) { setView("landing"); return; }
+    if (!token) { setChecking(false); return; }
 
     fetch(`${API_BASE}/api/auth/me`, { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json())
       .then(data => {
-        if (data.user) { setUser(data.user); setView("app"); }
-        else { localStorage.removeItem("hiq-token"); setView("landing"); }
+        if (data.user) setUser(data.user);
+        else localStorage.removeItem("hiq-token");
       })
-      .catch(() => { localStorage.removeItem("hiq-token"); setView("landing"); });
+      .catch(() => localStorage.removeItem("hiq-token"))
+      .finally(() => setChecking(false));
   }, []);
 
   const handleLogin = (token, userData) => {
     localStorage.setItem("hiq-token", token);
     setUser(userData);
-    setView("app");
+    setShowAuth(false);
   };
 
   const handleLogout = () => {
     localStorage.removeItem("hiq-token");
     setUser(null);
-    setView("landing");
   };
 
-  const goToAuth = (tab = "login") => {
+  const handleShowAuth = (tab = "login") => {
     setAuthTab(tab);
-    setView("auth");
+    setShowAuth(true);
   };
 
-  if (view === "loading") return <LoadingScreen />;
-  if (view === "landing") return (
-    <Landing
-      onSignIn={() => goToAuth("login")}
-      onGetStarted={() => goToAuth("register")}
-    />
+  if (checking) return <LoadingScreen />;
+
+  return (
+    <>
+      <HotelIQ
+        user={user}
+        apiBase={API_BASE}
+        onLogout={handleLogout}
+        onShowAuth={handleShowAuth}
+      />
+
+      {showAuth && (
+        <div
+          onClick={e => { if (e.target === e.currentTarget) setShowAuth(false); }}
+          style={{
+            position: "fixed", inset: 0, background: "rgba(0,0,0,0.88)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            zIndex: 1000, backdropFilter: "blur(4px)",
+          }}
+        >
+          <Auth
+            apiBase={API_BASE}
+            onLogin={handleLogin}
+            initialTab={authTab}
+            onClose={() => setShowAuth(false)}
+          />
+        </div>
+      )}
+    </>
   );
-  if (view === "auth") return (
-    <Auth
-      apiBase={API_BASE}
-      onLogin={handleLogin}
-      initialTab={authTab}
-      onBack={() => setView("landing")}
-    />
-  );
-  return <HotelIQ user={user} apiBase={API_BASE} onLogout={handleLogout} />;
 }
 
 function LoadingScreen() {
