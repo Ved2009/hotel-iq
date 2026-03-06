@@ -7,15 +7,16 @@ import {
 
 // ── Design Tokens ─────────────────────────────────────────────────────────────
 const C = {
-  gold:   "#C9A55A",  // muted gold — revenue metrics
-  blue:   "#4B8EF5",  // primary action
-  green:  "#22C55E",  // positive/success
-  red:    "#EF4444",  // negative/alert
-  amber:  "#F59E0B",  // warning
-  purple: "#8B5CF6",  // secondary metric
-  teal:   "#14B8A6",  // tertiary
-  orange: "#F59E0B",  // alias for amber (used in some gradients)
-  pink:   "#EC4899",  // GOPPAR accent
+  gold:   "#F59E0B",  // amber — revenue & occupancy
+  blue:   "#6366F1",  // indigo — primary action
+  green:  "#10B981",  // emerald — positive/success
+  red:    "#EF4444",  // red — alert
+  amber:  "#F59E0B",  // alias gold
+  purple: "#8B5CF6",  // violet — secondary
+  teal:   "#14B8A6",  // teal — tertiary
+  orange: "#F97316",  // orange — forecast
+  pink:   "#EC4899",  // pink — GOPPAR
+  indigo: "#6366F1",  // alias blue
 };
 
 // ── Deterministic pseudo-random (avoids hydration mismatch) ──────────────────
@@ -140,8 +141,8 @@ const reports = [
 // ── Reusable Components ────────────────────────────────────────────────────────
 const Card = ({ title, subtitle, action, children, style = {} }) => (
   <div style={{
-    background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)",
-    borderRadius: 14, padding: "20px 22px", ...style,
+    background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.07)",
+    borderRadius: 16, padding: "20px 22px", ...style,
   }}>
     {(title || action) && (
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
@@ -159,20 +160,29 @@ const Card = ({ title, subtitle, action, children, style = {} }) => (
 const KPI = ({ label, value, sub, delta, accent, icon }) => (
   <div style={{
     background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)",
-    borderRadius: 14, padding: "18px 20px", position: "relative", overflow: "hidden",
-  }}>
+    borderRadius: 16, padding: "18px 20px", position: "relative", overflow: "hidden",
+    transition: "border-color 0.2s, transform 0.2s",
+  }}
+    onMouseEnter={e => { e.currentTarget.style.borderColor = `${accent}40`; e.currentTarget.style.transform = "translateY(-2px)"; }}
+    onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"; e.currentTarget.style.transform = "translateY(0)"; }}>
+    {/* Colored top accent bar */}
     <div style={{
-      position: "absolute", top: 0, right: 0, width: 70, height: 70,
-      background: `radial-gradient(circle at top right, ${accent}30, transparent)`,
+      position: "absolute", top: 0, left: 0, right: 0, height: 2,
+      background: `linear-gradient(90deg, ${accent}, transparent)`,
+    }} />
+    {/* Corner glow */}
+    <div style={{
+      position: "absolute", top: 0, right: 0, width: 80, height: 80,
+      background: `radial-gradient(circle at top right, ${accent}20, transparent)`,
     }} />
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-      <span style={{ fontSize: 10, fontFamily: "'Space Mono', monospace", letterSpacing: 2,
-        textTransform: "uppercase", color: "#555" }}>{label}</span>
-      <span style={{ fontSize: 16, opacity: 0.45 }}>{icon}</span>
+      <span style={{ fontSize: 9, fontFamily: "'Space Mono', monospace", letterSpacing: 2,
+        textTransform: "uppercase", color: "#4B5563" }}>{label}</span>
+      <span style={{ fontSize: 16, opacity: 0.4 }}>{icon}</span>
     </div>
-    <div style={{ fontSize: 30, fontWeight: 800, fontFamily: "'Syne', sans-serif",
-      color: "#fff", lineHeight: 1.1, marginBottom: 4 }}>{value}</div>
-    {sub && <div style={{ fontSize: 11, color: "#555", marginBottom: 4 }}>{sub}</div>}
+    <div style={{ fontSize: 32, fontWeight: 800, fontFamily: "'Syne', sans-serif",
+      color: "#fff", lineHeight: 1.1, marginBottom: 4, letterSpacing: -1 }}>{value}</div>
+    {sub && <div style={{ fontSize: 11, color: "#4B5563", marginBottom: 4 }}>{sub}</div>}
     {delta !== undefined && (
       <div style={{ fontSize: 10, fontFamily: "'Space Mono', monospace",
         color: delta >= 0 ? C.green : C.red }}>
@@ -195,7 +205,7 @@ const Badge = ({ urgency }) => {
 const Tip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
   return (
-    <div style={{ background: "#0D0D10", border: "1px solid #1E1E24", borderRadius: 10,
+    <div style={{ background: "#070B14", border: "1px solid rgba(99,102,241,0.2)", borderRadius: 10,
       padding: "10px 14px", fontSize: 11, fontFamily: "'Space Mono', monospace",
       boxShadow: "0 8px 32px rgba(0,0,0,0.7)" }}>
       <div style={{ color: "#555", marginBottom: 6 }}>{label}</div>
@@ -250,21 +260,21 @@ function Overview({ user, setTab, applied, skipped, onApply }) {
             <AreaChart data={monthlyData}>
               <defs>
                 <linearGradient id="gOcc" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={C.gold} stopOpacity={0.28} />
-                  <stop offset="95%" stopColor={C.gold} stopOpacity={0} />
+                  <stop offset="5%" stopColor="#6366F1" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#6366F1" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1A1A20" />
-              <XAxis dataKey="month" tick={{ fill: "#555", fontSize: 10 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: "#555", fontSize: 10 }} axisLine={false} tickLine={false} domain={[30,100]} tickFormatter={v=>`${v}%`} />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(99,102,241,0.08)" />
+              <XAxis dataKey="month" tick={{ fill: "#4B5563", fontSize: 10 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: "#4B5563", fontSize: 10 }} axisLine={false} tickLine={false} domain={[30,100]} tickFormatter={v=>`${v}%`} />
               <Tooltip content={<Tip />} />
-              <Area type="monotone" dataKey="occupancy" stroke={C.gold} strokeWidth={2} fill="url(#gOcc)" name="This Year" />
-              <Area type="monotone" dataKey="lastYear" stroke="#333" strokeWidth={1.5} fill="transparent" strokeDasharray="4 4" name="Last Year" />
+              <Area type="monotone" dataKey="occupancy" stroke="#6366F1" strokeWidth={2} fill="url(#gOcc)" name="This Year" />
+              <Area type="monotone" dataKey="lastYear" stroke="#374151" strokeWidth={1.5} fill="transparent" strokeDasharray="4 4" name="Last Year" />
             </AreaChart>
           </ResponsiveContainer>
-          <div style={{ display: "flex", gap: 20, marginTop: 10, fontSize: 11, fontFamily: "'Space Mono', monospace", color: "#555" }}>
-            <span><span style={{ color: C.gold }}>—</span> This Year</span>
-            <span><span style={{ color: "#444" }}>- -</span> Last Year</span>
+          <div style={{ display: "flex", gap: 20, marginTop: 10, fontSize: 11, fontFamily: "'Space Mono', monospace", color: "#4B5563" }}>
+            <span><span style={{ color: "#6366F1" }}>—</span> This Year</span>
+            <span><span style={{ color: "#374151" }}>- -</span> Last Year</span>
           </div>
         </Card>
 
@@ -276,7 +286,7 @@ function Overview({ user, setTab, applied, skipped, onApply }) {
               <YAxis tick={{ fill: "#555", fontSize: 9 }} axisLine={false} tickLine={false} tickFormatter={v=>`$${(v/1000).toFixed(0)}k`} />
               <Tooltip content={<Tip />} />
               <Bar dataKey="revenue" radius={[5,5,0,0]} name="Revenue">
-                {weeklyRevenue.map((_, i) => <Cell key={i} fill={i >= 4 ? C.gold : "#202024"} />)}
+                {weeklyRevenue.map((_, i) => <Cell key={i} fill={i >= 4 ? "#6366F1" : "#1A1A28"} />)}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
@@ -285,13 +295,13 @@ function Overview({ user, setTab, applied, skipped, onApply }) {
 
       <div className="chart2col" style={{ display: "grid", gridTemplateColumns: "3fr 2fr", gap: 16 }}>
         <div style={{
-          background: "linear-gradient(135deg, rgba(232,197,71,0.08), rgba(249,115,22,0.06))",
-          border: "1px solid rgba(232,197,71,0.18)", borderRadius: 14, padding: "20px 24px",
+          background: "linear-gradient(135deg, rgba(99,102,241,0.1), rgba(79,70,229,0.07))",
+          border: "1px solid rgba(99,102,241,0.25)", borderRadius: 16, padding: "20px 24px",
         }}>
           <div style={{ display: "flex", gap: 14, marginBottom: 14 }}>
             <span style={{ fontSize: 24 }}>✦</span>
             <div>
-              <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 14, color: C.gold, marginBottom: 6 }}>AI Revenue Insight</div>
+              <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 14, color: "#818CF8", marginBottom: 6 }}>AI Revenue Insight</div>
               <div style={{ fontSize: 13, color: "#aaa", lineHeight: 1.8 }}>
                 Demand spike forecasted <strong style={{ color: "#fff" }}>+34%</strong> this weekend — regional tech conference in town.
                 Standard King & Double Queen rates are <strong style={{ color: C.orange }}>$16–20 below optimal</strong>.
@@ -301,9 +311,10 @@ function Overview({ user, setTab, applied, skipped, onApply }) {
           </div>
           <div style={{ display: "flex", gap: 10 }}>
             <button onClick={() => setTab("pricing")} style={{
-              background: "rgba(232,197,71,0.12)", border: "1px solid rgba(232,197,71,0.3)",
-              color: C.gold, padding: "8px 16px", borderRadius: 8, cursor: "pointer",
+              background: "linear-gradient(135deg, #6366F1, #4F46E5)", border: "none",
+              color: "#fff", padding: "8px 16px", borderRadius: 8, cursor: "pointer",
               fontSize: 11, fontFamily: "'Space Mono', monospace", fontWeight: 700,
+              boxShadow: "0 4px 14px rgba(99,102,241,0.4)",
             }}>REVIEW PRICING →</button>
             <button onClick={() => setTab("forecast")} style={{
               background: "transparent", border: "1px solid rgba(255,255,255,0.08)",
@@ -329,8 +340,8 @@ function Overview({ user, setTab, applied, skipped, onApply }) {
                   </div>
                 </div>
                 <button onClick={() => onApply(r.id)} style={{
-                  background: `linear-gradient(135deg, ${C.gold}, ${C.orange})`, border: "none",
-                  color: "#000", padding: "5px 12px", borderRadius: 6, cursor: "pointer",
+                  background: "linear-gradient(135deg, #10B981, #059669)", border: "none",
+                  color: "#fff", padding: "5px 12px", borderRadius: 6, cursor: "pointer",
                   fontSize: 10, fontWeight: 700, fontFamily: "'Space Mono', monospace",
                 }}>APPLY</button>
               </div>
@@ -512,9 +523,10 @@ function Pricing({ applied, skipped, onApply, onSkip, onRestore }) {
               <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
                 {!isApplied && !isSkipped && r.urgency !== "low" && (
                   <button onClick={() => onApply(r.id)} style={{
-                    background: `linear-gradient(135deg, ${C.gold}, ${C.orange})`, border: "none",
-                    color: "#000", padding: "8px 16px", borderRadius: 8, cursor: "pointer",
+                    background: "linear-gradient(135deg, #10B981, #059669)", border: "none",
+                    color: "#fff", padding: "8px 16px", borderRadius: 8, cursor: "pointer",
                     fontSize: 11, fontWeight: 700, fontFamily: "'Space Mono', monospace",
+                    boxShadow: "0 4px 12px rgba(16,185,129,0.35)",
                   }}>APPLY</button>
                 )}
                 {isApplied && (
@@ -719,7 +731,7 @@ function CompSet() {
                 <div style={{ height: 5, background: "#1A1A20", borderRadius: 3, overflow: "hidden" }}>
                   <div style={{
                     height: "100%", borderRadius: 3,
-                    background: isYou ? `linear-gradient(90deg, ${C.gold}, ${C.orange})` : "#2A2A30",
+                    background: isYou ? "linear-gradient(90deg, #6366F1, #8B5CF6)" : "#1A1A28",
                     width: `${((c.rate - 130) / 120) * 100}%`, transition: "width 1s",
                   }} />
                 </div>
@@ -889,9 +901,10 @@ function Settings({ user, onLogout, theme, toggleTheme }) {
         <div style={{ display: "flex", gap: 22 }}>
           <div style={{
             width: 60, height: 60, borderRadius: 16, flexShrink: 0,
-            background: `linear-gradient(135deg, ${C.gold}, ${C.orange})`,
+            background: "linear-gradient(135deg, #6366F1, #8B5CF6)",
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 24, fontWeight: 800, color: "#000", fontFamily: "'Syne', sans-serif",
+            fontSize: 24, fontWeight: 800, color: "#fff", fontFamily: "'Syne', sans-serif",
+            boxShadow: "0 0 24px rgba(99,102,241,0.4)",
           }}>{(user?.firstName?.[0] || "H").toUpperCase()}</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, flex: 1 }}>
             {[
@@ -1025,18 +1038,19 @@ Be concise, data-driven, give specific actionable advice with $ and % figures.`;
   return (
     <div style={{
       position: "fixed", bottom: 24, right: 24, width: 420, height: 580,
-      background: "#080D18", border: "1px solid rgba(75,142,245,0.2)",
+      background: "#070B14", border: "1px solid rgba(99,102,241,0.3)",
       borderRadius: 20, display: "flex", flexDirection: "column",
       boxShadow: "0 32px 80px rgba(0,0,0,0.85)", zIndex: 300, overflow: "hidden",
     }}>
       <div style={{
         padding: "14px 18px", borderBottom: "1px solid rgba(255,255,255,0.07)",
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        background: "rgba(75,142,245,0.06)",
+        background: "rgba(99,102,241,0.08)",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 32, height: 32, borderRadius: 9, background: `linear-gradient(135deg, ${C.gold}, ${C.orange})`,
-            display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>✦</div>
+          <div style={{ width: 32, height: 32, borderRadius: 9, background: "linear-gradient(135deg, #6366F1, #8B5CF6)",
+            display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14,
+            boxShadow: "0 0 12px rgba(99,102,241,0.5)" }}>✦</div>
           <div>
             <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 14 }}>AI Revenue Analyst</div>
             <div style={{ fontSize: 9, color: "#444", fontFamily: "'Space Mono', monospace", letterSpacing: 1 }}>POWERED BY GEMINI</div>
@@ -1052,8 +1066,8 @@ Be concise, data-driven, give specific actionable advice with $ and % figures.`;
           <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start", gap: 8 }}>
             {m.role === "assistant" && (
               <div style={{ width: 24, height: 24, borderRadius: 7, flexShrink: 0, marginTop: 2,
-                background: `linear-gradient(135deg, ${C.gold}, ${C.orange})`,
-                display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, color: "#000" }}>✦</div>
+                background: "linear-gradient(135deg, #6366F1, #8B5CF6)",
+                display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, color: "#fff" }}>✦</div>
             )}
             <div style={{
               maxWidth: "82%", padding: "10px 14px", fontSize: 13, lineHeight: 1.65, whiteSpace: "pre-wrap",
@@ -1088,9 +1102,9 @@ Be concise, data-driven, give specific actionable advice with $ and % figures.`;
             borderRadius: 10, padding: "10px 13px", color: "#fff", fontSize: 13,
             fontFamily: "'DM Sans', sans-serif", outline: "none" }} />
         <button onClick={send} disabled={loading} style={{
-          background: loading ? "rgba(232,197,71,0.3)" : `linear-gradient(135deg, ${C.gold}, ${C.orange})`,
+          background: loading ? "rgba(99,102,241,0.3)" : "linear-gradient(135deg, #6366F1, #4F46E5)",
           border: "none", borderRadius: 10, padding: "10px 16px",
-          cursor: loading ? "not-allowed" : "pointer", color: "#000", fontWeight: 700, fontSize: 16, minWidth: 44,
+          cursor: loading ? "not-allowed" : "pointer", color: "#fff", fontWeight: 700, fontSize: 16, minWidth: 44,
         }}>→</button>
       </div>
     </div>
@@ -1112,25 +1126,28 @@ const NAV = [
 function Sidebar({ active, setTab }) {
   return (
     <aside style={{
-      width: 210, flexShrink: 0, background: "#080D18",
-      borderRight: "1px solid rgba(255,255,255,0.06)",
-      display: "flex", flexDirection: "column", padding: "20px 0",
+      width: 220, flexShrink: 0,
+      background: "linear-gradient(180deg, #070B14 0%, #050912 100%)",
+      borderRight: "1px solid rgba(255,255,255,0.05)",
+      display: "flex", flexDirection: "column", padding: "16px 10px",
       position: "sticky", top: 62, height: "calc(100vh - 62px)", overflowY: "auto",
     }}>
       {NAV.map(n => {
         const isActive = active === n.id;
         return (
           <button key={n.id} onClick={() => setTab(n.id)} style={{
-            display: "flex", alignItems: "center", gap: 12,
-            padding: "11px 20px", cursor: "pointer",
-            background: isActive ? "rgba(75,142,245,0.1)" : "transparent",
-            border: "none",
-            borderLeft: isActive ? `3px solid ${C.blue}` : "3px solid transparent",
-            color: isActive ? "#E2E8F0" : "#4B5563",
+            display: "flex", alignItems: "center", gap: 11,
+            padding: "10px 14px", cursor: "pointer", borderRadius: 10, margin: "1px 0",
+            background: isActive ? "rgba(99,102,241,0.15)" : "transparent",
+            border: isActive ? "1px solid rgba(99,102,241,0.3)" : "1px solid transparent",
+            color: isActive ? "#C7D2FE" : "#4B5563",
             fontSize: 13, fontFamily: "'DM Sans', sans-serif", fontWeight: isActive ? 600 : 400,
             textAlign: "left", transition: "all 0.15s", width: "100%",
-          }}>
-            <span style={{ fontSize: 15, opacity: isActive ? 1 : 0.7 }}>{n.icon}</span>
+            boxShadow: isActive ? "0 0 12px rgba(99,102,241,0.1)" : "none",
+          }}
+            onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
+            onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "transparent"; }}>
+            <span style={{ fontSize: 14, opacity: isActive ? 1 : 0.5 }}>{n.icon}</span>
             {n.label}
           </button>
         );
@@ -1192,21 +1209,26 @@ export default function HotelIQ({ user, apiBase, onLogout, onShowAuth }) {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#06090F", color: "#E2E8F0", fontFamily: "'DM Sans', sans-serif" }}>
+    <div style={{ minHeight: "100vh", background: "#030712", color: "#E2E8F0", fontFamily: "'DM Sans', sans-serif", position: "relative" }}>
       <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+      {/* Ambient background glow */}
+      <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0,
+        background: "radial-gradient(ellipse 70% 40% at 50% 0%, rgba(99,102,241,0.08) 0%, transparent 60%)" }} />
 
       {/* ── Header ── */}
       <header style={{
         height: 62, padding: "0 28px", display: "flex", alignItems: "center",
         justifyContent: "space-between", position: "sticky", top: 0, zIndex: 200,
-        background: "rgba(6,9,15,0.97)", backdropFilter: "blur(20px)",
+        background: "rgba(3,7,18,0.97)", backdropFilter: "blur(24px)",
         borderBottom: "1px solid rgba(255,255,255,0.06)",
+        isolation: "isolate",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <div style={{ width: 34, height: 34, borderRadius: 10,
-            background: "linear-gradient(135deg, #C9A55A, #4B8EF5)",
+            background: "linear-gradient(135deg, #6366F1, #4F46E5)",
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 15, fontWeight: 800, color: "#fff", fontFamily: "'Syne', sans-serif" }}>IQ</div>
+            fontSize: 15, fontWeight: 800, color: "#fff", fontFamily: "'Syne', sans-serif",
+            boxShadow: "0 0 16px rgba(99,102,241,0.5)" }}>IQ</div>
           <div>
             <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 17, letterSpacing: -0.5, lineHeight: 1.2 }}>
               Hotel<span style={{ color: C.gold }}>IQ</span>
@@ -1227,8 +1249,8 @@ export default function HotelIQ({ user, apiBase, onLogout, onShowAuth }) {
           {/* Notifications */}
           <div style={{ position: "relative" }}>
             <button onClick={() => setShowNotif(v => !v)} style={{
-              background: showNotif ? "rgba(232,197,71,0.08)" : "transparent",
-              border: `1px solid ${showNotif ? "rgba(232,197,71,0.25)" : "rgba(255,255,255,0.07)"}`,
+              background: showNotif ? "rgba(99,102,241,0.1)" : "transparent",
+              border: `1px solid ${showNotif ? "rgba(99,102,241,0.3)" : "rgba(255,255,255,0.07)"}`,
               borderRadius: 8, width: 34, height: 34, cursor: "pointer", position: "relative",
               display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, color: "#fff",
             }}>🔔
@@ -1269,20 +1291,22 @@ export default function HotelIQ({ user, apiBase, onLogout, onShowAuth }) {
 
           {/* AI button */}
           <button onClick={() => user ? setAiOpen(o => !o) : onShowAuth?.("login")} style={{
-            background: aiOpen ? "rgba(75,142,245,0.12)" : `linear-gradient(135deg, ${C.blue}, #2563EB)`,
-            border: aiOpen ? `1px solid rgba(75,142,245,0.35)` : "none",
-            color: aiOpen ? C.blue : "#fff",
+            background: aiOpen ? "rgba(99,102,241,0.15)" : "linear-gradient(135deg, #6366F1, #4F46E5)",
+            border: aiOpen ? "1px solid rgba(99,102,241,0.4)" : "none",
+            color: aiOpen ? "#818CF8" : "#fff",
             padding: "8px 16px", borderRadius: 8, cursor: "pointer",
             fontSize: 12, fontWeight: 700, fontFamily: "'Space Mono', monospace", letterSpacing: 0.5,
+            boxShadow: aiOpen ? "none" : "0 4px 14px rgba(99,102,241,0.4)",
           }}>✦ ASK AI</button>
 
           {user ? (
             <>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <div style={{ width: 28, height: 28, borderRadius: "50%",
-                  background: `linear-gradient(135deg, ${C.gold}, ${C.orange})`,
+                  background: "linear-gradient(135deg, #6366F1, #8B5CF6)",
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 11, fontWeight: 800, color: "#000", fontFamily: "'Syne', sans-serif" }}>
+                  fontSize: 11, fontWeight: 800, color: "#fff", fontFamily: "'Syne', sans-serif",
+                  boxShadow: "0 0 10px rgba(99,102,241,0.4)" }}>
                   {(user.firstName?.[0] || "H").toUpperCase()}
                 </div>
                 <span style={{ fontSize: 12, color: "#666", fontFamily: "'Space Mono', monospace" }}>
@@ -1299,15 +1323,16 @@ export default function HotelIQ({ user, apiBase, onLogout, onShowAuth }) {
             <>
               <button onClick={() => onShowAuth?.("login")} style={{
                 background: "transparent",
-                border: `1px solid rgba(201,165,90,0.4)`,
-                color: C.gold, padding: "7px 16px", borderRadius: 8, cursor: "pointer",
+                border: "1px solid rgba(99,102,241,0.4)",
+                color: "#818CF8", padding: "7px 16px", borderRadius: 8, cursor: "pointer",
                 fontSize: 12, fontWeight: 600, fontFamily: "'DM Sans', sans-serif",
               }}>Sign In</button>
               <button onClick={() => onShowAuth?.("register")} style={{
-                background: `linear-gradient(135deg, ${C.gold}, #B8924A)`,
+                background: "linear-gradient(135deg, #6366F1, #4F46E5)",
                 border: "none",
-                color: "#000", padding: "7px 16px", borderRadius: 8, cursor: "pointer",
+                color: "#fff", padding: "7px 16px", borderRadius: 8, cursor: "pointer",
                 fontSize: 12, fontWeight: 700, fontFamily: "'DM Sans', sans-serif",
+                boxShadow: "0 4px 14px rgba(99,102,241,0.4)",
               }}>Register Free</button>
             </>
           )}
@@ -1329,8 +1354,10 @@ export default function HotelIQ({ user, apiBase, onLogout, onShowAuth }) {
         * { box-sizing: border-box; }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #1E1E24; border-radius: 2px; }
-        button:hover { filter: brightness(1.1); }
+        ::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.3); border-radius: 2px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(99,102,241,0.5); }
+        button:hover { filter: brightness(1.12); }
+        input::placeholder { color: #2D3748; }
         @media (max-width: 1100px) {
           .kpi6 { grid-template-columns: repeat(3,1fr) !important; }
           .chart2col { grid-template-columns: 1fr !important; }
