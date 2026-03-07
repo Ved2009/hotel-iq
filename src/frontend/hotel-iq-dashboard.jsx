@@ -138,6 +138,65 @@ const reports = [
   { name: "Year-over-Year Comparison",   desc: "KPI trends vs prior year",               freq: "Weekly",  status: "Ready" },
 ];
 
+// ── Spark data per KPI ────────────────────────────────────────────────────────
+const SPARKS = {
+  occupancy:   [64, 67, 65, 69, 71, 70, 74, 73],
+  revpar:      [129, 131, 133, 130, 136, 138, 140, 142],
+  adr:         [187, 190, 188, 191, 193, 192, 196, 195],
+  trevpar:     [158, 161, 159, 163, 165, 164, 168, 168],
+  revenueMtd:  [60,  65,  70,  74,  78,  82,  86,  89],
+  goppar:      [83,  85,  84,  86,  87,  87,  89,  89],
+  forecast7:   [75,  78,  80,  82,  84,  83,  82,  81],
+  forecastAcc: [92,  93,  91,  93,  94,  94,  94,  94],
+  projRev:     [31,  33,  35,  36,  38,  39,  40,  41],
+  roomRev:     [62,  67,  72,  76,  79,  83,  86,  89],
+  fbRev:       [14,  15,  15,  16,  17,  17,  18,  18],
+  profit:      [36,  39,  40,  42,  44,  45,  46,  47],
+};
+
+// ── Mini inline sparkline ─────────────────────────────────────────────────────
+const MiniSpark = ({ data, color }) => {
+  if (!data?.length) return null;
+  const W = 100, H = 26;
+  const min = Math.min(...data), max = Math.max(...data), rng = max - min || 1;
+  const pts = data.map((v, i) => `${((i / (data.length - 1)) * W).toFixed(1)},${(H - ((v - min) / rng) * (H - 3) - 1.5).toFixed(1)}`);
+  const id = `ms${color.replace(/[^a-z0-9]/gi, "")}${data[0]}`;
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} preserveAspectRatio="none" style={{ display: "block", marginTop: 6 }}>
+      <defs>
+        <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.3" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={`M0,${H} L${pts.join(" L")} L${W},${H} Z`} fill={`url(#${id})`} />
+      <polyline points={pts.join(" ")} fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+};
+
+// ── Demo banner ───────────────────────────────────────────────────────────────
+const DemoBanner = ({ onAction }) => (
+  <div style={{
+    background: "linear-gradient(135deg, rgba(99,102,241,0.14), rgba(79,70,229,0.08))",
+    border: "1px solid rgba(99,102,241,0.35)", borderRadius: 12,
+    padding: "13px 20px", display: "flex", alignItems: "center", gap: 14, marginBottom: 4,
+  }}>
+    <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#6366F1", flexShrink: 0,
+      display: "inline-block", boxShadow: "0 0 8px #6366F1", animation: "livePulse 2s ease-in-out infinite" }} />
+    <div style={{ flex: 1, fontSize: 13, color: "#A5B4FC" }}>
+      You're viewing <strong style={{ color: "#fff" }}>live demo data</strong> — sign in to connect
+      your property and get real AI pricing recommendations.
+    </div>
+    <button onClick={() => onAction?.("register")} style={{
+      background: "linear-gradient(135deg, #6366F1, #4F46E5)", border: "none",
+      color: "#fff", padding: "8px 18px", borderRadius: 8, cursor: "pointer",
+      fontSize: 12, fontWeight: 700, fontFamily: "'DM Sans', sans-serif",
+      whiteSpace: "nowrap", boxShadow: "0 4px 14px rgba(99,102,241,0.45)",
+    }}>Start Free →</button>
+  </div>
+);
+
 // ── Reusable Components ────────────────────────────────────────────────────────
 const Card = ({ title, subtitle, action, children, style = {} }) => (
   <div style={{
@@ -157,38 +216,35 @@ const Card = ({ title, subtitle, action, children, style = {} }) => (
   </div>
 );
 
-const KPI = ({ label, value, sub, delta, accent, icon }) => (
+const KPI = ({ label, value, sub, delta, accent, icon, spark }) => (
   <div style={{
     background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)",
-    borderRadius: 16, padding: "18px 20px", position: "relative", overflow: "hidden",
+    borderRadius: 16, padding: "16px 18px", position: "relative", overflow: "hidden",
     transition: "border-color 0.2s, transform 0.2s",
   }}
-    onMouseEnter={e => { e.currentTarget.style.borderColor = `${accent}40`; e.currentTarget.style.transform = "translateY(-2px)"; }}
+    onMouseEnter={e => { e.currentTarget.style.borderColor = `${accent}50`; e.currentTarget.style.transform = "translateY(-2px)"; }}
     onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"; e.currentTarget.style.transform = "translateY(0)"; }}>
-    {/* Colored top accent bar */}
-    <div style={{
-      position: "absolute", top: 0, left: 0, right: 0, height: 2,
-      background: `linear-gradient(90deg, ${accent}, transparent)`,
-    }} />
+    {/* Top accent bar */}
+    <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2,
+      background: `linear-gradient(90deg, ${accent}, transparent)` }} />
     {/* Corner glow */}
-    <div style={{
-      position: "absolute", top: 0, right: 0, width: 80, height: 80,
-      background: `radial-gradient(circle at top right, ${accent}20, transparent)`,
-    }} />
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+    <div style={{ position: "absolute", top: 0, right: 0, width: 80, height: 80,
+      background: `radial-gradient(circle at top right, ${accent}18, transparent)` }} />
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
       <span style={{ fontSize: 9, fontFamily: "'Space Mono', monospace", letterSpacing: 2,
         textTransform: "uppercase", color: "#4B5563" }}>{label}</span>
-      <span style={{ fontSize: 16, opacity: 0.4 }}>{icon}</span>
+      <span style={{ fontSize: 15, opacity: 0.35 }}>{icon}</span>
     </div>
-    <div style={{ fontSize: 32, fontWeight: 800, fontFamily: "'Syne', sans-serif",
-      color: "#fff", lineHeight: 1.1, marginBottom: 4, letterSpacing: -1 }}>{value}</div>
-    {sub && <div style={{ fontSize: 11, color: "#4B5563", marginBottom: 4 }}>{sub}</div>}
+    <div style={{ fontSize: 28, fontWeight: 800, fontFamily: "'Syne', sans-serif",
+      color: "#fff", lineHeight: 1.1, letterSpacing: -0.5 }}>{value}</div>
+    {sub && <div style={{ fontSize: 11, color: "#4B5563", marginTop: 2 }}>{sub}</div>}
     {delta !== undefined && (
-      <div style={{ fontSize: 10, fontFamily: "'Space Mono', monospace",
+      <div style={{ fontSize: 10, fontFamily: "'Space Mono', monospace", marginTop: 2,
         color: delta >= 0 ? C.green : C.red }}>
-        {delta >= 0 ? "▲" : "▼"} {Math.abs(delta)}% vs last month
+        {delta >= 0 ? "▲" : "▼"} {Math.abs(delta)}%
       </div>
     )}
+    {spark && <MiniSpark data={spark} color={accent} />}
   </div>
 );
 
@@ -221,37 +277,51 @@ const Tip = ({ active, payload, label }) => {
   );
 };
 
-const SectionHead = ({ title, sub, right }) => (
-  <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 26 }}>
+const SectionHead = ({ title, sub, right, live = true }) => (
+  <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 26 }}>
     <div>
-      <h1 style={{ fontFamily: "'Syne', sans-serif", fontSize: 26, fontWeight: 800,
-        margin: 0, letterSpacing: -0.5, color: "#fff" }}>{title}</h1>
-      {sub && <p style={{ color: "#555", margin: "5px 0 0", fontSize: 13 }}>{sub}</p>}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+        <h1 style={{ fontFamily: "'Syne', sans-serif", fontSize: 24, fontWeight: 800,
+          margin: 0, letterSpacing: -0.5, color: "#fff" }}>{title}</h1>
+        {live && (
+          <div style={{ display: "flex", alignItems: "center", gap: 5,
+            background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.25)",
+            borderRadius: 100, padding: "3px 10px" }}>
+            <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#10B981",
+              display: "inline-block", boxShadow: "0 0 6px #10B981",
+              animation: "livePulse 2s ease-in-out infinite" }} />
+            <span style={{ fontSize: 9, color: "#10B981", fontFamily: "'Space Mono', monospace",
+              letterSpacing: 1.5 }}>LIVE</span>
+          </div>
+        )}
+      </div>
+      {sub && <p style={{ color: "#4B5563", margin: 0, fontSize: 13 }}>{sub}</p>}
     </div>
     {right}
   </div>
 );
 
 // ── Section: Overview ─────────────────────────────────────────────────────────
-function Overview({ user, setTab, applied, skipped, onApply }) {
+function Overview({ user, setTab, applied, skipped, onApply, onShowAuth }) {
   const urgent = pricingRecs.filter(r => r.urgency === "high" && !applied.has(r.id) && !skipped.has(r.id));
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      {!user && <DemoBanner onAction={onShowAuth} />}
       <SectionHead
         title="Revenue Overview"
-        sub={`${user?.hotelName || "The Coastal Grand"} · Live · Updated just now`}
-        right={<span style={{ fontSize: 12, color: "#444", fontFamily: "'Space Mono', monospace" }}>
-          {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+        sub={`${user?.hotelName || "The Coastal Grand"} · Updated just now`}
+        right={<span style={{ fontSize: 11, color: "#374151", fontFamily: "'Space Mono', monospace" }}>
+          {new Date().toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" })}
         </span>}
       />
 
       <div className="kpi6" style={{ display: "grid", gridTemplateColumns: "repeat(6,1fr)", gap: 12 }}>
-        <KPI icon="🏨" label="Occupancy"    value="73%"    sub="214 / 292 rooms"    delta={4.2}  accent={C.gold} />
-        <KPI icon="📈" label="RevPAR"       value="$142"   sub="vs $131 last mo."   delta={7.8}  accent={C.orange} />
-        <KPI icon="💰" label="ADR"          value="$195"   sub="Avg daily rate"     delta={2.1}  accent={C.blue} />
-        <KPI icon="🏷️"  label="TRevPAR"    value="$168"   sub="Total rev / room"   delta={5.4}  accent={C.purple} />
-        <KPI icon="📊" label="Revenue MTD"  value="$89.4K" sub="Month to date"      delta={11.3} accent={C.green} />
-        <KPI icon="✨" label="GOPPAR"       value="$89"    sub="Gross op. profit"   delta={3.1}  accent={C.pink} />
+        <KPI icon="🏨" label="Occupancy"   value="73%"    sub="214 / 292 rooms"   delta={4.2}  accent={C.gold}   spark={SPARKS.occupancy} />
+        <KPI icon="📈" label="RevPAR"      value="$142"   sub="vs $131 last mo."  delta={7.8}  accent={C.orange} spark={SPARKS.revpar} />
+        <KPI icon="💰" label="ADR"         value="$195"   sub="Avg daily rate"    delta={2.1}  accent={C.blue}   spark={SPARKS.adr} />
+        <KPI icon="🏷️" label="TRevPAR"    value="$168"   sub="Total rev / room"  delta={5.4}  accent={C.purple} spark={SPARKS.trevpar} />
+        <KPI icon="📊" label="Revenue MTD" value="$89.4K" sub="Month to date"     delta={11.3} accent={C.green}  spark={SPARKS.revenueMtd} />
+        <KPI icon="✨" label="GOPPAR"      value="$89"    sub="Gross op. profit"  delta={3.1}  accent={C.pink}   spark={SPARKS.goppar} />
       </div>
 
       <div className="chart2col" style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16 }}>
@@ -281,7 +351,7 @@ function Overview({ user, setTab, applied, skipped, onApply }) {
         <Card title="This Week Revenue" subtitle="Gold = weekend">
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={weeklyRevenue} barSize={22}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1A1A20" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(99,102,241,0.07)" vertical={false} />
               <XAxis dataKey="day" tick={{ fill: "#555", fontSize: 10 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fill: "#555", fontSize: 9 }} axisLine={false} tickLine={false} tickFormatter={v=>`$${(v/1000).toFixed(0)}k`} />
               <Tooltip content={<Tip />} />
@@ -329,7 +399,7 @@ function Overview({ user, setTab, applied, skipped, onApply }) {
             {urgent.slice(0, 3).map(r => (
               <div key={r.id} style={{
                 display: "flex", alignItems: "center", justifyContent: "space-between",
-                background: "rgba(232,197,71,0.05)", border: "1px solid rgba(232,197,71,0.12)",
+                background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.18)",
                 borderRadius: 8, padding: "10px 12px",
               }}>
                 <div>
@@ -390,17 +460,17 @@ function Revenue() {
     <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
       <SectionHead title="Revenue Analysis" sub="Breakdown by segment, channel & performance metrics" />
       <div className="kpi4" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12 }}>
-        <KPI icon="💵" label="Room Revenue"    value="$89.4K" sub="Month to date"   delta={11.3} accent={C.gold} />
-        <KPI icon="🍽️"  label="F&B Revenue"   value="$18.2K" sub="Month to date"   delta={6.4}  accent={C.orange} />
-        <KPI icon="💆" label="Spa & Ancillary" value="$7.8K"  sub="Month to date"   delta={14.2} accent={C.blue} />
-        <KPI icon="📉" label="Gross Profit"    value="$47.3K" sub="44.7% GOP margin" delta={8.1} accent={C.green} />
+        <KPI icon="💵" label="Room Revenue"    value="$89.4K" sub="Month to date"    delta={11.3} accent={C.gold}   spark={SPARKS.roomRev} />
+        <KPI icon="🍽️" label="F&B Revenue"    value="$18.2K" sub="Month to date"    delta={6.4}  accent={C.orange} spark={SPARKS.fbRev} />
+        <KPI icon="💆" label="Spa & Ancillary" value="$7.8K"  sub="Month to date"    delta={14.2} accent={C.blue}   spark={SPARKS.trevpar} />
+        <KPI icon="📉" label="Gross Profit"    value="$47.3K" sub="44.7% GOP margin" delta={8.1}  accent={C.green}  spark={SPARKS.profit} />
       </div>
 
       <div className="chart2col" style={{ display: "grid", gridTemplateColumns: "3fr 2fr", gap: 16 }}>
         <Card title="Revenue by Channel" subtitle="Last 6 months — stacked">
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={channelData} barSize={30}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1A1A20" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(99,102,241,0.07)" vertical={false} />
               <XAxis dataKey="month" tick={{ fill: "#555", fontSize: 10 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fill: "#555", fontSize: 9 }} axisLine={false} tickLine={false} tickFormatter={v=>`$${(v/1000).toFixed(0)}k`} />
               <Tooltip content={<Tip />} />
@@ -444,7 +514,7 @@ function Revenue() {
       <Card title="ADR & RevPAR Trend" subtitle="12 months">
         <ResponsiveContainer width="100%" height={200}>
           <LineChart data={monthlyData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#1A1A20" />
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(99,102,241,0.07)" />
             <XAxis dataKey="month" tick={{ fill: "#555", fontSize: 10 }} axisLine={false} tickLine={false} />
             <YAxis tick={{ fill: "#555", fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v=>`$${v}`} />
             <Tooltip content={<Tip />} />
@@ -564,7 +634,7 @@ function Pricing({ applied, skipped, onApply, onSkip, onRestore }) {
           </div>
         )}
         {totalApplied > 0 && (
-          <div style={{ background: "rgba(96,165,250,0.05)", border: "1px solid rgba(96,165,250,0.2)",
+          <div style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.2)",
             borderRadius: 14, padding: "16px 22px" }}>
             <div style={{ fontSize: 10, color: C.blue, fontFamily: "'Space Mono', monospace", letterSpacing: 1 }}>APPLIED REVENUE GAIN</div>
             <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 28, fontWeight: 800, color: C.blue }}>+${totalApplied.toLocaleString()}</div>
@@ -583,13 +653,13 @@ function Forecast({ setTab }) {
       <SectionHead title="Demand Forecast" sub="14-day AI prediction · 90-day training window · 94% historical accuracy" />
 
       <div className="kpi4" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12 }}>
-        <KPI icon="📅" label="7-Day Avg Demand" value="81%"    sub="High demand period"    delta={12}   accent={C.blue} />
-        <KPI icon="🎯" label="Forecast Accuracy" value="94.2%" sub="Last 90 days"           delta={1.1}  accent={C.green} />
-        <KPI icon="💵" label="Projected Revenue" value="$41.2K" sub="Next 7 days"           delta={18.4} accent={C.gold} />
-        <KPI icon="📍" label="Events Detected"   value="2"     sub="Conference + weekend"   delta={0}    accent={C.purple} />
+        <KPI icon="📅" label="7-Day Avg Demand"  value="81%"    sub="High demand period" delta={12}   accent={C.blue}   spark={SPARKS.forecast7} />
+        <KPI icon="🎯" label="Forecast Accuracy" value="94.2%" sub="Last 90 days"        delta={1.1}  accent={C.green}  spark={SPARKS.forecastAcc} />
+        <KPI icon="💵" label="Projected Revenue" value="$41.2K" sub="Next 7 days"        delta={18.4} accent={C.gold}   spark={SPARKS.projRev} />
+        <KPI icon="📍" label="Events Detected"   value="2"     sub="Conference + weekend" delta={0}   accent={C.purple} />
       </div>
 
-      <div style={{ background: "rgba(96,165,250,0.07)", border: "1px solid rgba(96,165,250,0.2)",
+      <div style={{ background: "rgba(99,102,241,0.07)", border: "1px solid rgba(99,102,241,0.2)",
         borderRadius: 12, padding: "14px 20px", display: "flex", alignItems: "center", gap: 14 }}>
         <span style={{ fontSize: 20 }}>📍</span>
         <div>
@@ -601,8 +671,8 @@ function Forecast({ setTab }) {
           </div>
         </div>
         <button onClick={() => setTab("pricing")} style={{
-          marginLeft: "auto", whiteSpace: "nowrap", background: "rgba(96,165,250,0.12)",
-          border: "1px solid rgba(96,165,250,0.3)", color: C.blue, padding: "8px 16px",
+          marginLeft: "auto", whiteSpace: "nowrap", background: "rgba(99,102,241,0.12)",
+          border: "1px solid rgba(99,102,241,0.3)", color: C.blue, padding: "8px 16px",
           borderRadius: 8, cursor: "pointer", fontSize: 11, fontFamily: "'Space Mono', monospace", fontWeight: 700,
         }}>ADJUST RATES →</button>
       </div>
@@ -616,7 +686,7 @@ function Forecast({ setTab }) {
                 <stop offset="95%" stopColor={C.blue} stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#1A1A20" />
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(99,102,241,0.07)" />
             <XAxis dataKey="date" tick={{ fill: "#555", fontSize: 10 }} axisLine={false} tickLine={false} />
             <YAxis tick={{ fill: "#555", fontSize: 10 }} axisLine={false} tickLine={false} domain={[0,100]} tickFormatter={v=>`${v}%`} />
             <Tooltip content={<Tip />} />
@@ -629,7 +699,7 @@ function Forecast({ setTab }) {
         <Card title="Booking Pickup" subtitle="New bookings made per day (last 7 days)">
           <ResponsiveContainer width="100%" height={180}>
             <BarChart data={pickupData} barSize={18} barGap={4}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1A1A20" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(99,102,241,0.07)" vertical={false} />
               <XAxis dataKey="date" tick={{ fill: "#555", fontSize: 10 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fill: "#555", fontSize: 10 }} axisLine={false} tickLine={false} />
               <Tooltip content={<Tip />} />
@@ -650,14 +720,14 @@ function Forecast({ setTab }) {
               const isEvent = d.event === "Conference";
               return (
                 <div key={i} style={{
-                  background: isEvent ? "rgba(96,165,250,0.08)" : isHigh ? "rgba(232,197,71,0.08)" : "rgba(255,255,255,0.03)",
-                  border: isEvent ? "1px solid rgba(96,165,250,0.3)" : isHigh ? "1px solid rgba(232,197,71,0.3)" : "1px solid transparent",
+                  background: isEvent ? "rgba(99,102,241,0.1)" : isHigh ? "rgba(16,185,129,0.07)" : "rgba(255,255,255,0.03)",
+                  border: isEvent ? "1px solid rgba(99,102,241,0.35)" : isHigh ? "1px solid rgba(16,185,129,0.25)" : "1px solid transparent",
                   borderRadius: 10, padding: "10px 6px", textAlign: "center",
                 }}>
                   <div style={{ fontSize: 9, color: "#555", fontFamily: "'Space Mono', monospace", marginBottom: 6 }}>{d.date}</div>
                   <div style={{ fontSize: 18, fontWeight: 800, fontFamily: "'Syne', sans-serif",
-                    color: isEvent ? C.blue : isHigh ? C.gold : "#aaa" }}>{d.demand}%</div>
-                  {d.event && <div style={{ fontSize: 7, color: isEvent ? C.blue : C.gold,
+                    color: isEvent ? "#818CF8" : isHigh ? C.green : "#6B7280" }}>{d.demand}%</div>
+                  {d.event && <div style={{ fontSize: 7, color: isEvent ? "#818CF8" : C.green,
                     fontFamily: "'Space Mono', monospace", marginTop: 4 }}>{d.event.toUpperCase()}</div>}
                   <div style={{ fontSize: 8, color: "#444", marginTop: 4, fontFamily: "'Space Mono', monospace" }}>
                     {d.confidence}%
@@ -696,8 +766,8 @@ function CompSet() {
           const isYou = c.name === "Your Hotel";
           return (
             <div key={i} style={{
-              background: isYou ? "rgba(232,197,71,0.05)" : "rgba(255,255,255,0.03)",
-              border: isYou ? "1px solid rgba(232,197,71,0.22)" : "1px solid rgba(255,255,255,0.07)",
+              background: isYou ? "rgba(99,102,241,0.07)" : "rgba(255,255,255,0.03)",
+              border: isYou ? "1px solid rgba(99,102,241,0.3)" : "1px solid rgba(255,255,255,0.07)",
               borderRadius: 14, padding: "16px 22px", display: "flex", alignItems: "center", gap: 18,
             }}>
               <div style={{ width: 24, fontFamily: "'Space Mono', monospace", fontSize: 12,
@@ -705,7 +775,7 @@ function CompSet() {
               <div style={{ flex: 2 }}>
                 <div style={{ fontWeight: 600, fontSize: 14, display: "flex", alignItems: "center", gap: 8 }}>
                   {c.name}
-                  {isYou && <span style={{ fontSize: 9, background: "rgba(232,197,71,0.18)", color: C.gold,
+                  {isYou && <span style={{ fontSize: 9, background: "rgba(99,102,241,0.2)", color: "#818CF8",
                     padding: "2px 7px", borderRadius: 4, fontFamily: "'Space Mono', monospace" }}>YOU</span>}
                 </div>
                 <div style={{ fontSize: 11, color: "#444", marginTop: 2 }}>
@@ -714,21 +784,21 @@ function CompSet() {
               </div>
               <div style={{ textAlign: "center", minWidth: 80 }}>
                 <div style={{ fontSize: 26, fontFamily: "'Syne', sans-serif", fontWeight: 800,
-                  color: isYou ? C.gold : "#fff" }}>${c.rate}</div>
+                  color: isYou ? "#818CF8" : "#fff" }}>${c.rate}</div>
                 <div style={{ fontSize: 11, fontFamily: "'Space Mono', monospace",
                   color: c.change > 0 ? C.green : c.change < 0 ? C.red : "#444" }}>
                   {c.change > 0 ? `▲ ${c.change}%` : c.change < 0 ? `▼ ${Math.abs(c.change)}%` : "— unchanged"}
                 </div>
               </div>
               {isYou && c.target && (
-                <div style={{ textAlign: "center", background: "rgba(232,197,71,0.07)",
-                  border: "1px solid rgba(232,197,71,0.18)", borderRadius: 10, padding: "10px 16px" }}>
-                  <div style={{ fontSize: 9, color: C.gold, fontFamily: "'Space Mono', monospace", marginBottom: 3 }}>AI TARGET</div>
-                  <div style={{ fontSize: 20, fontFamily: "'Syne', sans-serif", fontWeight: 700, color: C.gold }}>${c.target}</div>
+                <div style={{ textAlign: "center", background: "rgba(99,102,241,0.08)",
+                  border: "1px solid rgba(99,102,241,0.25)", borderRadius: 10, padding: "10px 16px" }}>
+                  <div style={{ fontSize: 9, color: "#818CF8", fontFamily: "'Space Mono', monospace", marginBottom: 3 }}>AI TARGET</div>
+                  <div style={{ fontSize: 20, fontFamily: "'Syne', sans-serif", fontWeight: 700, color: "#818CF8" }}>${c.target}</div>
                 </div>
               )}
               <div style={{ flex: 2 }}>
-                <div style={{ height: 5, background: "#1A1A20", borderRadius: 3, overflow: "hidden" }}>
+                <div style={{ height: 5, background: "rgba(255,255,255,0.06)", borderRadius: 3, overflow: "hidden" }}>
                   <div style={{
                     height: "100%", borderRadius: 3,
                     background: isYou ? "linear-gradient(90deg, #6366F1, #8B5CF6)" : "#1A1A28",
@@ -748,7 +818,7 @@ function CompSet() {
       <Card title="Rate Trend — Last 7 Days" subtitle="Your hotel vs top competitors">
         <ResponsiveContainer width="100%" height={200}>
           <LineChart data={rateHistory}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#1A1A20" />
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(99,102,241,0.07)" />
             <XAxis dataKey="day" tick={{ fill: "#555", fontSize: 10 }} axisLine={false} tickLine={false} />
             <YAxis tick={{ fill: "#555", fontSize: 10 }} axisLine={false} tickLine={false} domain={[140, 260]} tickFormatter={v=>`$${v}`} />
             <Tooltip content={<Tip />} />
@@ -796,8 +866,8 @@ function CalendarSection() {
           {Array.from({ length: offset }, (_, i) => <div key={`e${i}`} />)}
           {days.map((d) => (
             <div key={d.day} style={{
-              background: d.isToday ? "rgba(232,197,71,0.15)" : `${occColor(d.occupancy)}18`,
-              border: d.isToday ? `2px solid ${C.gold}` : `1px solid ${occColor(d.occupancy)}40`,
+              background: d.isToday ? "rgba(99,102,241,0.18)" : `${occColor(d.occupancy)}18`,
+              border: d.isToday ? "2px solid rgba(99,102,241,0.7)" : `1px solid ${occColor(d.occupancy)}40`,
               borderRadius: 10, padding: "8px 6px", textAlign: "center", cursor: "default",
               transition: "transform 0.15s",
             }}>
@@ -843,8 +913,8 @@ function Reports() {
           }}>
             <div style={{
               width: 44, height: 44, borderRadius: 12, flexShrink: 0,
-              background: r.status === "Ready" ? "rgba(74,222,128,0.1)" : "rgba(232,197,71,0.1)",
-              color: r.status === "Ready" ? C.green : C.gold,
+              background: r.status === "Ready" ? "rgba(16,185,129,0.1)" : "rgba(99,102,241,0.1)",
+              color: r.status === "Ready" ? C.green : "#818CF8",
               display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20,
             }}>📄</div>
             <div style={{ flex: 1 }}>
@@ -852,12 +922,12 @@ function Reports() {
               <div style={{ fontSize: 12, color: "#555" }}>{r.desc}</div>
               <div style={{ display: "flex", gap: 10, marginTop: 6 }}>
                 <span style={{ fontSize: 10, fontFamily: "'Space Mono', monospace",
-                  color: C.blue, background: "rgba(96,165,250,0.1)", padding: "2px 8px", borderRadius: 4 }}>
+                  color: C.blue, background: "rgba(99,102,241,0.1)", padding: "2px 8px", borderRadius: 4 }}>
                   {r.freq}
                 </span>
                 <span style={{ fontSize: 10, fontFamily: "'Space Mono', monospace",
-                  color: r.status === "Ready" ? C.green : C.gold,
-                  background: r.status === "Ready" ? "rgba(74,222,128,0.1)" : "rgba(232,197,71,0.1)",
+                  color: r.status === "Ready" ? C.green : "#818CF8",
+                  background: r.status === "Ready" ? "rgba(16,185,129,0.1)" : "rgba(99,102,241,0.1)",
                   padding: "2px 8px", borderRadius: 4 }}>
                   {r.status}
                 </span>
@@ -867,15 +937,15 @@ function Reports() {
               onClick={() => r.status === "Ready" && simulateDownload(r.name)}
               disabled={r.status !== "Ready"}
               style={{
-                background: downloading === r.name ? "rgba(74,222,128,0.15)" :
-                  r.status === "Ready" ? "rgba(232,197,71,0.1)" : "rgba(255,255,255,0.04)",
-                border: `1px solid ${downloading === r.name ? "rgba(74,222,128,0.3)" :
-                  r.status === "Ready" ? "rgba(232,197,71,0.25)" : "rgba(255,255,255,0.06)"}`,
-                color: downloading === r.name ? C.green : r.status === "Ready" ? C.gold : "#444",
+                background: downloading === r.name ? "rgba(16,185,129,0.12)" :
+                  r.status === "Ready" ? "rgba(99,102,241,0.1)" : "rgba(255,255,255,0.04)",
+                border: `1px solid ${downloading === r.name ? "rgba(16,185,129,0.3)" :
+                  r.status === "Ready" ? "rgba(99,102,241,0.3)" : "rgba(255,255,255,0.06)"}`,
+                color: downloading === r.name ? C.green : r.status === "Ready" ? "#818CF8" : "#444",
                 padding: "8px 16px", borderRadius: 8, cursor: r.status === "Ready" ? "pointer" : "not-allowed",
                 fontSize: 11, fontFamily: "'Space Mono', monospace", fontWeight: 700, whiteSpace: "nowrap",
               }}>
-              {downloading === r.name ? "↓ SAVING..." : r.status === "Ready" ? "↓ DOWNLOAD" : "PENDING"}
+              {downloading === r.name ? "✓ SAVED" : r.status === "Ready" ? "↓ DOWNLOAD" : "PENDING"}
             </button>
           </div>
         ))}
@@ -947,7 +1017,7 @@ function Settings({ user, onLogout, theme, toggleTheme }) {
               <div style={{ fontSize: 13, fontWeight: 500, color: "#ddd" }}>{item.label}</div>
               <div style={{ fontSize: 12, color: "#555", marginTop: 2 }}>{item.desc}</div>
             </div>
-            <div style={{ width: 40, height: 22, borderRadius: 11, background: item.on ? C.gold : "#1A1A20",
+            <div style={{ width: 40, height: 22, borderRadius: 11, background: item.on ? C.blue : "#1A1A28",
               position: "relative", cursor: "pointer", flexShrink: 0 }}>
               <div style={{ width: 16, height: 16, borderRadius: "50%", background: "#fff",
                 position: "absolute", top: 3, left: item.on ? 21 : 3, transition: "left 0.2s",
@@ -1196,7 +1266,7 @@ export default function HotelIQ({ user, apiBase, onLogout, onShowAuth }) {
 
   const renderTab = () => {
     switch (activeTab) {
-      case "overview":  return <Overview user={user} setTab={setActiveTab} applied={applied} skipped={skipped} onApply={handleApply} />;
+      case "overview":  return <Overview user={user} setTab={setActiveTab} applied={applied} skipped={skipped} onApply={handleApply} onShowAuth={onShowAuth} />;
       case "revenue":   return <Revenue />;
       case "pricing":   return <Pricing applied={applied} skipped={skipped} onApply={handleApply} onSkip={handleSkip} onRestore={handleRestore} />;
       case "forecast":  return <Forecast setTab={setActiveTab} />;
@@ -1351,6 +1421,7 @@ export default function HotelIQ({ user, apiBase, onLogout, onShowAuth }) {
 
       <style>{`
         @keyframes aipulse { 0%,100%{opacity:.3;transform:scale(.8)} 50%{opacity:1;transform:scale(1.2)} }
+        @keyframes livePulse { 0%,100%{opacity:.5;transform:scale(.8)} 50%{opacity:1;transform:scale(1.2)} }
         * { box-sizing: border-box; }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
