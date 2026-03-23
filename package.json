@@ -10,7 +10,7 @@
     "install:all":    "cd src/backend && npm install && cd ../frontend && npm install",
     "dev":            "concurrently \"npm run dev:backend\" \"npm run start:frontend\"",
     "railway:build":  "cd src/backend && npm install && cd ../frontend && npm install && npx parcel build index.html --dist-dir build --public-url /",
-    "render:build":   "npm install --prefix src/backend && npm install --prefix src/frontend && NODE_OPTIONS=--max-old-space-size=460 npx parcel build src/frontend/index.html --dist-dir src/frontend/build --public-url / --no-cache",
+    "render:build":   "npm install --prefix src/backend && npm install --prefix src/frontend && cd src/frontend && NODE_OPTIONS=--max-old-space-size=460 ./node_modules/.bin/parcel build index.html --dist-dir build --public-url / --no-cache",
     "start":          "node src/backend/server.js"
   },
   "dependencies": {
