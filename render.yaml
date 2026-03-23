@@ -2,8 +2,19 @@ services:
   - type: web
     name: hotel-iq
     env: node
-    buildCommand: npm run railway:build
+    region: oregon
+    plan: free
+    buildCommand: npm run render:build
     startCommand: node src/backend/server.js
+    healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
         value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: SERPAPI_KEY
+        sync: false
+      - key: FRONTEND_URL
+        value: https://hoteliq.us

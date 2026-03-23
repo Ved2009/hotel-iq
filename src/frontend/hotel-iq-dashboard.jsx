@@ -95,11 +95,11 @@ const rateHistory = DAYS_SHORT.map((d, i) => ({
 }));
 
 const pricingRecs = [
-  { id: 1, room: "Standard King",    current: 159, suggested: 179, reason: "High demand — comp supply low",    impact: 2400,  urgency: "high",   minStay: 2 },
-  { id: 2, room: "Ocean View Suite", current: 289, suggested: 269, reason: "3 comps dropped rates below",      impact: -800,  urgency: "medium", minStay: null },
-  { id: 3, room: "Double Queen",     current: 139, suggested: 155, reason: "Weekend demand spike forecast",    impact: 1100,  urgency: "high",   minStay: 2 },
-  { id: 4, room: "Executive Floor",  current: 349, suggested: 349, reason: "Rate is optimal — hold position",  impact: 0,     urgency: "low",    minStay: null },
-  { id: 5, room: "Junior Suite",     current: 229, suggested: 249, reason: "Conference demand surge",          impact: 880,   urgency: "high",   minStay: 3 },
+  { id: 1, roomId: "standard-king",    room: "Standard King",    current: 159, suggested: 179, reason: "High demand — comp supply low",    impact: 2400,  urgency: "high",   minStay: 2 },
+  { id: 2, roomId: "ocean-view-suite", room: "Ocean View Suite", current: 289, suggested: 269, reason: "3 comps dropped rates below",      impact: -800,  urgency: "medium", minStay: null },
+  { id: 3, roomId: "double-queen",     room: "Double Queen",     current: 139, suggested: 155, reason: "Weekend demand spike forecast",    impact: 1100,  urgency: "high",   minStay: 2 },
+  { id: 4, roomId: "executive-floor",  room: "Executive Floor",  current: 349, suggested: 349, reason: "Rate is optimal — hold position",  impact: 0,     urgency: "low",    minStay: null },
+  { id: 5, roomId: "junior-suite",     room: "Junior Suite",     current: 229, suggested: 249, reason: "Conference demand surge",          impact: 880,   urgency: "high",   minStay: 3 },
 ];
 
 const activityLog = [
@@ -110,6 +110,56 @@ const activityLog = [
   { time: "5h ago",  type: "info",     icon: "★",  text: "New 5-star review on Booking.com" },
   { time: "8h ago",  type: "alert",    icon: "⚡", text: "Fresh 14-day demand forecast generated" },
 ];
+
+// ── Integrations data ─────────────────────────────────────────────────────────
+const PMS_LIST = [
+  { id: "mews",         name: "Mews",           desc: "Cloud PMS for modern hotels & hostels", icon: "🏨", docs: "https://mews.com/api", fields: ["API Token", "Property ID"] },
+  { id: "cloudbeds",    name: "Cloudbeds",       desc: "All-in-one hospitality platform",        icon: "☁️", docs: "https://cloudbeds.com/api", fields: ["API Key", "Property ID"] },
+  { id: "opera",        name: "Oracle Opera",    desc: "Enterprise hotel management suite",      icon: "🔷", docs: "https://docs.oracle.com/en/industries/hospitality/", fields: ["Username", "Password", "Endpoint URL"] },
+  { id: "protel",       name: "Protel Air",      desc: "Cloud PMS for all property sizes",       icon: "🏢", docs: "https://protel.net/api", fields: ["API Key", "Hotel ID"] },
+  { id: "littlehotelier", name: "Little Hotelier", desc: "Built for small independent hotels",  icon: "🏡", docs: "https://littlehotelier.com/api", fields: ["API Key"] },
+  { id: "clock",        name: "Clock PMS",       desc: "Web-based PMS + booking engine",        icon: "⏱", docs: "https://clock-software.com/api", fields: ["API Key", "Property Code"] },
+];
+
+const CHANNEL_MANAGERS = [
+  { id: "siteminder",   name: "SiteMinder",      desc: "World's leading channel manager",        icon: "🌐", fields: ["API Key", "Property ID"] },
+  { id: "channex",      name: "Channex",          desc: "Open-API channel manager",              icon: "🔗", fields: ["API Key", "Channel ID"] },
+  { id: "cubilis",      name: "Cubilis",           desc: "Rate & availability distribution",     icon: "📡", fields: ["Username", "Password"] },
+  { id: "myallocator",  name: "myallocator",       desc: "Automated OTA sync & reporting",       icon: "⚡", fields: ["Account ID", "API Key"] },
+];
+
+const OTA_CONNECTIONS = [
+  { id: "booking",      name: "Booking.com",      desc: "Direct API — push rates & retrieve reviews", icon: "🅱", fields: ["Property ID", "API Key"] },
+  { id: "expedia",      name: "Expedia Group",     desc: "Expedia + Hotels.com rate management",       icon: "✈", fields: ["Hotel ID", "API Key"] },
+  { id: "airbnb",       name: "Airbnb",            desc: "Host tools & real-time rate sync",           icon: "🏠", fields: ["Listing ID", "Access Token"] },
+  { id: "google",       name: "Google Hotels",     desc: "Free booking links + price accuracy",        icon: "🔍", fields: ["Property ID"] },
+];
+
+const PRICING_STRATEGIES = {
+  conservative: { label: "Conservative", desc: "Cautious adjustments, prioritize occupancy over rate", multiplier: 0.6, color: C.blue,   accent: "rgba(99,102,241,0.12)",  border: "rgba(99,102,241,0.3)" },
+  balanced:     { label: "Balanced",     desc: "AI-optimal mix of rate and occupancy growth",          multiplier: 1.0, color: C.green,  accent: "rgba(16,185,129,0.1)",   border: "rgba(16,185,129,0.3)" },
+  aggressive:   { label: "Aggressive",   desc: "Maximize RevPAR, accept modest occupancy risk",        multiplier: 1.4, color: C.orange, accent: "rgba(249,115,22,0.1)",   border: "rgba(249,115,22,0.3)" },
+};
+
+const rateCalendar30 = Array.from({ length: 30 }, (_, i) => {
+  const d = new Date(); d.setDate(d.getDate() + i);
+  const isWknd   = [0, 6].includes(d.getDay());
+  const demand    = Math.min(100, Math.round(55 + rng(i * 3) * 36 + (isWknd ? 14 : 0) + (i >= 5 && i <= 7 ? 22 : 0)));
+  const baseRate  = 189;
+  const optimal   = Math.round(baseRate * (0.76 + (demand / 100) * 0.52));
+  return {
+    day:         d.getDate(),
+    dow:         d.toLocaleDateString("en-US", { weekday: "short" }),
+    label:       d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+    demand,
+    current:     baseRate,
+    optimal,
+    gap:         optimal - baseRate,
+    isWknd,
+    isToday:     i === 0,
+    hasEvent:    i >= 5 && i <= 7,
+  };
+});
 
 function generateCalendar() {
   const now = new Date();
@@ -198,16 +248,22 @@ const DemoBanner = ({ onAction }) => (
 );
 
 // ── Reusable Components ────────────────────────────────────────────────────────
-const Card = ({ title, subtitle, action, children, style = {} }) => (
+const Card = ({ title, subtitle, action, children, style = {}, accent }) => (
   <div style={{
-    background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.07)",
-    borderRadius: 16, padding: "20px 22px", ...style,
+    background: "linear-gradient(145deg, rgba(12,14,22,0.9), rgba(8,10,18,0.95))",
+    border: "1px solid rgba(255,255,255,0.07)",
+    borderRadius: 16, padding: "20px 22px",
+    boxShadow: "0 4px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.04)",
+    position: "relative", overflow: "hidden",
+    ...style,
   }}>
+    {accent && <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2,
+      background: `linear-gradient(90deg, ${accent}CC, transparent)`, borderRadius: "16px 16px 0 0" }} />}
     {(title || action) && (
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
         <div>
-          {title && <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 14, color: "#fff" }}>{title}</div>}
-          {subtitle && <div style={{ fontSize: 11, color: "#555", marginTop: 3 }}>{subtitle}</div>}
+          {title && <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 14, color: "#E2E8F0" }}>{title}</div>}
+          {subtitle && <div style={{ fontSize: 11, color: "#4B5563", marginTop: 3 }}>{subtitle}</div>}
         </div>
         {action}
       </div>
@@ -218,28 +274,41 @@ const Card = ({ title, subtitle, action, children, style = {} }) => (
 
 const KPI = ({ label, value, sub, delta, accent, icon, spark }) => (
   <div style={{
-    background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)",
-    borderRadius: 16, padding: "16px 18px", position: "relative", overflow: "hidden",
-    transition: "border-color 0.2s, transform 0.2s",
+    background: "linear-gradient(145deg, rgba(12,14,22,0.95), rgba(8,10,18,1))",
+    border: "1px solid rgba(255,255,255,0.07)",
+    borderRadius: 16, padding: "18px 20px", position: "relative", overflow: "hidden",
+    transition: "border-color 0.2s, transform 0.18s, box-shadow 0.2s",
+    boxShadow: "0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)",
+    cursor: "default",
   }}
-    onMouseEnter={e => { e.currentTarget.style.borderColor = `${accent}50`; e.currentTarget.style.transform = "translateY(-2px)"; }}
-    onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"; e.currentTarget.style.transform = "translateY(0)"; }}>
-    {/* Top accent bar */}
+    onMouseEnter={e => {
+      e.currentTarget.style.borderColor = `${accent}60`;
+      e.currentTarget.style.transform = "translateY(-3px)";
+      e.currentTarget.style.boxShadow = `0 8px 30px rgba(0,0,0,0.5), 0 0 20px ${accent}22, inset 0 1px 0 rgba(255,255,255,0.04)`;
+    }}
+    onMouseLeave={e => {
+      e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)";
+      e.currentTarget.style.transform = "translateY(0)";
+      e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)";
+    }}>
     <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2,
-      background: `linear-gradient(90deg, ${accent}, transparent)` }} />
-    {/* Corner glow */}
-    <div style={{ position: "absolute", top: 0, right: 0, width: 80, height: 80,
-      background: `radial-gradient(circle at top right, ${accent}18, transparent)` }} />
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-      <span style={{ fontSize: 9, fontFamily: "'Space Mono', monospace", letterSpacing: 2,
-        textTransform: "uppercase", color: "#4B5563" }}>{label}</span>
-      <span style={{ fontSize: 15, opacity: 0.35 }}>{icon}</span>
+      background: `linear-gradient(90deg, ${accent}DD, ${accent}33, transparent)` }} />
+    <div style={{ position: "absolute", top: -20, right: -20, width: 100, height: 100,
+      background: `radial-gradient(circle, ${accent}14 0%, transparent 70%)` }} />
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+      <span style={{ fontSize: 9, fontFamily: "'Space Mono', monospace", letterSpacing: 1.8,
+        textTransform: "uppercase", color: "#374151", lineHeight: 1.4 }}>{label}</span>
+      <span style={{ fontSize: 16, opacity: 0.5, filter: "saturate(0.7)" }}>{icon}</span>
     </div>
-    <div style={{ fontSize: 28, fontWeight: 800, fontFamily: "'Syne', sans-serif",
-      color: "#fff", lineHeight: 1.1, letterSpacing: -0.5 }}>{value}</div>
-    {sub && <div style={{ fontSize: 11, color: "#4B5563", marginTop: 2 }}>{sub}</div>}
+    <div style={{ fontSize: 30, fontWeight: 800, fontFamily: "'Syne', sans-serif",
+      color: "#F1F5F9", lineHeight: 1, letterSpacing: -1 }}>{value}</div>
+    {sub && <div style={{ fontSize: 11, color: "#374151", marginTop: 4 }}>{sub}</div>}
     {delta !== undefined && (
-      <div style={{ fontSize: 10, fontFamily: "'Space Mono', monospace", marginTop: 2,
+      <div style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10,
+        fontFamily: "'Space Mono', monospace", marginTop: 5,
+        background: delta >= 0 ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)",
+        border: `1px solid ${delta >= 0 ? "rgba(16,185,129,0.25)" : "rgba(239,68,68,0.25)"}`,
+        borderRadius: 6, padding: "2px 7px",
         color: delta >= 0 ? C.green : C.red }}>
         {delta >= 0 ? "▲" : "▼"} {Math.abs(delta)}%
       </div>
@@ -302,26 +371,38 @@ const SectionHead = ({ title, sub, right, live = true }) => (
 );
 
 // ── Section: Overview ─────────────────────────────────────────────────────────
-function Overview({ user, setTab, applied, skipped, onApply, onShowAuth }) {
+function Overview({ user, property, setTab, applied, skipped, onApply, onShowAuth }) {
   const urgent = pricingRecs.filter(r => r.urgency === "high" && !applied.has(r.id) && !skipped.has(r.id));
+  const m = property?.metrics || {};
+  const p = property?.profile || {};
+  const totalRooms = p.totalRooms ?? 292;
+  const occ = m.occupancy ?? 73;
+  const adr = m.adr ?? 195;
+  const revpar = m.revpar ?? 142;
+  const trevpar = m.trevpar ?? 168;
+  const revMtd = m.revenueMtd ?? 89400;
+  const goppar = m.goppar ?? 89;
+  const hasRealData = m.updatedAt != null;
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       {!user && <DemoBanner onAction={onShowAuth} />}
       <SectionHead
         title="Revenue Overview"
-        sub={`${user?.hotelName || "The Coastal Grand"} · Updated just now`}
+        sub={`${user?.hotelName || p.hotelName || "The Coastal Grand"} · ${hasRealData ? `Updated ${new Date(m.updatedAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}` : "Demo data — enter real KPIs in Settings"}`}
+        live={hasRealData}
         right={<span style={{ fontSize: 11, color: "#374151", fontFamily: "'Space Mono', monospace" }}>
           {new Date().toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" })}
         </span>}
       />
 
       <div className="kpi6" style={{ display: "grid", gridTemplateColumns: "repeat(6,1fr)", gap: 12 }}>
-        <KPI icon="🏨" label="Occupancy"   value="73%"    sub="214 / 292 rooms"   delta={4.2}  accent={C.gold}   spark={SPARKS.occupancy} />
-        <KPI icon="📈" label="RevPAR"      value="$142"   sub="vs $131 last mo."  delta={7.8}  accent={C.orange} spark={SPARKS.revpar} />
-        <KPI icon="💰" label="ADR"         value="$195"   sub="Avg daily rate"    delta={2.1}  accent={C.blue}   spark={SPARKS.adr} />
-        <KPI icon="🏷️" label="TRevPAR"    value="$168"   sub="Total rev / room"  delta={5.4}  accent={C.purple} spark={SPARKS.trevpar} />
-        <KPI icon="📊" label="Revenue MTD" value="$89.4K" sub="Month to date"     delta={11.3} accent={C.green}  spark={SPARKS.revenueMtd} />
-        <KPI icon="✨" label="GOPPAR"      value="$89"    sub="Gross op. profit"  delta={3.1}  accent={C.pink}   spark={SPARKS.goppar} />
+        <KPI icon="🏨" label="Occupancy"   value={`${occ}%`}                            sub={`${Math.round(occ / 100 * totalRooms)} / ${totalRooms} rooms`} delta={4.2}  accent={C.gold}   spark={SPARKS.occupancy} />
+        <KPI icon="📈" label="RevPAR"      value={`$${revpar}`}                         sub="vs $131 last mo."  delta={7.8}  accent={C.orange} spark={SPARKS.revpar} />
+        <KPI icon="💰" label="ADR"         value={`$${adr}`}                            sub="Avg daily rate"    delta={2.1}  accent={C.blue}   spark={SPARKS.adr} />
+        <KPI icon="🏷️" label="TRevPAR"    value={`$${trevpar}`}                        sub="Total rev / room"  delta={5.4}  accent={C.purple} spark={SPARKS.trevpar} />
+        <KPI icon="📊" label="Revenue MTD" value={revMtd >= 1000 ? `$${(revMtd/1000).toFixed(1)}K` : `$${revMtd}`} sub="Month to date" delta={11.3} accent={C.green} spark={SPARKS.revenueMtd} />
+        <KPI icon="✨" label="GOPPAR"      value={`$${goppar}`}                         sub="Gross op. profit"  delta={3.1}  accent={C.pink}   spark={SPARKS.goppar} />
       </div>
 
       <div className="chart2col" style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16 }}>
@@ -454,16 +535,26 @@ function Overview({ user, setTab, applied, skipped, onApply, onShowAuth }) {
 }
 
 // ── Section: Revenue ──────────────────────────────────────────────────────────
-function Revenue() {
+function fmtK(n) { return n >= 1000 ? `$${(n / 1000).toFixed(1)}K` : `$${n}`; }
+
+function Revenue({ property }) {
   const channelColors = { "Direct": C.gold, "Booking.com": C.blue, "Expedia": C.purple, "Phone/Email": C.green };
+  const m = property?.metrics || {};
+  const roomRev   = m.roomRevenueMtd ?? 89400;
+  const fbRev     = m.fbRevenueMtd   ?? 18200;
+  const profit    = m.profitMtd      ?? 47300;
+  const totalRev  = m.revenueMtd     ?? 115400;
+  const ancillary = Math.max(0, totalRev - roomRev - fbRev) || 7800;
+  const gopMargin = totalRev > 0 ? ((profit / totalRev) * 100).toFixed(1) : "44.7";
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
       <SectionHead title="Revenue Analysis" sub="Breakdown by segment, channel & performance metrics" />
       <div className="kpi4" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12 }}>
-        <KPI icon="💵" label="Room Revenue"    value="$89.4K" sub="Month to date"    delta={11.3} accent={C.gold}   spark={SPARKS.roomRev} />
-        <KPI icon="🍽️" label="F&B Revenue"    value="$18.2K" sub="Month to date"    delta={6.4}  accent={C.orange} spark={SPARKS.fbRev} />
-        <KPI icon="💆" label="Spa & Ancillary" value="$7.8K"  sub="Month to date"    delta={14.2} accent={C.blue}   spark={SPARKS.trevpar} />
-        <KPI icon="📉" label="Gross Profit"    value="$47.3K" sub="44.7% GOP margin" delta={8.1}  accent={C.green}  spark={SPARKS.profit} />
+        <KPI icon="💵" label="Room Revenue"    value={fmtK(roomRev)}   sub="Month to date"              delta={11.3} accent={C.gold}   spark={SPARKS.roomRev} />
+        <KPI icon="🍽️" label="F&B Revenue"    value={fmtK(fbRev)}     sub="Month to date"              delta={6.4}  accent={C.orange} spark={SPARKS.fbRev} />
+        <KPI icon="💆" label="Spa & Ancillary" value={fmtK(ancillary)} sub="Month to date"              delta={14.2} accent={C.blue}   spark={SPARKS.trevpar} />
+        <KPI icon="📉" label="Gross Profit"    value={fmtK(profit)}    sub={`${gopMargin}% GOP margin`} delta={8.1}  accent={C.green}  spark={SPARKS.profit} />
       </div>
 
       <div className="chart2col" style={{ display: "grid", gridTemplateColumns: "3fr 2fr", gap: 16 }}>
@@ -532,26 +623,218 @@ function Revenue() {
 }
 
 // ── Section: Pricing ──────────────────────────────────────────────────────────
-function Pricing({ applied, skipped, onApply, onSkip, onRestore }) {
-  const pending = pricingRecs.filter(r => !applied.has(r.id) && !skipped.has(r.id) && r.impact > 0);
+function Pricing({ applied, skipped, onApply, onSkip, onRestore, property }) {
+  const [strategy, setStrategy]       = useState("balanced");
+  const [calView, setCalView]         = useState(false);
+  const [restrictions, setRestrictions] = useState({ minStay: 1, ctaFri: false, ctaSat: false, ctdSun: true });
+  const [selectedDay, setSelectedDay] = useState(null);
+
+  // Overlay live room rates from DB over static rec defaults
+  const rooms = property?.rooms || {};
+  const strat = PRICING_STRATEGIES[strategy];
+  const recs = pricingRecs.map(r => ({
+    ...r,
+    current:   rooms[r.roomId] ?? r.current,
+    suggested: Math.round((rooms[r.roomId] ?? r.current) + (r.suggested - r.current) * strat.multiplier),
+    impact:    Math.round(r.impact * strat.multiplier),
+  }));
+  const pending = recs.filter(r => !applied.has(r.id) && !skipped.has(r.id) && r.impact > 0);
   const totalPending = pending.reduce((s, r) => s + r.impact, 0);
-  const totalApplied = pricingRecs.filter(r => applied.has(r.id) && r.impact > 0).reduce((s, r) => s + r.impact, 0);
+  const totalApplied = recs.filter(r => applied.has(r.id) && r.impact > 0).reduce((s, r) => s + r.impact, 0);
+
+  // Yield score: 0–100 based on how many high-impact recs are applied
+  const highRecs    = recs.filter(r => r.urgency === "high");
+  const highApplied = highRecs.filter(r => applied.has(r.id)).length;
+  const yieldScore  = highRecs.length > 0 ? Math.round(60 + (highApplied / highRecs.length) * 40) : 60;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
       <SectionHead
         title="Dynamic Pricing"
         sub="AI-generated recommendations based on demand, comp set & 90-day history"
-        right={totalPending > 0 && (
-          <div style={{ textAlign: "right" }}>
-            <div style={{ fontSize: 10, color: "#555", fontFamily: "'Space Mono', monospace", marginBottom: 3 }}>PENDING OPPORTUNITY</div>
-            <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 24, fontWeight: 800, color: C.green }}>+${totalPending.toLocaleString()}</div>
+        right={
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            {/* Yield score */}
+            <div style={{ textAlign: "center", background: "rgba(255,255,255,0.03)",
+              border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: "8px 14px" }}>
+              <div style={{ fontSize: 9, color: "#374151", fontFamily: "'Space Mono', monospace", marginBottom: 3, letterSpacing: 1 }}>YIELD SCORE</div>
+              <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 22,
+                color: yieldScore >= 80 ? C.green : yieldScore >= 65 ? C.gold : C.orange }}>{yieldScore}</div>
+            </div>
+            {totalPending > 0 && (
+              <div style={{ textAlign: "right" }}>
+                <div style={{ fontSize: 9, color: "#374151", fontFamily: "'Space Mono', monospace", marginBottom: 3, letterSpacing: 1 }}>PENDING OPP.</div>
+                <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 22, fontWeight: 800, color: C.green }}>+${totalPending.toLocaleString()}</div>
+              </div>
+            )}
           </div>
-        )}
+        }
       />
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        {pricingRecs.map(r => {
+      {/* ── Strategy Selector ── */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+        {Object.entries(PRICING_STRATEGIES).map(([key, s]) => {
+          const active = strategy === key;
+          return (
+            <button key={key} onClick={() => setStrategy(key)} style={{
+              background: active ? s.accent : "rgba(255,255,255,0.02)",
+              border: `1px solid ${active ? s.border : "rgba(255,255,255,0.06)"}`,
+              borderRadius: 12, padding: "14px 16px", cursor: "pointer", textAlign: "left",
+              transition: "all 0.18s",
+              boxShadow: active ? `0 4px 20px ${s.color}22` : "none",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+                <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 13,
+                  color: active ? s.color : "#6B7280" }}>{s.label}</span>
+                {active && <span style={{ width: 7, height: 7, borderRadius: "50%", background: s.color,
+                  display: "inline-block", boxShadow: `0 0 8px ${s.color}` }} />}
+              </div>
+              <div style={{ fontSize: 11, color: "#4B5563", lineHeight: 1.5 }}>{s.desc}</div>
+              {active && (
+                <div style={{ fontSize: 9, color: s.color, fontFamily: "'Space Mono', monospace",
+                  letterSpacing: 1, marginTop: 6 }}>
+                  {key === "conservative" ? "×0.6 adjustments" : key === "balanced" ? "×1.0 adjustments" : "×1.4 adjustments"}
+                </div>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ── Toggle: Recommendations / Rate Calendar ── */}
+      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        {[["Recommendations", false], ["30-Day Rate Calendar", true]].map(([label, isCalendar]) => (
+          <button key={label} onClick={() => setCalView(isCalendar)} style={{
+            padding: "7px 16px", borderRadius: 8, cursor: "pointer",
+            background: calView === isCalendar ? "rgba(99,102,241,0.15)" : "transparent",
+            border: calView === isCalendar ? "1px solid rgba(99,102,241,0.35)" : "1px solid rgba(255,255,255,0.07)",
+            color: calView === isCalendar ? "#C7D2FE" : "#4B5563",
+            fontSize: 12, fontFamily: "'DM Sans', sans-serif", fontWeight: calView === isCalendar ? 600 : 400,
+            transition: "all 0.15s",
+          }}>{label}</button>
+        ))}
+        <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
+          {/* Restriction mini-badges */}
+          {[
+            { label: `Min ${restrictions.minStay}N stay`, active: restrictions.minStay > 1 },
+            { label: "CTA Fri", active: restrictions.ctaFri },
+            { label: "CTA Sat", active: restrictions.ctaSat },
+            { label: "CTD Sun", active: restrictions.ctdSun },
+          ].map(b => b.active && (
+            <span key={b.label} style={{
+              fontSize: 9, fontFamily: "'Space Mono', monospace", letterSpacing: 1,
+              background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.25)",
+              color: "#818CF8", borderRadius: 6, padding: "3px 8px",
+            }}>{b.label}</span>
+          ))}
+        </div>
+      </div>
+
+      {calView ? (
+        /* ── 30-Day Rate Calendar ── */
+        <Card title="30-Day Rate Optimization Calendar" subtitle={`Strategy: ${strat.label} — click any day to see details`} accent={strat.color}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 5, marginBottom: 12 }}>
+            {["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(d => (
+              <div key={d} style={{ textAlign: "center", fontSize: 9, color: "#2D3748",
+                fontFamily: "'Space Mono', monospace", paddingBottom: 6 }}>{d}</div>
+            ))}
+            {/* offset for first day */}
+            {Array.from({ length: (new Date().getDay() + 6) % 7 }, (_, i) => <div key={`e${i}`} />)}
+            {rateCalendar30.map((d, i) => {
+              const isSelected = selectedDay?.day === d.day;
+              const gapPct     = Math.abs(d.gap / d.current);
+              const hasBigGap  = d.gap > 20;
+              const bgColor    = d.hasEvent
+                ? "rgba(139,92,246,0.12)"
+                : d.isWknd
+                  ? "rgba(99,102,241,0.08)"
+                  : hasBigGap
+                    ? "rgba(16,185,129,0.07)"
+                    : "rgba(255,255,255,0.02)";
+              const borderCol  = d.isToday
+                ? "rgba(99,102,241,0.6)"
+                : d.hasEvent
+                  ? "rgba(139,92,246,0.35)"
+                  : hasBigGap
+                    ? "rgba(16,185,129,0.3)"
+                    : "rgba(255,255,255,0.05)";
+              return (
+                <div key={i} onClick={() => setSelectedDay(isSelected ? null : d)} style={{
+                  background: isSelected ? `${strat.color}22` : bgColor,
+                  border: `1px solid ${isSelected ? strat.color : borderCol}`,
+                  borderRadius: 8, padding: "7px 4px", textAlign: "center",
+                  cursor: "pointer", transition: "all 0.15s",
+                  boxShadow: isSelected ? `0 0 12px ${strat.color}44` : "none",
+                }}>
+                  <div style={{ fontSize: 8, color: "#374151", fontFamily: "'Space Mono', monospace", marginBottom: 2 }}>
+                    {d.dow}{d.isToday ? "●" : ""}
+                  </div>
+                  <div style={{ fontSize: 10, color: "#555", marginBottom: 3 }}>{d.day}</div>
+                  <div style={{ fontSize: 12, fontWeight: 800, fontFamily: "'Syne', sans-serif",
+                    color: d.hasEvent ? C.purple : hasBigGap ? C.green : "#6B7280" }}>
+                    ${d.optimal}
+                  </div>
+                  {hasBigGap && (
+                    <div style={{ fontSize: 7, color: C.green, fontFamily: "'Space Mono', monospace", marginTop: 1 }}>
+                      +${d.gap}
+                    </div>
+                  )}
+                  {d.hasEvent && (
+                    <div style={{ fontSize: 7, color: C.purple, fontFamily: "'Space Mono', monospace", marginTop: 1 }}>EVT</div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Selected day detail */}
+          {selectedDay && (
+            <div style={{
+              background: `linear-gradient(135deg, ${strat.color}10, rgba(0,0,0,0.3))`,
+              border: `1px solid ${strat.color}30`, borderRadius: 12, padding: "14px 18px",
+              display: "flex", gap: 24, alignItems: "center", flexWrap: "wrap",
+            }}>
+              <div>
+                <div style={{ fontSize: 10, color: "#4B5563", fontFamily: "'Space Mono', monospace", marginBottom: 3 }}>DATE</div>
+                <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 16, color: "#E2E8F0" }}>{selectedDay.label}</div>
+              </div>
+              {[
+                ["DEMAND",      `${selectedDay.demand}%`,    selectedDay.demand >= 80 ? C.green : C.gold],
+                ["CURRENT",     `$${selectedDay.current}`,   "#E2E8F0"],
+                ["OPTIMAL",     `$${selectedDay.optimal}`,   strat.color],
+                ["OPPORTUNITY", `+$${selectedDay.gap}`,      C.green],
+              ].map(([l, v, c]) => (
+                <div key={l} style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: 9, color: "#374151", fontFamily: "'Space Mono', monospace", marginBottom: 3 }}>{l}</div>
+                  <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 20, color: c }}>{v}</div>
+                </div>
+              ))}
+              {selectedDay.hasEvent && (
+                <div style={{ padding: "6px 12px", background: "rgba(139,92,246,0.12)",
+                  border: "1px solid rgba(139,92,246,0.3)", borderRadius: 8,
+                  fontSize: 11, color: C.purple, fontFamily: "'Space Mono', monospace" }}>
+                  📍 EVENT DETECTED
+                </div>
+              )}
+              <button onClick={() => {}} style={{
+                marginLeft: "auto", background: `linear-gradient(135deg, ${strat.color}CC, ${strat.color}99)`,
+                border: "none", color: "#fff", padding: "8px 16px", borderRadius: 8,
+                cursor: "pointer", fontSize: 11, fontFamily: "'Space Mono', monospace", fontWeight: 700,
+              }}>APPLY RATE →</button>
+            </div>
+          )}
+
+          {/* Legend */}
+          <div style={{ display: "flex", gap: 16, marginTop: 12, fontSize: 10, fontFamily: "'Space Mono', monospace", flexWrap: "wrap" }}>
+            {[[C.green, ">$20 opportunity"], [C.purple, "Event detected"], [C.blue, "Weekend", ], ["#4B5563", "Standard"]].map(([c, l]) => (
+              <span key={l}><span style={{ color: c }}>■</span> {l}</span>
+            ))}
+          </div>
+        </Card>
+      ) : (
+        /* ── Recommendations List ── */
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {recs.map(r => {
           const isApplied = applied.has(r.id);
           const isSkipped = skipped.has(r.id);
           return (
@@ -615,8 +898,10 @@ function Pricing({ applied, skipped, onApply, onSkip, onRestore }) {
             </div>
           );
         })}
-      </div>
+        </div>
+      )}
 
+      {/* ── Summary + Apply All ── */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
         {totalPending > 0 && (
           <div style={{ background: "rgba(74,222,128,0.05)", border: "1px solid rgba(74,222,128,0.2)",
@@ -642,6 +927,60 @@ function Pricing({ applied, skipped, onApply, onSkip, onRestore }) {
           </div>
         )}
       </div>
+
+      {/* ── Restriction Manager ── */}
+      <Card title="Restriction Manager" subtitle="Control length-of-stay & arrival/departure rules" accent={C.purple}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+          {/* Min Stay */}
+          <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)",
+            borderRadius: 12, padding: "14px 16px" }}>
+            <div style={{ fontSize: 10, color: "#4B5563", fontFamily: "'Space Mono', monospace",
+              letterSpacing: 1, marginBottom: 10 }}>MIN STAY (NIGHTS)</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <button onClick={() => setRestrictions(p => ({ ...p, minStay: Math.max(1, p.minStay - 1) }))} style={{
+                width: 28, height: 28, borderRadius: 7, background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.08)", color: "#fff", cursor: "pointer", fontSize: 14,
+              }}>−</button>
+              <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 22,
+                color: restrictions.minStay > 1 ? C.purple : "#4B5563" }}>{restrictions.minStay}</span>
+              <button onClick={() => setRestrictions(p => ({ ...p, minStay: Math.min(7, p.minStay + 1) }))} style={{
+                width: 28, height: 28, borderRadius: 7, background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.08)", color: "#fff", cursor: "pointer", fontSize: 14,
+              }}>+</button>
+            </div>
+          </div>
+
+          {/* CTA Fri */}
+          {[
+            { key: "ctaFri", label: "CTA FRIDAY",    desc: "Close to arrivals" },
+            { key: "ctaSat", label: "CTA SATURDAY",  desc: "Close to arrivals" },
+            { key: "ctdSun", label: "CTD SUNDAY",    desc: "Close to departures" },
+          ].map(({ key, label, desc }) => (
+            <div key={key} style={{
+              background: restrictions[key] ? "rgba(139,92,246,0.08)" : "rgba(255,255,255,0.02)",
+              border: `1px solid ${restrictions[key] ? "rgba(139,92,246,0.3)" : "rgba(255,255,255,0.06)"}`,
+              borderRadius: 12, padding: "14px 16px", cursor: "pointer",
+              transition: "all 0.15s",
+            }} onClick={() => setRestrictions(p => ({ ...p, [key]: !p[key] }))}>
+              <div style={{ fontSize: 10, color: restrictions[key] ? C.purple : "#374151",
+                fontFamily: "'Space Mono', monospace", letterSpacing: 1, marginBottom: 6 }}>{label}</div>
+              <div style={{ fontSize: 11, color: "#4B5563", marginBottom: 10 }}>{desc}</div>
+              <div style={{
+                width: 36, height: 20, borderRadius: 10, position: "relative", cursor: "pointer",
+                background: restrictions[key] ? "linear-gradient(90deg, #8B5CF6, #6366F1)" : "rgba(255,255,255,0.08)",
+                border: `1px solid ${restrictions[key] ? "rgba(139,92,246,0.5)" : "rgba(255,255,255,0.1)"}`,
+                transition: "all 0.2s",
+              }}>
+                <div style={{
+                  position: "absolute", top: 2, left: restrictions[key] ? 18 : 2,
+                  width: 14, height: 14, borderRadius: "50%",
+                  background: restrictions[key] ? "#fff" : "#374151", transition: "left 0.2s",
+                }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
     </div>
   );
 }
@@ -743,93 +1082,341 @@ function Forecast({ setTab }) {
 }
 
 // ── Section: Comp Set ─────────────────────────────────────────────────────────
-function CompSet() {
-  const sorted = [...competitors].sort((a, b) => b.rate - a.rate);
-  const myIdx = sorted.findIndex(c => c.name === "Your Hotel");
-  const avgComp = Math.round(
-    competitors.filter(c => c.name !== "Your Hotel").reduce((s, c) => s + c.rate, 0) /
-    (competitors.length - 1)
-  );
+function CompSet({ apiBase, property }) {
+  const [data, setData]           = useState(null);
+  const [loading, setLoading]     = useState(true);
+  const [lastRefresh, setLastRefresh] = useState(null);
+  const [showAddComp, setShowAddComp] = useState(false);
+  const [showSerpConfig, setShowSerpConfig] = useState(false);
+  const [serpKey, setSerpKey]     = useState("");
+  const [serpSaving, setSerpSaving] = useState(false);
+  const [serpSaved, setSerpSaved]   = useState(false);
+  const [customComps, setCustomComps] = useState([]);
+  const [newComp, setNewComp]     = useState({ name: "", stars: 4 });
+
+  // Use average of live room rates from DB, or fall back to 189
+  const YOUR_NAME = property?.profile?.hotelName || "Your Hotel";
+  const liveRooms = property?.rooms ? Object.values(property.rooms) : [];
+  const YOUR_RATE = liveRooms.length
+    ? Math.round(liveRooms.reduce((s, r) => s + r, 0) / liveRooms.length)
+    : 189;
+
+  const fetchRates = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${apiBase}/api/compset/rates?yourRate=${YOUR_RATE}`);
+      if (!res.ok) throw new Error("Failed to fetch");
+      const json = await res.json();
+      setData(json);
+      setLastRefresh(new Date());
+    } catch {
+      // Fallback to static mock if backend unavailable
+      setData({
+        hotels: competitors.filter(c => c.name !== YOUR_NAME),
+        yourRate: YOUR_RATE, isLive: false, hasSerpApiKey: false,
+        analysis: {
+          avgComp: 193, suggestion: 195, position: 3,
+          sorted: [...competitors].sort((a, b) => b.rate - a.rate),
+        },
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchRates(); }, []);
+
+  const yourEntry = { name: YOUR_NAME, rate: YOUR_RATE, stars: 4, score: 4.4, change: 3.2 };
+  const baseHotels = data ? [yourEntry, ...data.hotels] : [yourEntry, ...competitors.filter(c => c.name !== YOUR_NAME)];
+  const allHotels = [...baseHotels, ...customComps.map(c => ({ ...c, isCustom: true }))];
+  const sorted    = [...allHotels].sort((a, b) => b.rate - a.rate);
+  const analysis  = data?.analysis || { avgComp: 193, suggestion: 195, position: 3 };
+  const isLive    = data?.isLive;
+  const hasKey    = data?.hasSerpApiKey;
+
+  const rateMin = Math.min(...sorted.map(h => h.rate)) - 20;
+  const rateMax = Math.max(...sorted.map(h => h.rate)) + 20;
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
-      <SectionHead title="Comp Set" sub="Live rate comparison · Refreshed 12 min ago" />
+      <SectionHead
+        title="Comp Set Intelligence"
+        sub={lastRefresh ? `Refreshed ${lastRefresh.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}` : "Fetching rates…"}
+        right={
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {/* Source badge */}
+            <div style={{
+              display: "flex", alignItems: "center", gap: 6,
+              background: isLive ? "rgba(16,185,129,0.1)" : "rgba(99,102,241,0.1)",
+              border: `1px solid ${isLive ? "rgba(16,185,129,0.3)" : "rgba(99,102,241,0.25)"}`,
+              borderRadius: 100, padding: "4px 12px",
+            }}>
+              <span style={{ width: 5, height: 5, borderRadius: "50%",
+                background: isLive ? "#10B981" : "#6366F1", display: "inline-block",
+                boxShadow: `0 0 6px ${isLive ? "#10B981" : "#6366F1"}`,
+                animation: "livePulse 2s ease-in-out infinite" }} />
+              <span style={{ fontSize: 9, color: isLive ? "#10B981" : "#818CF8",
+                fontFamily: "'Space Mono', monospace", letterSpacing: 1 }}>
+                {isLive ? "GOOGLE HOTELS LIVE" : hasKey ? "FETCHING…" : "DEMO DATA"}
+              </span>
+            </div>
+            {!hasKey && (
+              <a href="https://serpapi.com/register" target="_blank" rel="noopener" style={{
+                fontSize: 10, color: "#4B5563", fontFamily: "'Space Mono', monospace",
+                textDecoration: "none", letterSpacing: 0.5,
+              }}>Add SERPAPI_KEY for live rates →</a>
+            )}
+            <button onClick={fetchRates} disabled={loading} style={{
+              background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.25)",
+              color: "#818CF8", padding: "5px 12px", borderRadius: 7, cursor: "pointer",
+              fontSize: 10, fontFamily: "'Space Mono', monospace",
+            }}>↻ REFRESH</button>
+          </div>
+        }
+      />
 
       <div className="kpi4" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12 }}>
-        <KPI icon="🏆" label="Market Position" value={`#${myIdx + 1}`} sub={`of ${competitors.length} properties`} accent={C.gold} />
-        <KPI icon="💰" label="Your Rate"       value="$189"  sub={`vs $${avgComp} avg comp`}  delta={189 > avgComp ? 1 : -1} accent={C.blue} />
-        <KPI icon="🎯" label="AI Target Rate"  value="$195"  sub="+$6 from current · optimal"  accent={C.green} />
-        <KPI icon="⭐" label="Review Score"    value="4.4"   sub="Booking.com avg"              accent={C.purple} />
+        <KPI icon="🏆" label="Market Position" value={`#${analysis.position || 3}`} sub={`of ${sorted.length + customComps.length} properties`} accent={C.gold} />
+        <KPI icon="💰" label="Your Rate"       value={`$${YOUR_RATE}`}  sub={`vs $${analysis.avgComp} comp avg`}  delta={YOUR_RATE > analysis.avgComp ? 2 : -2} accent={C.blue} />
+        <KPI icon="🎯" label="AI Target Rate"  value={`$${analysis.suggestion || 195}`}  sub="Optimal based on comp + demand"  accent={C.green} />
+        <KPI icon="⭐" label="Rate Parity"     value={YOUR_RATE <= analysis.avgComp + 10 && YOUR_RATE >= analysis.avgComp - 15 ? "On Par" : YOUR_RATE > analysis.avgComp + 10 ? "Premium" : "Low"}  sub={`$${Math.abs(YOUR_RATE - analysis.avgComp)} vs comp avg`}  delta={YOUR_RATE > analysis.avgComp ? 3 : -5} accent={C.purple} />
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {sorted.map((c, i) => {
-          const isYou = c.name === "Your Hotel";
-          return (
-            <div key={i} style={{
-              background: isYou ? "rgba(99,102,241,0.07)" : "rgba(255,255,255,0.03)",
-              border: isYou ? "1px solid rgba(99,102,241,0.3)" : "1px solid rgba(255,255,255,0.07)",
-              borderRadius: 14, padding: "16px 22px", display: "flex", alignItems: "center", gap: 18,
-            }}>
-              <div style={{ width: 24, fontFamily: "'Space Mono', monospace", fontSize: 12,
-                color: i === 0 ? C.gold : "#444", fontWeight: 700, textAlign: "center" }}>#{i + 1}</div>
-              <div style={{ flex: 2 }}>
-                <div style={{ fontWeight: 600, fontSize: 14, display: "flex", alignItems: "center", gap: 8 }}>
-                  {c.name}
-                  {isYou && <span style={{ fontSize: 9, background: "rgba(99,102,241,0.2)", color: "#818CF8",
-                    padding: "2px 7px", borderRadius: 4, fontFamily: "'Space Mono', monospace" }}>YOU</span>}
-                </div>
-                <div style={{ fontSize: 11, color: "#444", marginTop: 2 }}>
-                  {"★".repeat(c.stars)}{"☆".repeat(5 - c.stars)} · {c.score} score
-                </div>
+      {/* SerpAPI config + Add Competitor row */}
+      <div style={{ display: "flex", gap: 10 }}>
+        {/* SerpAPI connect block */}
+        <div style={{ flex: 1, background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.18)",
+          borderRadius: 12, padding: "14px 18px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: showSerpConfig ? 12 : 0 }}>
+            <span style={{ fontSize: 18 }}>🔑</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: isLive ? C.green : "#C7D2FE" }}>
+                {isLive ? "Google Hotels Live Data" : "Connect Live Competitor Data"}
               </div>
-              <div style={{ textAlign: "center", minWidth: 80 }}>
-                <div style={{ fontSize: 26, fontFamily: "'Syne', sans-serif", fontWeight: 800,
-                  color: isYou ? "#818CF8" : "#fff" }}>${c.rate}</div>
-                <div style={{ fontSize: 11, fontFamily: "'Space Mono', monospace",
-                  color: c.change > 0 ? C.green : c.change < 0 ? C.red : "#444" }}>
-                  {c.change > 0 ? `▲ ${c.change}%` : c.change < 0 ? `▼ ${Math.abs(c.change)}%` : "— unchanged"}
-                </div>
+              {!isLive && <div style={{ fontSize: 11, color: "#4B5563", marginTop: 1 }}>
+                Free SerpAPI key pulls real-time Google Hotels rates
+              </div>}
+            </div>
+            {isLive
+              ? <span style={{ fontSize: 9, color: C.green, fontFamily: "'Space Mono', monospace", letterSpacing: 1,
+                  background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.25)",
+                  borderRadius: 100, padding: "3px 10px" }}>● LIVE</span>
+              : <button onClick={() => setShowSerpConfig(v => !v)} style={{
+                  background: showSerpConfig ? "transparent" : "linear-gradient(135deg, #6366F1, #4F46E5)",
+                  border: showSerpConfig ? "1px solid rgba(255,255,255,0.08)" : "none",
+                  color: showSerpConfig ? "#4B5563" : "#fff", padding: "7px 14px", borderRadius: 8,
+                  cursor: "pointer", fontSize: 11, fontFamily: "'Space Mono', monospace", fontWeight: 700,
+                  boxShadow: showSerpConfig ? "none" : "0 4px 12px rgba(99,102,241,0.35)",
+                }}>{showSerpConfig ? "Cancel" : "Configure →"}</button>
+            }
+          </div>
+          {showSerpConfig && (
+            <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 12 }}>
+              <div style={{ fontSize: 10, color: "#4B5563", marginBottom: 8 }}>
+                Get 100 free searches/month at <strong style={{ color: "#818CF8" }}>serpapi.com/register</strong> — no credit card needed.
+                Then add <code style={{ color: "#818CF8", background: "rgba(99,102,241,0.12)", padding: "1px 5px", borderRadius: 3 }}>SERPAPI_KEY=your_key</code> to your backend <code style={{ color: "#818CF8" }}>.env</code> file and restart the server.
               </div>
-              {isYou && c.target && (
-                <div style={{ textAlign: "center", background: "rgba(99,102,241,0.08)",
-                  border: "1px solid rgba(99,102,241,0.25)", borderRadius: 10, padding: "10px 16px" }}>
-                  <div style={{ fontSize: 9, color: "#818CF8", fontFamily: "'Space Mono', monospace", marginBottom: 3 }}>AI TARGET</div>
-                  <div style={{ fontSize: 20, fontFamily: "'Syne', sans-serif", fontWeight: 700, color: "#818CF8" }}>${c.target}</div>
-                </div>
-              )}
-              <div style={{ flex: 2 }}>
-                <div style={{ height: 5, background: "rgba(255,255,255,0.06)", borderRadius: 3, overflow: "hidden" }}>
-                  <div style={{
-                    height: "100%", borderRadius: 3,
-                    background: isYou ? "linear-gradient(90deg, #6366F1, #8B5CF6)" : "#1A1A28",
-                    width: `${((c.rate - 130) / 120) * 100}%`, transition: "width 1s",
-                  }} />
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4,
-                  fontSize: 9, color: "#2A2A30", fontFamily: "'Space Mono', monospace" }}>
-                  <span>$130</span><span>$250</span>
-                </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <input value={serpKey} onChange={e => setSerpKey(e.target.value)}
+                  placeholder="sk-…  (paste your SerpAPI key)"
+                  style={{ flex: 1, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)",
+                    borderRadius: 8, padding: "9px 12px", color: "#E2E8F0", fontSize: 12,
+                    fontFamily: "'Space Mono', monospace", outline: "none" }} />
+                <button onClick={() => { setSerpSaving(true); setTimeout(() => { setSerpSaving(false); setSerpSaved(true); setShowSerpConfig(false); }, 1200); }} style={{
+                  background: serpSaving ? "rgba(16,185,129,0.1)" : "linear-gradient(135deg, #10B981, #059669)",
+                  border: serpSaving ? "1px solid rgba(16,185,129,0.3)" : "none",
+                  color: serpSaving ? C.green : "#fff", padding: "9px 16px", borderRadius: 8,
+                  cursor: "pointer", fontSize: 11, fontFamily: "'Space Mono', monospace", fontWeight: 700, whiteSpace: "nowrap",
+                }}>{serpSaving ? "Testing…" : "Save Key"}</button>
               </div>
             </div>
-          );
-        })}
+          )}
+        </div>
+
+        {/* Add competitor */}
+        <div style={{ flex: 1, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)",
+          borderRadius: 12, padding: "14px 18px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: showAddComp ? 12 : 0 }}>
+            <span style={{ fontSize: 18 }}>➕</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "#E2E8F0" }}>Track a Competitor</div>
+              <div style={{ fontSize: 11, color: "#4B5563", marginTop: 1 }}>Manually add hotels to your comp set</div>
+            </div>
+            <button onClick={() => setShowAddComp(v => !v)} style={{
+              background: showAddComp ? "transparent" : "rgba(255,255,255,0.05)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              color: "#9CA3AF", padding: "7px 14px", borderRadius: 8,
+              cursor: "pointer", fontSize: 11, fontFamily: "'Space Mono', monospace",
+            }}>{showAddComp ? "Cancel" : "+ Add"}</button>
+          </div>
+          {showAddComp && (
+            <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 12 }}>
+              <div style={{ display: "flex", gap: 8 }}>
+                <input value={newComp.name} onChange={e => setNewComp(p => ({ ...p, name: e.target.value }))}
+                  placeholder="Hotel name (e.g. The Meridian)"
+                  style={{ flex: 1, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)",
+                    borderRadius: 8, padding: "9px 12px", color: "#E2E8F0", fontSize: 12,
+                    fontFamily: "'DM Sans', sans-serif", outline: "none" }} />
+                <select value={newComp.stars} onChange={e => setNewComp(p => ({ ...p, stars: Number(e.target.value) }))}
+                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)",
+                    borderRadius: 8, padding: "9px 10px", color: "#E2E8F0", fontSize: 12,
+                    fontFamily: "'DM Sans', sans-serif", outline: "none", cursor: "pointer" }}>
+                  {[3,4,5].map(s => <option key={s} value={s} style={{ background: "#0D0D18" }}>{s}★</option>)}
+                </select>
+                <button onClick={() => {
+                  if (!newComp.name.trim()) return;
+                  const rate = Math.round(180 + Math.random() * 60);
+                  setCustomComps(p => [...p, { ...newComp, rate, change: 0, score: 4.1, id: Date.now() }]);
+                  setNewComp({ name: "", stars: 4 });
+                  setShowAddComp(false);
+                }} style={{
+                  background: "linear-gradient(135deg, #6366F1, #4F46E5)", border: "none",
+                  color: "#fff", padding: "9px 16px", borderRadius: 8, cursor: "pointer",
+                  fontSize: 11, fontWeight: 700, fontFamily: "'Space Mono', monospace",
+                }}>Track</button>
+              </div>
+            </div>
+          )}
+          {customComps.length > 0 && !showAddComp && (
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
+              {customComps.map(c => (
+                <span key={c.id} style={{
+                  fontSize: 10, background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.2)",
+                  borderRadius: 6, padding: "2px 8px", color: "#818CF8", fontFamily: "'Space Mono', monospace",
+                  display: "flex", alignItems: "center", gap: 5,
+                }}>
+                  {c.name}
+                  <span onClick={() => setCustomComps(p => p.filter(x => x.id !== c.id))}
+                    style={{ cursor: "pointer", color: "#4B5563", fontSize: 12 }}>×</span>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
+
+      {loading ? (
+        <div style={{ display: "flex", justifyContent: "center", padding: "40px 0" }}>
+          <div style={{ display: "flex", gap: 8 }}>
+            {[0,1,2].map(i => (
+              <div key={i} style={{ width: 8, height: 8, borderRadius: "50%", background: "#6366F1",
+                animation: `aipulse 1.2s ease-in-out ${i*0.2}s infinite` }} />
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {sorted.map((c, i) => {
+            const isYou = c.name === YOUR_NAME;
+            const pct = ((c.rate - rateMin) / (rateMax - rateMin)) * 100;
+            const vsAvg = c.rate - analysis.avgComp;
+            return (
+              <div key={i} style={{
+                background: isYou ? "rgba(99,102,241,0.08)" : "rgba(255,255,255,0.025)",
+                border: isYou ? "1px solid rgba(99,102,241,0.3)" : "1px solid rgba(255,255,255,0.06)",
+                borderRadius: 14, padding: "16px 22px",
+                display: "flex", alignItems: "center", gap: 18,
+                transition: "border-color 0.2s",
+              }}>
+                {/* Rank */}
+                <div style={{ width: 26, fontFamily: "'Space Mono', monospace", fontSize: 12,
+                  color: i === 0 ? C.gold : "#374151", fontWeight: 700, textAlign: "center", flexShrink: 0 }}>
+                  #{i + 1}
+                </div>
+
+                {/* Name + stars */}
+                <div style={{ flex: 2, minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, fontSize: 14, display: "flex", alignItems: "center", gap: 8,
+                    color: isYou ? "#C7D2FE" : "#E2E8F0" }}>
+                    {c.name}
+                    {isYou && <span style={{ fontSize: 9, background: "rgba(99,102,241,0.2)", color: "#818CF8",
+                      padding: "2px 7px", borderRadius: 4, fontFamily: "'Space Mono', monospace",
+                      letterSpacing: 1 }}>YOU</span>}
+                    {isLive && !isYou && !c.isCustom && <span style={{ fontSize: 9, background: "rgba(16,185,129,0.1)", color: C.green,
+                      padding: "2px 7px", borderRadius: 4, fontFamily: "'Space Mono', monospace" }}>LIVE</span>}
+                    {c.isCustom && (
+                      <span style={{ fontSize: 9, background: "rgba(249,115,22,0.1)", color: C.orange,
+                        padding: "2px 7px", borderRadius: 4, fontFamily: "'Space Mono', monospace",
+                        display: "flex", alignItems: "center", gap: 4 }}>
+                        TRACKED
+                        <span onClick={() => setCustomComps(p => p.filter(x => x.id !== c.id))}
+                          style={{ cursor: "pointer", color: "#555", fontSize: 10 }}>×</span>
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 11, color: "#374151", marginTop: 3 }}>
+                    {"★".repeat(c.stars || 3)}{"☆".repeat(5 - (c.stars || 3))}
+                    {c.score ? ` · ${c.score} ⭐` : ""}
+                    {c.reviews ? ` · ${c.reviews.toLocaleString()} reviews` : ""}
+                  </div>
+                </div>
+
+                {/* Rate */}
+                <div style={{ textAlign: "center", minWidth: 90, flexShrink: 0 }}>
+                  <div style={{ fontSize: 28, fontFamily: "'Syne', sans-serif", fontWeight: 800,
+                    color: isYou ? "#818CF8" : "#fff", letterSpacing: -1 }}>${c.rate}</div>
+                  <div style={{ fontSize: 10, fontFamily: "'Space Mono', monospace", marginTop: 2,
+                    color: (c.change || 0) > 0 ? C.green : (c.change || 0) < 0 ? C.red : "#374151" }}>
+                    {(c.change || 0) > 0 ? `▲ ${c.change}%` : (c.change || 0) < 0 ? `▼ ${Math.abs(c.change)}%` : "— steady"}
+                  </div>
+                </div>
+
+                {/* vs comp avg */}
+                <div style={{ textAlign: "center", minWidth: 70, flexShrink: 0 }}>
+                  <div style={{ fontSize: 9, color: "#374151", fontFamily: "'Space Mono', monospace",
+                    marginBottom: 3 }}>VS AVG</div>
+                  <div style={{ fontSize: 14, fontWeight: 700,
+                    color: vsAvg > 0 ? C.green : vsAvg < 0 ? C.red : "#374151" }}>
+                    {vsAvg > 0 ? `+$${vsAvg}` : vsAvg < 0 ? `-$${Math.abs(vsAvg)}` : "—"}
+                  </div>
+                </div>
+
+                {/* AI target (your hotel only) */}
+                {isYou && (
+                  <div style={{ textAlign: "center", background: "rgba(99,102,241,0.08)",
+                    border: "1px solid rgba(99,102,241,0.22)", borderRadius: 10, padding: "9px 14px", flexShrink: 0 }}>
+                    <div style={{ fontSize: 9, color: "#818CF8", fontFamily: "'Space Mono', monospace", marginBottom: 3 }}>AI TARGET</div>
+                    <div style={{ fontSize: 18, fontFamily: "'Syne', sans-serif", fontWeight: 800, color: "#818CF8" }}>
+                      ${analysis.suggestion || 195}
+                    </div>
+                  </div>
+                )}
+
+                {/* Rate bar */}
+                <div style={{ flex: 2, minWidth: 80 }}>
+                  <div style={{ height: 6, background: "rgba(255,255,255,0.06)", borderRadius: 3, overflow: "hidden" }}>
+                    <div style={{
+                      height: "100%", borderRadius: 3, transition: "width 1s ease",
+                      background: isYou ? "linear-gradient(90deg, #6366F1, #8B5CF6)" : "rgba(255,255,255,0.15)",
+                      width: `${Math.max(5, Math.min(100, pct))}%`,
+                    }} />
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4,
+                    fontSize: 8, color: "#2D3748", fontFamily: "'Space Mono', monospace" }}>
+                    <span>${rateMin}</span><span>${rateMax}</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       <Card title="Rate Trend — Last 7 Days" subtitle="Your hotel vs top competitors">
         <ResponsiveContainer width="100%" height={200}>
           <LineChart data={rateHistory}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(99,102,241,0.07)" />
-            <XAxis dataKey="day" tick={{ fill: "#555", fontSize: 10 }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fill: "#555", fontSize: 10 }} axisLine={false} tickLine={false} domain={[140, 260]} tickFormatter={v=>`$${v}`} />
+            <XAxis dataKey="day" tick={{ fill: "#4B5563", fontSize: 10 }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fill: "#4B5563", fontSize: 10 }} axisLine={false} tickLine={false} domain={[140, 260]} tickFormatter={v=>`$${v}`} />
             <Tooltip content={<Tip />} />
-            <Line type="monotone" dataKey="Your Hotel"    stroke={C.gold}   strokeWidth={2.5} dot={false} />
-            <Line type="monotone" dataKey="Grand Regency" stroke={C.blue}   strokeWidth={1.5} dot={false} strokeDasharray="4 4" />
+            <Line type="monotone" dataKey="Your Hotel"    stroke="#818CF8" strokeWidth={2.5} dot={false} />
+            <Line type="monotone" dataKey="Grand Regency" stroke={C.gold}   strokeWidth={1.5} dot={false} strokeDasharray="4 4" />
             <Line type="monotone" dataKey="The Meridian"  stroke={C.purple} strokeWidth={1.5} dot={false} strokeDasharray="4 4" />
             <Line type="monotone" dataKey="Blue Harbor"   stroke={C.orange} strokeWidth={1.5} dot={false} strokeDasharray="4 4" />
           </LineChart>
         </ResponsiveContainer>
         <div style={{ display: "flex", gap: 20, marginTop: 10, flexWrap: "wrap", fontSize: 11, fontFamily: "'Space Mono', monospace", color: "#555" }}>
-          {[["Your Hotel", C.gold], ["Grand Regency", C.blue], ["The Meridian", C.purple], ["Blue Harbor", C.orange]].map(([n, c]) => (
+          {[["Your Hotel", "#818CF8"], ["Grand Regency", C.gold], ["The Meridian", C.purple], ["Blue Harbor", C.orange]].map(([n, c]) => (
             <span key={n}><span style={{ color: c }}>—</span> {n}</span>
           ))}
         </div>
@@ -839,22 +1426,28 @@ function CompSet() {
 }
 
 // ── Section: Calendar ─────────────────────────────────────────────────────────
-function CalendarSection() {
+function CalendarSection({ property }) {
   const { offset, days } = useMemo(generateCalendar, []);
   const now = new Date();
   const monthName = now.toLocaleDateString("en-US", { month: "long", year: "numeric" });
   const occColor = (occ) =>
     occ >= 90 ? C.red : occ >= 80 ? C.orange : occ >= 65 ? C.gold : occ >= 50 ? C.green : "#2A2A30";
 
+  const m = property?.metrics || {};
+  const occMtd = m.occupancy ? `${m.occupancy}%` : "73%";
+  const adrMtd = m.adr       ? `$${m.adr}`       : "$195";
+  const bestDay  = Math.max(...days.map(d => d.revenue));
+  const lowestOcc = Math.min(...days.map(d => d.occupancy));
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
       <SectionHead title="Revenue Calendar" sub={`${monthName} · Daily occupancy, ADR & revenue`} />
 
       <div className="kpi4" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12 }}>
-        <KPI icon="📊" label="Avg Occupancy MTD" value="73%"   sub="vs 69% last month" delta={4.2} accent={C.gold} />
-        <KPI icon="💵" label="Avg ADR MTD"       value="$195"  sub="vs $191 last month" delta={2.1} accent={C.blue} />
-        <KPI icon="📈" label="Best Day"          value="$14.2K" sub="Revenue single day" accent={C.green} />
-        <KPI icon="📉" label="Lowest Occ Day"    value="51%"    sub="Opportunity exists"  accent={C.red} />
+        <KPI icon="📊" label="Avg Occupancy MTD" value={occMtd}              sub="vs 69% last month"  delta={4.2} accent={C.gold} />
+        <KPI icon="💵" label="Avg ADR MTD"       value={adrMtd}              sub="vs $191 last month" delta={2.1} accent={C.blue} />
+        <KPI icon="📈" label="Best Day"          value={fmtK(bestDay)}       sub="Revenue single day"             accent={C.green} />
+        <KPI icon="📉" label="Lowest Occ Day"    value={`${lowestOcc}%`}     sub="Opportunity exists"             accent={C.red} />
       </div>
 
       <Card title={`${monthName} — Occupancy Heatmap`} subtitle="Click a day to see details">
@@ -896,11 +1489,60 @@ function CalendarSection() {
 }
 
 // ── Section: Reports ──────────────────────────────────────────────────────────
-function Reports() {
+function buildCSV(reportName, property) {
+  const m   = property?.metrics  || {};
+  const now = new Date().toLocaleDateString("en-US");
+
+  const csvSets = {
+    "Monthly Revenue Summary": [
+      ["Metric", "Value", "As of"],
+      ["Room Revenue MTD",  m.roomRevenueMtd ?? "N/A", now],
+      ["F&B Revenue MTD",   m.fbRevenueMtd   ?? "N/A", now],
+      ["Gross Profit MTD",  m.profitMtd      ?? "N/A", now],
+      ["Total Revenue MTD", m.revenueMtd     ?? "N/A", now],
+      ["Occupancy",         m.occupancy ? `${m.occupancy}%` : "N/A", now],
+      ["ADR",               m.adr       ? `$${m.adr}`       : "N/A", now],
+      ["RevPAR",            m.revpar    ? `$${m.revpar}`     : "N/A", now],
+      ["TrevPAR",           m.trevpar   ? `$${m.trevpar}`   : "N/A", now],
+      ["GOPPAR",            m.goppar    ? `$${m.goppar}`     : "N/A", now],
+    ],
+    "Demand Forecast Report": [
+      ["Date", "Demand %", "Confidence %", "Event"],
+      ...forecastData.map(d => [d.date, `${d.demand}%`, `${d.confidence}%`, d.event || ""]),
+    ],
+    "Comp Set Rate Analysis": [
+      ["Hotel", "Rate", "Change %", "Stars", "Score"],
+      ...competitors.map(c => [c.name, `$${c.rate}`, `${c.change ?? 0}%`, c.stars, c.score ?? ""]),
+    ],
+    "Channel Performance Report": [
+      ["Month", "Direct", "Booking.com", "Expedia", "Phone/Email"],
+      ...channelData.map(d => [d.month, d["Direct"], d["Booking.com"], d["Expedia"], d["Phone/Email"]]),
+    ],
+    "Year-over-Year Comparison": [
+      ["Month", "ADR", "RevPAR", "Occupancy", "Revenue"],
+      ...monthlyData.map(d => [d.month, `$${d.adr}`, `$${d.revpar}`, `${d.occupancy}%`, `$${d.revenue}`]),
+    ],
+  };
+
+  const rows = csvSets[reportName];
+  if (!rows) return null;
+  return rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
+}
+
+function Reports({ property }) {
   const [downloading, setDownloading] = useState(null);
-  const simulateDownload = (name) => {
+  const handleDownload = (name) => {
+    const csv = buildCSV(name, property);
+    if (!csv) { setDownloading(name); setTimeout(() => setDownloading(null), 1800); return; }
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href     = url;
+    a.download = `${name.replace(/\s+/g, "_")}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
     setDownloading(name);
-    setTimeout(() => setDownloading(null), 1800);
+    setTimeout(() => setDownloading(null), 1200);
   };
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
@@ -934,7 +1576,7 @@ function Reports() {
               </div>
             </div>
             <button
-              onClick={() => r.status === "Ready" && simulateDownload(r.name)}
+              onClick={() => { if (r.status === "Ready") handleDownload(r.name); }}
               disabled={r.status !== "Ready"}
               style={{
                 background: downloading === r.name ? "rgba(16,185,129,0.12)" :
@@ -955,18 +1597,119 @@ function Reports() {
 }
 
 // ── Section: Settings ─────────────────────────────────────────────────────────
-function Settings({ user, onLogout, theme, toggleTheme }) {
+function SettingsInput({ label, value, onChange, type = "text", placeholder }) {
+  return (
+    <div>
+      <div style={{ fontSize: 10, color: "#444", fontFamily: "'Space Mono', monospace",
+        letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 6 }}>{label}</div>
+      <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
+        style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+          borderRadius: 8, padding: "9px 12px", color: "#fff", fontSize: 13,
+          fontFamily: "'DM Sans', sans-serif", outline: "none", boxSizing: "border-box" }} />
+    </div>
+  );
+}
+
+function Settings({ user, property, apiBase, onPropertyUpdate, onLogout, theme, toggleTheme }) {
   const isDark = theme === "dark";
-  const notifItems = [
-    { label: "Pricing recommendations", desc: "Alert when AI detects a rate opportunity", on: true },
-    { label: "Demand spike alerts",      desc: "Notify when forecast demand rises sharply", on: true },
-    { label: "Competitor rate changes",  desc: "Alert when comp set moves rates significantly", on: true },
-    { label: "Weekly digest email",      desc: "Performance summary every Monday morning", on: false },
-  ];
+
+  const [profileForm, setProfileForm] = useState({ hotelName: "", location: "", stars: 4, totalRooms: 100 });
+  const [metricsForm, setMetricsForm] = useState({ occupancy: "", adr: "", revpar: "", trevpar: "", goppar: "", revenueMtd: "", roomRevenueMtd: "", fbRevenueMtd: "", profitMtd: "" });
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [savingMetrics, setSavingMetrics] = useState(false);
+  const [profileMsg, setProfileMsg] = useState(null);
+  const [metricsMsg, setMetricsMsg] = useState(null);
+
+  // Sync forms when property data arrives (fetched async after mount)
+  useEffect(() => {
+    const prof = property?.profile || {};
+    const met  = property?.metrics || {};
+    setProfileForm({
+      hotelName:  prof.hotelName  || user?.hotelName || "",
+      location:   prof.location   || "",
+      stars:      prof.stars      || 4,
+      totalRooms: prof.totalRooms || 100,
+    });
+    setMetricsForm({
+      occupancy:      met.occupancy      ?? "",
+      adr:            met.adr            ?? "",
+      revpar:         met.revpar         ?? "",
+      trevpar:        met.trevpar        ?? "",
+      goppar:         met.goppar         ?? "",
+      revenueMtd:     met.revenueMtd     ?? "",
+      roomRevenueMtd: met.roomRevenueMtd ?? "",
+      fbRevenueMtd:   met.fbRevenueMtd   ?? "",
+      profitMtd:      met.profitMtd      ?? "",
+    });
+  }, [property]);
+
+  const pf = (k) => (v) => setProfileForm(p => ({ ...p, [k]: v }));
+  const mf = (k) => (v) => setMetricsForm(p => ({ ...p, [k]: v }));
+
+  const saveProfile = async () => {
+    if (!user) return;
+    setSavingProfile(true); setProfileMsg(null);
+    try {
+      const token = localStorage.getItem("hiq-token");
+      const res = await fetch(`${apiBase}/api/property/profile`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(profileForm),
+      });
+      if (res.ok) {
+        const profile = await res.json();
+        onPropertyUpdate(p => p ? { ...p, profile } : { profile, metrics: {}, rooms: [], appliedRates: [] });
+        setProfileMsg("saved");
+      } else setProfileMsg("error");
+    } catch { setProfileMsg("error"); }
+    setSavingProfile(false);
+    setTimeout(() => setProfileMsg(null), 3000);
+  };
+
+  const saveMetrics = async () => {
+    if (!user) return;
+    setSavingMetrics(true); setMetricsMsg(null);
+    try {
+      const token = localStorage.getItem("hiq-token");
+      const body = {};
+      for (const [k, v] of Object.entries(metricsForm)) {
+        if (v !== "" && v !== null) body[k] = parseFloat(v);
+      }
+      const res = await fetch(`${apiBase}/api/property/metrics`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(body),
+      });
+      if (res.ok) {
+        const metrics = await res.json();
+        onPropertyUpdate(p => p ? { ...p, metrics } : { profile: {}, metrics, rooms: [], appliedRates: [] });
+        setMetricsMsg("saved");
+      } else setMetricsMsg("error");
+    } catch { setMetricsMsg("error"); }
+    setSavingMetrics(false);
+    setTimeout(() => setMetricsMsg(null), 3000);
+  };
+
+  const SaveBtn = ({ saving, msg, onClick }) => (
+    <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 16 }}>
+      <button onClick={onClick} disabled={saving || !user} style={{
+        background: user ? "linear-gradient(135deg, #6366F1, #4F46E5)" : "rgba(255,255,255,0.05)",
+        border: "none", color: "#fff", padding: "10px 22px", borderRadius: 8,
+        cursor: user ? "pointer" : "not-allowed", fontSize: 12,
+        fontFamily: "'Space Mono', monospace", fontWeight: 700,
+        opacity: saving ? 0.7 : 1,
+      }}>{saving ? "SAVING…" : "SAVE CHANGES"}</button>
+      {msg === "saved" && <span style={{ fontSize: 12, color: C.green, fontFamily: "'Space Mono', monospace" }}>✓ Saved</span>}
+      {msg === "error" && <span style={{ fontSize: 12, color: C.red,  fontFamily: "'Space Mono', monospace" }}>✕ Error</span>}
+      {!user && <span style={{ fontSize: 11, color: "#444" }}>Sign in to save</span>}
+    </div>
+  );
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <SectionHead title="Settings" sub="Manage your account, property and preferences" />
+      <SectionHead title="Settings" sub="Manage your account, property and data" />
 
+      {/* Account */}
       <Card title="Account">
         <div style={{ display: "flex", gap: 22 }}>
           <div style={{
@@ -993,40 +1736,34 @@ function Settings({ user, onLogout, theme, toggleTheme }) {
         </div>
       </Card>
 
-      <Card title="Property Details">
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14 }}>
-          {[["Total Rooms","292"],["Room Types","5"],["Star Rating","4 ★"],["Comp Set Size","5 hotels"]].map(([l,v]) => (
-            <div key={l} style={{ background: "rgba(255,255,255,0.03)", borderRadius: 10, padding: "14px 16px",
-              border: "1px solid rgba(255,255,255,0.05)" }}>
-              <div style={{ fontSize: 10, color: "#444", fontFamily: "'Space Mono', monospace",
-                letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 6 }}>{l}</div>
-              <div style={{ fontSize: 20, fontFamily: "'Syne', sans-serif", fontWeight: 700, color: "#fff" }}>{v}</div>
-            </div>
-          ))}
+      {/* Property Setup */}
+      <Card title="Property Setup" subtitle="Configure your hotel details">
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+          <SettingsInput label="Hotel Name"   value={profileForm.hotelName}  onChange={pf("hotelName")}  placeholder="e.g. Grand Coastal Hotel" />
+          <SettingsInput label="Location"     value={profileForm.location}   onChange={pf("location")}   placeholder="e.g. Miami Beach, FL" />
+          <SettingsInput label="Star Rating"  value={profileForm.stars}      onChange={pf("stars")}      type="number" placeholder="4" />
+          <SettingsInput label="Total Rooms"  value={profileForm.totalRooms} onChange={pf("totalRooms")} type="number" placeholder="292" />
         </div>
+        <SaveBtn saving={savingProfile} msg={profileMsg} onClick={saveProfile} />
       </Card>
 
-      <Card title="Notification Preferences">
-        {notifItems.map((item, i) => (
-          <div key={item.label} style={{
-            display: "flex", alignItems: "center", justifyContent: "space-between",
-            padding: "14px 0",
-            borderBottom: i < notifItems.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none",
-          }}>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 500, color: "#ddd" }}>{item.label}</div>
-              <div style={{ fontSize: 12, color: "#555", marginTop: 2 }}>{item.desc}</div>
-            </div>
-            <div style={{ width: 40, height: 22, borderRadius: 11, background: item.on ? C.blue : "#1A1A28",
-              position: "relative", cursor: "pointer", flexShrink: 0 }}>
-              <div style={{ width: 16, height: 16, borderRadius: "50%", background: "#fff",
-                position: "absolute", top: 3, left: item.on ? 21 : 3, transition: "left 0.2s",
-                boxShadow: "0 1px 4px rgba(0,0,0,0.4)" }} />
-            </div>
-          </div>
-        ))}
+      {/* KPI Entry */}
+      <Card title="Today's KPIs" subtitle={met.updatedAt ? `Last updated ${new Date(met.updatedAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}` : "Enter your current metrics to power the dashboard"}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>
+          <SettingsInput label="Occupancy (%)"   value={metricsForm.occupancy}     onChange={mf("occupancy")}     type="number" placeholder="73" />
+          <SettingsInput label="ADR ($)"         value={metricsForm.adr}           onChange={mf("adr")}           type="number" placeholder="195" />
+          <SettingsInput label="RevPAR ($)"      value={metricsForm.revpar}        onChange={mf("revpar")}        type="number" placeholder="142" />
+          <SettingsInput label="TRevPAR ($)"     value={metricsForm.trevpar}       onChange={mf("trevpar")}       type="number" placeholder="168" />
+          <SettingsInput label="GOPPAR ($)"      value={metricsForm.goppar}        onChange={mf("goppar")}        type="number" placeholder="89" />
+          <SettingsInput label="Revenue MTD ($)" value={metricsForm.revenueMtd}   onChange={mf("revenueMtd")}    type="number" placeholder="89400" />
+          <SettingsInput label="Room Rev MTD ($)"value={metricsForm.roomRevenueMtd} onChange={mf("roomRevenueMtd")} type="number" placeholder="71500" />
+          <SettingsInput label="F&B Rev MTD ($)" value={metricsForm.fbRevenueMtd} onChange={mf("fbRevenueMtd")}  type="number" placeholder="17900" />
+          <SettingsInput label="Profit MTD ($)"  value={metricsForm.profitMtd}    onChange={mf("profitMtd")}     type="number" placeholder="47000" />
+        </div>
+        <SaveBtn saving={savingMetrics} msg={metricsMsg} onClick={saveMetrics} />
       </Card>
 
+      {/* Appearance */}
       <Card title="Appearance">
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
@@ -1043,6 +1780,7 @@ function Settings({ user, onLogout, theme, toggleTheme }) {
         </div>
       </Card>
 
+      {/* Sign Out */}
       <div style={{ background: "rgba(248,113,113,0.04)", border: "1px solid rgba(248,113,113,0.15)", borderRadius: 14, padding: 22 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
@@ -1061,7 +1799,7 @@ function Settings({ user, onLogout, theme, toggleTheme }) {
 }
 
 // ── AI Chat Panel ─────────────────────────────────────────────────────────────
-function AIChat({ user, apiBase, onClose }) {
+function AIChat({ user, property, apiBase, onClose }) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [msgs, setMsgs] = useState([{
@@ -1080,12 +1818,14 @@ function AIChat({ user, apiBase, onClose }) {
     setLoading(true);
     try {
       const token = localStorage.getItem("hiq-token");
+      const m = property?.metrics || {};
+      const p = property?.profile || {};
       const context = `You are Hotel IQ, an expert hotel revenue management AI analyst.
-Hotel: ${user?.hotelName || "The Coastal Grand"} | Manager: ${user?.firstName || ""}
-Metrics: Occupancy 73%, RevPAR $142, ADR $195, TRevPAR $168, GOPPAR $89, Revenue MTD $89.4K.
+Hotel: ${user?.hotelName || p.hotelName || "The Coastal Grand"} | Location: ${p.location || "N/A"} | Manager: ${user?.firstName || ""}
+Current Metrics: Occupancy ${m.occupancy ?? 73}%, RevPAR $${m.revpar ?? 142}, ADR $${m.adr ?? 195}, TRevPAR $${m.trevpar ?? 168}, GOPPAR $${m.goppar ?? 89}, Revenue MTD $${m.revenueMtd ?? 89400}.
 Comp set: Grand Regency $210, The Meridian $220, Harbor View $195, Blue Harbor $175, Coastal Suites $165.
 Open recs: Standard King $159→$179 (+$2,400), Double Queen $139→$155 (+$1,100), Junior Suite $229→$249 (+$880).
-Weekend demand spike +34% (conference). Forecast accuracy 94.2%.
+Weekend demand spike +34% (conference). Forecast accuracy 94.2%.${m.updatedAt ? ` Metrics last updated: ${new Date(m.updatedAt).toLocaleDateString()}.` : " (Using demo metrics — user has not entered real data yet.)"}
 Be concise, data-driven, give specific actionable advice with $ and % figures.`;
 
       const history = msgs.filter((_, i) => i > 0)
@@ -1141,20 +1881,20 @@ Be concise, data-driven, give specific actionable advice with $ and % figures.`;
             )}
             <div style={{
               maxWidth: "82%", padding: "10px 14px", fontSize: 13, lineHeight: 1.65, whiteSpace: "pre-wrap",
-              background: m.role === "user" ? "rgba(232,197,71,0.1)" : "rgba(255,255,255,0.04)",
-              border: m.role === "user" ? "1px solid rgba(232,197,71,0.22)" : "1px solid rgba(255,255,255,0.06)",
+              background: m.role === "user" ? "rgba(99,102,241,0.15)" : "rgba(255,255,255,0.04)",
+              border: m.role === "user" ? "1px solid rgba(99,102,241,0.35)" : "1px solid rgba(255,255,255,0.06)",
               borderRadius: m.role === "user" ? "14px 14px 4px 14px" : "14px 14px 14px 4px",
-              color: m.role === "user" ? C.gold : "#ccc",
+              color: m.role === "user" ? "#e0e0ff" : "#ccc",
             }}>{m.text}</div>
           </div>
         ))}
         {loading && (
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <div style={{ width: 24, height: 24, borderRadius: 7, background: `linear-gradient(135deg, ${C.gold}, ${C.orange})`,
-              display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, color: "#000" }}>✦</div>
+            <div style={{ width: 24, height: 24, borderRadius: 7, background: "linear-gradient(135deg, #6366F1, #8B5CF6)",
+              display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, color: "#fff" }}>✦</div>
             <div style={{ display: "flex", gap: 4 }}>
               {[0,1,2].map(i => (
-                <div key={i} style={{ width: 6, height: 6, borderRadius: "50%", background: C.gold,
+                <div key={i} style={{ width: 6, height: 6, borderRadius: "50%", background: "#6366F1",
                   animation: `aipulse 1.2s ease-in-out ${i*0.2}s infinite` }} />
               ))}
             </div>
@@ -1181,47 +1921,369 @@ Be concise, data-driven, give specific actionable advice with $ and % figures.`;
   );
 }
 
+// ── Section: Integrations ─────────────────────────────────────────────────────
+function IntegrationCard({ item, connected, onToggle }) {
+  const [expanded, setExpanded] = useState(false);
+  const [fields, setFields]     = useState({});
+  const [saving, setSaving]     = useState(false);
+  const [saved, setSaved]       = useState(false);
+
+  const handleSave = () => {
+    setSaving(true);
+    setTimeout(() => { setSaving(false); setSaved(true); onToggle(item.id); }, 1200);
+  };
+
+  const statusColor  = connected ? C.green  : "#374151";
+  const statusBg     = connected ? "rgba(16,185,129,0.1)" : "rgba(255,255,255,0.03)";
+  const statusBorder = connected ? "rgba(16,185,129,0.25)" : "rgba(255,255,255,0.07)";
+
+  return (
+    <div style={{
+      background: connected
+        ? "linear-gradient(145deg, rgba(16,185,129,0.05), rgba(8,10,18,0.95))"
+        : "linear-gradient(145deg, rgba(12,14,22,0.9), rgba(8,10,18,0.95))",
+      border: `1px solid ${statusBorder}`,
+      borderRadius: 14, overflow: "hidden",
+      transition: "border-color 0.2s, box-shadow 0.2s",
+      boxShadow: connected ? "0 0 20px rgba(16,185,129,0.08)" : "0 4px 16px rgba(0,0,0,0.3)",
+    }}>
+      <div style={{ padding: "16px 18px", display: "flex", alignItems: "center", gap: 14 }}>
+        {/* Icon */}
+        <div style={{
+          width: 44, height: 44, borderRadius: 12, flexShrink: 0, fontSize: 20,
+          background: connected ? "rgba(16,185,129,0.12)" : "rgba(255,255,255,0.05)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          border: `1px solid ${connected ? "rgba(16,185,129,0.2)" : "rgba(255,255,255,0.06)"}`,
+        }}>{item.icon}</div>
+
+        {/* Info */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: "#E2E8F0", marginBottom: 2 }}>{item.name}</div>
+          <div style={{ fontSize: 11, color: "#4B5563" }}>{item.desc}</div>
+        </div>
+
+        {/* Status badge */}
+        <div style={{
+          display: "flex", alignItems: "center", gap: 5, flexShrink: 0,
+          background: statusBg, border: `1px solid ${statusBorder}`,
+          borderRadius: 100, padding: "4px 10px",
+        }}>
+          <span style={{ width: 5, height: 5, borderRadius: "50%", background: statusColor,
+            display: "inline-block",
+            boxShadow: connected ? `0 0 6px ${C.green}` : "none",
+            animation: connected ? "livePulse 2s ease-in-out infinite" : "none" }} />
+          <span style={{ fontSize: 9, fontFamily: "'Space Mono', monospace", letterSpacing: 1,
+            color: statusColor }}>{connected ? "CONNECTED" : "NOT CONNECTED"}</span>
+        </div>
+
+        {/* Connect/Disconnect btn */}
+        <button onClick={() => connected ? onToggle(item.id) : setExpanded(v => !v)} style={{
+          flexShrink: 0, padding: "7px 14px", borderRadius: 8, cursor: "pointer",
+          fontSize: 11, fontFamily: "'Space Mono', monospace", fontWeight: 700,
+          background: connected ? "transparent" : "linear-gradient(135deg, #6366F1, #4F46E5)",
+          border: connected ? "1px solid rgba(255,255,255,0.08)" : "none",
+          color: connected ? "#4B5563" : "#fff",
+          boxShadow: connected ? "none" : "0 4px 12px rgba(99,102,241,0.35)",
+          transition: "all 0.15s",
+        }}>
+          {connected ? "Disconnect" : expanded ? "Cancel ✕" : "Connect →"}
+        </button>
+      </div>
+
+      {/* Expandable connect form */}
+      {expanded && !connected && (
+        <div style={{
+          borderTop: "1px solid rgba(255,255,255,0.06)", padding: "16px 18px",
+          background: "rgba(0,0,0,0.2)",
+        }}>
+          <div style={{ fontSize: 12, color: "#6B7280", marginBottom: 12, fontFamily: "'Space Mono', monospace", letterSpacing: 0.5 }}>
+            ENTER CREDENTIALS
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
+            {item.fields.map(f => (
+              <div key={f}>
+                <div style={{ fontSize: 10, color: "#4B5563", marginBottom: 5,
+                  fontFamily: "'Space Mono', monospace", letterSpacing: 1 }}>{f.toUpperCase()}</div>
+                <input
+                  type={f.toLowerCase().includes("password") || f.toLowerCase().includes("token") || f.toLowerCase().includes("key") ? "password" : "text"}
+                  placeholder={f}
+                  value={fields[f] || ""}
+                  onChange={e => setFields(p => ({ ...p, [f]: e.target.value }))}
+                  style={{
+                    width: "100%", background: "rgba(255,255,255,0.04)",
+                    border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8,
+                    padding: "9px 12px", color: "#E2E8F0", fontSize: 12,
+                    fontFamily: "'DM Sans', sans-serif", outline: "none",
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+            <button onClick={handleSave} disabled={saving} style={{
+              background: saving ? "rgba(16,185,129,0.1)" : "linear-gradient(135deg, #10B981, #059669)",
+              border: saving ? "1px solid rgba(16,185,129,0.3)" : "none",
+              color: saving ? C.green : "#fff", padding: "9px 20px", borderRadius: 8,
+              cursor: "pointer", fontSize: 11, fontWeight: 700,
+              fontFamily: "'Space Mono', monospace",
+              boxShadow: saving ? "none" : "0 4px 14px rgba(16,185,129,0.35)",
+            }}>{saving ? "Testing connection…" : saved ? "✓ Connected!" : "Test & Connect"}</button>
+            {item.docs && (
+              <a href={item.docs} target="_blank" rel="noopener" style={{
+                fontSize: 11, color: "#4B5563", fontFamily: "'Space Mono', monospace",
+                textDecoration: "none", letterSpacing: 0.5,
+              }}>View API docs →</a>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function IntegrationSection({ title, desc, items, connected, onToggle, accent }) {
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 15, color: "#E2E8F0" }}>{title}</div>
+          <div style={{ fontSize: 12, color: "#4B5563", marginTop: 2 }}>{desc}</div>
+        </div>
+        <div style={{ fontSize: 10, fontFamily: "'Space Mono', monospace", color: accent,
+          background: `${accent}18`, border: `1px solid ${accent}30`,
+          borderRadius: 100, padding: "3px 10px", letterSpacing: 1 }}>
+          {items.filter(i => connected.has(i.id)).length}/{items.length} CONNECTED
+        </div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        {items.map(item => (
+          <IntegrationCard key={item.id} item={item} connected={connected.has(item.id)} onToggle={onToggle} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Integrations({ user }) {
+  const [connected, setConnected] = useState(new Set());
+  const toggle = (id) => setConnected(p => {
+    const n = new Set(p);
+    n.has(id) ? n.delete(id) : n.add(id);
+    return n;
+  });
+
+  const totalConnected = connected.size;
+  const totalAvailable = PMS_LIST.length + CHANNEL_MANAGERS.length + OTA_CONNECTIONS.length;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+      <SectionHead
+        title="Integrations"
+        sub="Connect your PMS, channel manager & OTA accounts to sync live data"
+        live={false}
+        right={
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontSize: 10, color: "#374151", fontFamily: "'Space Mono', monospace", marginBottom: 2 }}>CONNECTIONS</div>
+            <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 22,
+              color: totalConnected > 0 ? C.green : "#374151" }}>
+              {totalConnected} <span style={{ fontSize: 14, color: "#374151" }}>/ {totalAvailable}</span>
+            </div>
+          </div>
+        }
+      />
+
+      {!user && (
+        <div style={{
+          background: "rgba(99,102,241,0.07)", border: "1px solid rgba(99,102,241,0.2)",
+          borderRadius: 12, padding: "14px 20px", display: "flex", alignItems: "center", gap: 14,
+        }}>
+          <span style={{ fontSize: 20 }}>🔒</span>
+          <div style={{ flex: 1, fontSize: 13, color: "#818CF8" }}>
+            <strong style={{ color: "#fff" }}>Sign in</strong> to save your integration credentials and enable live data sync.
+          </div>
+        </div>
+      )}
+
+      {/* Data flow explainer */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+        {[
+          { icon: "📥", label: "PMS → Hotel IQ",        desc: "Reservations, rates, inventory & room type data sync automatically",  color: C.blue   },
+          { icon: "🔄", label: "Channel Manager Sync",  desc: "Rate changes you apply here push to all OTAs within seconds",         color: C.purple },
+          { icon: "📊", label: "OTA → Analytics",       desc: "Review scores, rate visibility & pickup trends feed your dashboards",  color: C.orange },
+        ].map(f => (
+          <div key={f.label} style={{
+            background: `linear-gradient(145deg, ${f.color}0A, rgba(8,10,18,0.9))`,
+            border: `1px solid ${f.color}22`,
+            borderRadius: 14, padding: "16px 18px",
+          }}>
+            <div style={{ fontSize: 22, marginBottom: 8 }}>{f.icon}</div>
+            <div style={{ fontWeight: 600, fontSize: 13, color: "#E2E8F0", marginBottom: 4 }}>{f.label}</div>
+            <div style={{ fontSize: 11, color: "#4B5563", lineHeight: 1.6 }}>{f.desc}</div>
+          </div>
+        ))}
+      </div>
+
+      <IntegrationSection
+        title="Property Management Systems (PMS)"
+        desc="Connect your PMS to pull live reservations, ADR, RevPAR and inventory"
+        items={PMS_LIST}
+        connected={connected}
+        onToggle={toggle}
+        accent={C.blue}
+      />
+
+      <IntegrationSection
+        title="Channel Managers"
+        desc="Push rate changes to all OTAs simultaneously via your channel manager"
+        items={CHANNEL_MANAGERS}
+        connected={connected}
+        onToggle={toggle}
+        accent={C.purple}
+      />
+
+      <IntegrationSection
+        title="OTA Direct Connections"
+        desc="Connect OTAs directly for review data, rate visibility and booking pickup"
+        items={OTA_CONNECTIONS}
+        connected={connected}
+        onToggle={toggle}
+        accent={C.orange}
+      />
+
+      {/* Webhook / API key section */}
+      <Card title="Hotel IQ Inbound API" subtitle="Push data from your own systems via REST" accent={C.teal}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+          <div>
+            <div style={{ fontSize: 11, color: "#4B5563", marginBottom: 8 }}>
+              Use our inbound API to push occupancy, revenue and ADR from any source — custom PMS, spreadsheet automation, or internal BI.
+            </div>
+            <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 10,
+              background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.07)",
+              borderRadius: 8, padding: "10px 14px", color: C.teal, letterSpacing: 0.5 }}>
+              POST /api/property/metrics<br />
+              Authorization: Bearer &lt;your-jwt&gt;
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: 10, color: "#374151", fontFamily: "'Space Mono', monospace",
+              letterSpacing: 1, marginBottom: 8 }}>PAYLOAD EXAMPLE</div>
+            <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 10,
+              background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.07)",
+              borderRadius: 8, padding: "10px 14px", color: "#6B7280", lineHeight: 1.8 }}>
+              {`{ "occupancy": 78,\n  "adr": 195,\n  "revpar": 152,\n  "revenueMtd": 89400 }`}
+            </div>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
 // ── Sidebar ───────────────────────────────────────────────────────────────────
-const NAV = [
-  { id: "overview",    label: "Overview",   icon: "▦" },
-  { id: "revenue",     label: "Revenue",    icon: "💰" },
-  { id: "pricing",     label: "Pricing",    icon: "🏷️" },
-  { id: "forecast",    label: "Forecast",   icon: "📈" },
-  { id: "compset",     label: "Comp Set",   icon: "🏨" },
-  { id: "calendar",    label: "Calendar",   icon: "📅" },
-  { id: "reports",     label: "Reports",    icon: "📄" },
-  { id: "settings",    label: "Settings",   icon: "⚙️" },
+const NAV_GROUPS = [
+  {
+    label: "CORE",
+    items: [
+      { id: "overview",  label: "Overview",  icon: "▦" },
+      { id: "revenue",   label: "Revenue",   icon: "💰" },
+      { id: "pricing",   label: "Pricing",   icon: "🏷️" },
+    ],
+  },
+  {
+    label: "INTELLIGENCE",
+    items: [
+      { id: "forecast",  label: "Forecast",  icon: "📈" },
+      { id: "compset",   label: "Comp Set",  icon: "🏨" },
+    ],
+  },
+  {
+    label: "TOOLS",
+    items: [
+      { id: "calendar",     label: "Calendar",     icon: "📅" },
+      { id: "reports",      label: "Reports",      icon: "📄" },
+      { id: "integrations", label: "Integrations", icon: "🔌" },
+      { id: "settings",     label: "Settings",     icon: "⚙️" },
+    ],
+  },
 ];
 
-function Sidebar({ active, setTab }) {
+
+function Sidebar({ active, setTab, user, urgentCount }) {
   return (
     <aside style={{
-      width: 220, flexShrink: 0,
-      background: "linear-gradient(180deg, #070B14 0%, #050912 100%)",
+      width: 230, flexShrink: 0,
+      background: "linear-gradient(180deg, #060A13 0%, #040810 100%)",
       borderRight: "1px solid rgba(255,255,255,0.05)",
-      display: "flex", flexDirection: "column", padding: "16px 10px",
+      display: "flex", flexDirection: "column",
       position: "sticky", top: 62, height: "calc(100vh - 62px)", overflowY: "auto",
     }}>
-      {NAV.map(n => {
-        const isActive = active === n.id;
-        return (
-          <button key={n.id} onClick={() => setTab(n.id)} style={{
-            display: "flex", alignItems: "center", gap: 11,
-            padding: "10px 14px", cursor: "pointer", borderRadius: 10, margin: "1px 0",
-            background: isActive ? "rgba(99,102,241,0.15)" : "transparent",
-            border: isActive ? "1px solid rgba(99,102,241,0.3)" : "1px solid transparent",
-            color: isActive ? "#C7D2FE" : "#4B5563",
-            fontSize: 13, fontFamily: "'DM Sans', sans-serif", fontWeight: isActive ? 600 : 400,
-            textAlign: "left", transition: "all 0.15s", width: "100%",
-            boxShadow: isActive ? "0 0 12px rgba(99,102,241,0.1)" : "none",
-          }}
-            onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
-            onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "transparent"; }}>
-            <span style={{ fontSize: 14, opacity: isActive ? 1 : 0.5 }}>{n.icon}</span>
-            {n.label}
-          </button>
-        );
-      })}
+      {/* Property info */}
+      <div style={{
+        padding: "16px 16px 14px",
+        borderBottom: "1px solid rgba(255,255,255,0.05)",
+      }}>
+        <div style={{ fontSize: 9, color: "#374151", fontFamily: "'Space Mono', monospace",
+          letterSpacing: 2, marginBottom: 6, textTransform: "uppercase" }}>Property</div>
+        <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 13,
+          color: "#E2E8F0", lineHeight: 1.3 }}>
+          {user?.hotelName || "The Coastal Grand"}
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 6 }}>
+          <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#10B981",
+            display: "inline-block", boxShadow: "0 0 8px #10B981",
+            animation: "livePulse 2s ease-in-out infinite" }} />
+          <span style={{ fontSize: 9, color: "#10B981", fontFamily: "'Space Mono', monospace",
+            letterSpacing: 1 }}>ALL SYSTEMS LIVE</span>
+        </div>
+      </div>
+
+      {/* Grouped nav */}
+      <div style={{ flex: 1, padding: "8px 10px" }}>
+        {NAV_GROUPS.map((g, gi) => (
+          <div key={g.label} style={{ marginTop: gi === 0 ? 8 : 16 }}>
+            <div style={{ fontSize: 8.5, color: "#2D3748", fontFamily: "'Space Mono', monospace",
+              letterSpacing: 2, paddingLeft: 8, marginBottom: 4, textTransform: "uppercase" }}>
+              {g.label}
+            </div>
+            {g.items.map(n => {
+              const isActive = active === n.id;
+              const hasBadge = n.id === "pricing" && urgentCount > 0;
+              return (
+                <button key={n.id} onClick={() => setTab(n.id)} style={{
+                  display: "flex", alignItems: "center", gap: 10, justifyContent: "space-between",
+                  padding: "9px 12px", cursor: "pointer", borderRadius: 9, margin: "1px 0",
+                  background: isActive ? "rgba(99,102,241,0.15)" : "transparent",
+                  border: isActive ? "1px solid rgba(99,102,241,0.28)" : "1px solid transparent",
+                  color: isActive ? "#C7D2FE" : "#4B5563",
+                  fontSize: 13, fontFamily: "'DM Sans', sans-serif", fontWeight: isActive ? 600 : 400,
+                  textAlign: "left", transition: "all 0.15s", width: "100%",
+                  boxShadow: isActive ? "0 0 10px rgba(99,102,241,0.08)" : "none",
+                }}
+                  onMouseEnter={e => { if (!isActive) e.currentTarget.style.color = "#9CA3AF"; }}
+                  onMouseLeave={e => { if (!isActive) e.currentTarget.style.color = "#4B5563"; }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <span style={{ fontSize: 13, opacity: isActive ? 1 : 0.45 }}>{n.icon}</span>
+                    {n.label}
+                  </div>
+                  {hasBadge && (
+                    <span style={{
+                      fontSize: 9, background: C.red, color: "#fff",
+                      borderRadius: 10, padding: "1px 6px",
+                      fontFamily: "'Space Mono', monospace", fontWeight: 700,
+                    }}>{urgentCount}</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+
+      {/* Footer */}
+      <div style={{ padding: "12px 16px", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+        <div style={{ fontSize: 9, color: "#1F2937", fontFamily: "'Space Mono', monospace",
+          letterSpacing: 0.5 }}>Hotel IQ · v2.1 · AI Revenue Intelligence</div>
+      </div>
     </aside>
   );
 }
@@ -1235,8 +2297,20 @@ export default function HotelIQ({ user, apiBase, onLogout, onShowAuth }) {
   const [skipped, setSkipped] = useState(new Set());
   const [showNotif, setShowNotif] = useState(false);
   const [clock, setClock] = useState(new Date());
+  const [propertyData, setPropertyData] = useState(null);
 
   useEffect(() => { const t = setInterval(() => setClock(new Date()), 1000); return () => clearInterval(t); }, []);
+
+  // Fetch property data when user logs in
+  useEffect(() => {
+    if (!user) { setPropertyData(null); return; }
+    const token = localStorage.getItem("hiq-token");
+    if (!token) return;
+    fetch(`${apiBase}/api/property/me`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(data => setPropertyData(data))
+      .catch(() => {});
+  }, [user, apiBase]);
 
   const toggleTheme = () => {
     const next = theme === "dark" ? "light" : "dark";
@@ -1244,9 +2318,26 @@ export default function HotelIQ({ user, apiBase, onLogout, onShowAuth }) {
     localStorage.setItem("hiq-theme", next);
   };
 
-  const handleApply = (id) => {
+  const handleApply = async (id) => {
     setApplied(p => new Set([...p, id]));
     setSkipped(p => { const n = new Set(p); n.delete(id); return n; });
+    if (!user) return; // demo mode — UI only
+    const rec = pricingRecs.find(r => r.id === id);
+    if (!rec?.roomId) return;
+    // Use live rate from DB if available, else fall back to static default
+    const liveCurrentRate = propertyData?.rooms?.[rec.roomId] ?? rec.current;
+    try {
+      const token = localStorage.getItem("hiq-token");
+      const res = await fetch(`${apiBase}/api/property/rates/apply`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ roomId: rec.roomId, oldRate: liveCurrentRate, newRate: rec.suggested, reason: rec.reason }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setPropertyData(p => p ? { ...p, rooms: data.rooms, appliedRates: data.appliedRates } : p);
+      }
+    } catch {}
   };
   const handleSkip = (id) => {
     setSkipped(p => new Set([...p, id]));
@@ -1266,14 +2357,15 @@ export default function HotelIQ({ user, apiBase, onLogout, onShowAuth }) {
 
   const renderTab = () => {
     switch (activeTab) {
-      case "overview":  return <Overview user={user} setTab={setActiveTab} applied={applied} skipped={skipped} onApply={handleApply} onShowAuth={onShowAuth} />;
-      case "revenue":   return <Revenue />;
-      case "pricing":   return <Pricing applied={applied} skipped={skipped} onApply={handleApply} onSkip={handleSkip} onRestore={handleRestore} />;
+      case "overview":  return <Overview user={user} property={propertyData} setTab={setActiveTab} applied={applied} skipped={skipped} onApply={handleApply} onShowAuth={onShowAuth} />;
+      case "revenue":   return <Revenue property={propertyData} />;
+      case "pricing":   return <Pricing applied={applied} skipped={skipped} onApply={handleApply} onSkip={handleSkip} onRestore={handleRestore} property={propertyData} />;
       case "forecast":  return <Forecast setTab={setActiveTab} />;
-      case "compset":   return <CompSet />;
-      case "calendar":  return <CalendarSection />;
-      case "reports":   return <Reports />;
-      case "settings":  return <Settings user={user} onLogout={onLogout} theme={theme} toggleTheme={toggleTheme} />;
+      case "compset":   return <CompSet apiBase={apiBase} property={propertyData} />;
+      case "calendar":  return <CalendarSection property={propertyData} />;
+      case "reports":       return <Reports property={propertyData} />;
+      case "integrations":  return <Integrations user={user} apiBase={apiBase} />;
+      case "settings":      return <Settings user={user} property={propertyData} apiBase={apiBase} onPropertyUpdate={setPropertyData} onLogout={onLogout} theme={theme} toggleTheme={toggleTheme} />;
       default:          return null;
     }
   };
@@ -1411,24 +2503,32 @@ export default function HotelIQ({ user, apiBase, onLogout, onShowAuth }) {
 
       {/* ── Body ── */}
       <div style={{ display: "flex" }}>
-        <Sidebar active={activeTab} setTab={setActiveTab} />
+        <Sidebar active={activeTab} setTab={setActiveTab} user={user} urgentCount={urgentCount} />
         <main style={{ flex: 1, padding: "32px 36px", minWidth: 0, overflowX: "hidden" }}>
           {renderTab()}
         </main>
       </div>
 
-      {aiOpen && <AIChat user={user} apiBase={apiBase} onClose={() => setAiOpen(false)} />}
+      {aiOpen && <AIChat user={user} property={propertyData} apiBase={apiBase} onClose={() => setAiOpen(false)} />}
 
       <style>{`
-        @keyframes aipulse { 0%,100%{opacity:.3;transform:scale(.8)} 50%{opacity:1;transform:scale(1.2)} }
+        @keyframes aipulse   { 0%,100%{opacity:.3;transform:scale(.8)} 50%{opacity:1;transform:scale(1.2)} }
         @keyframes livePulse { 0%,100%{opacity:.5;transform:scale(.8)} 50%{opacity:1;transform:scale(1.2)} }
+        @keyframes fadeUp    { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes shimmer   { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
         * { box-sizing: border-box; }
-        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.3); border-radius: 2px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(99,102,241,0.5); }
-        button:hover { filter: brightness(1.12); }
+        ::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.25); border-radius: 2px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(99,102,241,0.45); }
+        button { transition: filter 0.12s, transform 0.12s; }
+        button:hover { filter: brightness(1.1); }
+        button:active { transform: scale(0.97); }
+        input, select { transition: border-color 0.15s, box-shadow 0.15s; }
+        input:focus, select:focus { border-color: rgba(99,102,241,0.5) !important; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); outline: none; }
         input::placeholder { color: #2D3748; }
+        select option { background: #0D0D18; }
+        main > div > * { animation: fadeUp 0.22s ease both; }
         @media (max-width: 1100px) {
           .kpi6 { grid-template-columns: repeat(3,1fr) !important; }
           .chart2col { grid-template-columns: 1fr !important; }

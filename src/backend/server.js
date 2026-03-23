@@ -3,8 +3,10 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 
-const authRoutes = require('./routes/auth');
-const aiRoutes = require('./routes/ai');
+const authRoutes     = require('./routes/auth');
+const aiRoutes       = require('./routes/ai');
+const compsetRoutes  = require('./routes/compset');
+const propertyRoutes = require('./routes/property');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -24,8 +26,10 @@ app.use(cors({
 app.use(express.json());
 
 // API routes
-app.use('/api/auth', authRoutes);
-app.use('/api/ai', aiRoutes);
+app.use('/api/auth',     authRoutes);
+app.use('/api/ai',       aiRoutes);
+app.use('/api/compset',  compsetRoutes);
+app.use('/api/property', propertyRoutes);
 
 // Health check
 app.get('/api/health', (_req, res) => res.json({ status: 'ok', ts: new Date().toISOString() }));
