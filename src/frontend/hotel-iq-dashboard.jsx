@@ -218,6 +218,15 @@ const SPARKS = {
   profit:      [36,  39,  40,  42,  44,  45,  46,  47],
 };
 
+// ── AI Chat quick-prompt suggestions ─────────────────────────────────────────
+const QUICK_PROMPTS = [
+  "Optimal rate for this weekend?",
+  "How do I grow RevPAR 10%?",
+  "Analyse my comp set",
+  "Is my ADR competitive?",
+  "Forecast next 7 days",
+];
+
 // ── Mini inline sparkline ─────────────────────────────────────────────────────
 const MiniSpark = ({ data, color }) => {
   if (!data?.length) return null;
@@ -494,30 +503,48 @@ function Overview({ user, property, setTab, applied, skipped, onApply, onShowAut
 
       <div className="chart2col" style={{ display: "grid", gridTemplateColumns: "3fr 2fr", gap: 16 }}>
         <div style={{
-          background: "linear-gradient(135deg, rgba(99,102,241,0.1), rgba(79,70,229,0.07))",
-          border: "1px solid rgba(99,102,241,0.25)", borderRadius: 16, padding: "20px 24px",
+          background: "linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.05), rgba(79,70,229,0.07))",
+          border: "1px solid rgba(99,102,241,0.2)", borderRadius: 16, padding: "20px 24px",
+          position: "relative", overflow: "hidden",
         }}>
-          <div style={{ display: "flex", gap: 14, marginBottom: 14 }}>
-            <span style={{ fontSize: 24 }}>✦</span>
-            <div>
-              <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 14, color: "#818CF8", marginBottom: 6 }}>AI Revenue Insight</div>
-              <div style={{ fontSize: 13, color: "#aaa", lineHeight: 1.8 }}>
+          {/* Animated rainbow top border */}
+          <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2,
+            background: "linear-gradient(90deg, #6366F1, #8B5CF6, #EC4899, #F59E0B, #6366F1)",
+            backgroundSize: "300% 100%", animation: "gradientShift 4s ease infinite" }} />
+          {/* Soft ambient glow */}
+          <div style={{ position: "absolute", top: -40, right: -40, width: 180, height: 180,
+            background: "radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%)", pointerEvents: "none" }} />
+          <div style={{ display: "flex", gap: 14, marginBottom: 16, position: "relative" }}>
+            <div style={{ width: 40, height: 40, borderRadius: 12, flexShrink: 0,
+              background: "linear-gradient(135deg, rgba(99,102,241,0.3), rgba(139,92,246,0.2))",
+              border: "1px solid rgba(99,102,241,0.35)",
+              display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18,
+              boxShadow: "0 0 20px rgba(99,102,241,0.25)" }}>✦</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 14, color: "#818CF8" }}>AI Revenue Insight</div>
+                <div style={{ fontSize: 9, fontFamily: "'Space Mono', monospace", letterSpacing: 1.2,
+                  background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.25)",
+                  borderRadius: 4, padding: "2px 7px", color: "#6366F1" }}>LIVE</div>
+              </div>
+              <div style={{ fontSize: 13, color: "#94A3B8", lineHeight: 1.8 }}>
                 Demand spike forecasted <strong style={{ color: "#fff" }}>+34%</strong> this weekend — regional tech conference in town.
                 Standard King & Double Queen rates are <strong style={{ color: C.orange }}>$16–20 below optimal</strong>.
                 Applying open recommendations could generate <strong style={{ color: C.green }}>$4,380</strong> additional revenue.
               </div>
             </div>
           </div>
-          <div style={{ display: "flex", gap: 10 }}>
+          <div style={{ display: "flex", gap: 10, position: "relative" }}>
             <button onClick={() => setTab("pricing")} style={{
               background: "linear-gradient(135deg, #6366F1, #4F46E5)", border: "none",
-              color: "#fff", padding: "8px 16px", borderRadius: 8, cursor: "pointer",
+              color: "#fff", padding: "9px 18px", borderRadius: 9, cursor: "pointer",
               fontSize: 11, fontFamily: "'Space Mono', monospace", fontWeight: 700,
-              boxShadow: "0 4px 14px rgba(99,102,241,0.4)",
+              boxShadow: "0 4px 20px rgba(99,102,241,0.45)",
+              letterSpacing: 0.5,
             }}>REVIEW PRICING →</button>
             <button onClick={() => setTab("forecast")} style={{
-              background: "transparent", border: "1px solid rgba(255,255,255,0.08)",
-              color: "#555", padding: "8px 16px", borderRadius: 8, cursor: "pointer",
+              background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)",
+              color: "#6B7280", padding: "9px 16px", borderRadius: 9, cursor: "pointer",
               fontSize: 11, fontFamily: "'Space Mono', monospace",
             }}>VIEW FORECAST</button>
           </div>
@@ -895,10 +922,27 @@ function Pricing({ applied, skipped, onApply, onSkip, onRestore, property }) {
               <div style={{ flex: 2 }}>
                 <div style={{ fontWeight: 600, fontSize: 14, color: "#fff", marginBottom: 3,
                   textDecoration: isSkipped ? "line-through" : "none" }}>{r.room}</div>
-                <div style={{ fontSize: 12, color: "#555" }}>{r.reason}</div>
+                <div style={{ fontSize: 12, color: "#555", marginBottom: 6 }}>{r.reason}</div>
+                {/* AI confidence bar */}
+                {!isSkipped && r.impact !== 0 && (
+                  <div style={{ marginBottom: 4 }}>
+                    <div style={{ height: 3, borderRadius: 2, background: "rgba(255,255,255,0.04)", overflow: "hidden" }}>
+                      <div style={{
+                        height: "100%", borderRadius: 2,
+                        width: `${Math.min(100, Math.abs(r.impact) / 30)}%`,
+                        background: isApplied
+                          ? `linear-gradient(90deg, ${C.green}, ${C.teal})`
+                          : r.urgency === "high"
+                            ? `linear-gradient(90deg, ${C.orange}, ${C.gold})`
+                            : `linear-gradient(90deg, ${C.blue}, #818CF8)`,
+                        transition: "width 0.6s ease",
+                      }} />
+                    </div>
+                  </div>
+                )}
                 {r.minStay && <div style={{ fontSize: 10, color: C.blue, fontFamily: "'Space Mono', monospace",
-                  marginTop: 4 }}>MIN STAY {r.minStay}N RECOMMENDED</div>}
-                {isApplied && <div style={{ fontSize: 10, color: C.green, fontFamily: "'Space Mono', monospace", marginTop: 4 }}>✓ RATE UPDATED</div>}
+                  marginTop: 2 }}>MIN STAY {r.minStay}N RECOMMENDED</div>}
+                {isApplied && <div style={{ fontSize: 10, color: C.green, fontFamily: "'Space Mono', monospace", marginTop: 2 }}>✓ RATE UPDATED</div>}
               </div>
               <div style={{ textAlign: "center", minWidth: 70 }}>
                 <div style={{ fontSize: 10, color: "#555", fontFamily: "'Space Mono', monospace", marginBottom: 4, letterSpacing: 1 }}>CURRENT</div>
@@ -1936,6 +1980,26 @@ Be concise, data-driven, give specific actionable advice with $ and % figures.`;
             }}>{m.text}</div>
           </div>
         ))}
+        {/* Quick-prompt chips — visible only on fresh conversation */}
+        {msgs.length === 1 && !loading && (
+          <div style={{ marginTop: 4, display: "flex", flexDirection: "column", gap: 6 }}>
+            <div style={{ fontSize: 10, color: "#374151", fontFamily: "'Space Mono', monospace",
+              letterSpacing: 1, marginBottom: 2 }}>SUGGESTED</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {QUICK_PROMPTS.map((q, i) => (
+                <button key={i} onClick={() => setInput(q)} style={{
+                  background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.2)",
+                  borderRadius: 100, padding: "5px 13px", cursor: "pointer",
+                  fontSize: 11, color: "#818CF8", fontFamily: "'Inter', sans-serif",
+                  transition: "all 0.15s", whiteSpace: "nowrap",
+                }}
+                  onMouseEnter={e => { e.currentTarget.style.background = "rgba(99,102,241,0.15)"; e.currentTarget.style.borderColor = "rgba(99,102,241,0.4)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "rgba(99,102,241,0.08)"; e.currentTarget.style.borderColor = "rgba(99,102,241,0.2)"; }}
+                >{q}</button>
+              ))}
+            </div>
+          </div>
+        )}
         {loading && (
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <div style={{ width: 24, height: 24, borderRadius: 7, background: "linear-gradient(135deg, #6366F1, #8B5CF6)",
@@ -2438,9 +2502,18 @@ export default function HotelIQ({ user, apiBase, onLogout, onShowAuth }) {
   return (
     <div style={{ minHeight: "100vh", background: S.bg, color: S.text1, fontFamily: "'Inter', sans-serif", position: "relative" }}>
       <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Space+Mono:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-      {/* Ambient background glow */}
-      <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0,
-        background: "radial-gradient(ellipse 70% 40% at 50% 0%, rgba(99,102,241,0.08) 0%, transparent 60%)" }} />
+      {/* Ambient background: dot grid + top glow */}
+      <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0 }}>
+        <div style={{
+          position: "absolute", inset: 0,
+          backgroundImage: "radial-gradient(rgba(99,102,241,0.18) 1px, transparent 1px)",
+          backgroundSize: "36px 36px",
+          maskImage: "radial-gradient(ellipse 90% 70% at 50% 0%, black 0%, transparent 75%)",
+          WebkitMaskImage: "radial-gradient(ellipse 90% 70% at 50% 0%, black 0%, transparent 75%)",
+        }} />
+        <div style={{ position: "absolute", inset: 0,
+          background: "radial-gradient(ellipse 70% 40% at 50% 0%, rgba(99,102,241,0.1) 0%, transparent 60%)" }} />
+      </div>
 
       {/* ── Header ── */}
       <header style={{
@@ -2524,8 +2597,18 @@ export default function HotelIQ({ user, apiBase, onLogout, onShowAuth }) {
             color: aiOpen ? "#818CF8" : "#fff",
             padding: "7px 16px", borderRadius: 9, cursor: "pointer",
             fontSize: 12, fontWeight: 600, fontFamily: "'Inter', sans-serif", letterSpacing: 0.2,
-            boxShadow: aiOpen ? "none" : "0 4px 20px rgba(99,102,241,0.35)",
-          }}>✦ ASK AI</button>
+            boxShadow: aiOpen ? "none" : "0 4px 20px rgba(99,102,241,0.35), 0 0 0 0 rgba(99,102,241,0)",
+            position: "relative", overflow: "hidden",
+          }}>
+            {!aiOpen && (
+              <div style={{ position: "absolute", inset: 0, overflow: "hidden", borderRadius: 9, pointerEvents: "none" }}>
+                <div style={{ position: "absolute", top: 0, left: "-60%", width: "40%", height: "100%",
+                  background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent)",
+                  animation: "shimmer 3s ease-in-out infinite", animationDelay: "1s" }} />
+              </div>
+            )}
+            ✦ ASK AI
+          </button>
 
           {user ? (
             <>
@@ -2579,10 +2662,12 @@ export default function HotelIQ({ user, apiBase, onLogout, onShowAuth }) {
 
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        @keyframes aipulse   { 0%,100%{opacity:.3;transform:scale(.85)} 50%{opacity:1;transform:scale(1.15)} }
-        @keyframes livePulse { 0%,100%{opacity:.4;transform:scale(.85)} 50%{opacity:1;transform:scale(1.15)} }
-        @keyframes fadeUp    { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes slideIn   { from{opacity:0;transform:translateX(-8px)} to{opacity:1;transform:translateX(0)} }
+        @keyframes aipulse       { 0%,100%{opacity:.3;transform:scale(.85)} 50%{opacity:1;transform:scale(1.15)} }
+        @keyframes livePulse     { 0%,100%{opacity:.4;transform:scale(.85)} 50%{opacity:1;transform:scale(1.15)} }
+        @keyframes fadeUp        { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes slideIn       { from{opacity:0;transform:translateX(-8px)} to{opacity:1;transform:translateX(0)} }
+        @keyframes gradientShift { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+        @keyframes shimmer       { 0%{transform:translateX(-100%)} 100%{transform:translateX(200%)} }
         * { box-sizing: border-box; }
         body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
         ::-webkit-scrollbar { width: 3px; height: 3px; }
