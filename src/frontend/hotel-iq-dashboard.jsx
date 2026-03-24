@@ -7,16 +7,30 @@ import {
 
 // ── Design Tokens ─────────────────────────────────────────────────────────────
 const C = {
-  gold:   "#F59E0B",  // amber — revenue & occupancy
-  blue:   "#6366F1",  // indigo — primary action
-  green:  "#10B981",  // emerald — positive/success
-  red:    "#EF4444",  // red — alert
-  amber:  "#F59E0B",  // alias gold
-  purple: "#8B5CF6",  // violet — secondary
-  teal:   "#14B8A6",  // teal — tertiary
-  orange: "#F97316",  // orange — forecast
-  pink:   "#EC4899",  // pink — GOPPAR
-  indigo: "#6366F1",  // alias blue
+  gold:   "#F59E0B",
+  blue:   "#6366F1",
+  green:  "#10B981",
+  red:    "#EF4444",
+  amber:  "#F59E0B",
+  purple: "#8B5CF6",
+  teal:   "#14B8A6",
+  orange: "#F97316",
+  pink:   "#EC4899",
+  indigo: "#6366F1",
+};
+
+// Semantic surface colors
+const S = {
+  bg:      "#03050A",
+  surf1:   "#080C16",
+  surf2:   "#0C1120",
+  surf3:   "#111827",
+  border:  "rgba(148,163,184,0.08)",
+  borderHover: "rgba(148,163,184,0.16)",
+  text1:   "#F8FAFC",
+  text2:   "#94A3B8",
+  text3:   "#475569",
+  text4:   "#1E293B",
 };
 
 // ── Deterministic pseudo-random (avoids hydration mismatch) ──────────────────
@@ -228,42 +242,54 @@ const MiniSpark = ({ data, color }) => {
 // ── Demo banner ───────────────────────────────────────────────────────────────
 const DemoBanner = ({ onAction }) => (
   <div style={{
-    background: "linear-gradient(135deg, rgba(99,102,241,0.14), rgba(79,70,229,0.08))",
-    border: "1px solid rgba(99,102,241,0.35)", borderRadius: 12,
-    padding: "13px 20px", display: "flex", alignItems: "center", gap: 14, marginBottom: 4,
+    background: "linear-gradient(135deg, rgba(99,102,241,0.1) 0%, rgba(139,92,246,0.06) 100%)",
+    border: "1px solid rgba(99,102,241,0.2)", borderRadius: 16,
+    padding: "14px 20px", display: "flex", alignItems: "center", gap: 14,
   }}>
-    <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#6366F1", flexShrink: 0,
-      display: "inline-block", boxShadow: "0 0 8px #6366F1", animation: "livePulse 2s ease-in-out infinite" }} />
-    <div style={{ flex: 1, fontSize: 13, color: "#A5B4FC" }}>
-      You're viewing <strong style={{ color: "#fff" }}>live demo data</strong> — sign in to connect
-      your property and get real AI pricing recommendations.
+    <div style={{ width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+      background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.25)",
+      display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>✦</div>
+    <div style={{ flex: 1 }}>
+      <div style={{ fontSize: 13, fontWeight: 600, color: S.text1, marginBottom: 2 }}>
+        You're viewing demo data
+      </div>
+      <div style={{ fontSize: 12, color: S.text3 }}>
+        Sign in to connect your property and get live AI pricing recommendations
+      </div>
     </div>
     <button onClick={() => onAction?.("register")} style={{
-      background: "linear-gradient(135deg, #6366F1, #4F46E5)", border: "none",
-      color: "#fff", padding: "8px 18px", borderRadius: 8, cursor: "pointer",
-      fontSize: 12, fontWeight: 700, fontFamily: "'DM Sans', sans-serif",
-      whiteSpace: "nowrap", boxShadow: "0 4px 14px rgba(99,102,241,0.45)",
-    }}>Start Free →</button>
+      background: "linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)", border: "none",
+      color: "#fff", padding: "9px 20px", borderRadius: 10, cursor: "pointer",
+      fontSize: 12, fontWeight: 600, fontFamily: "'Inter', sans-serif",
+      whiteSpace: "nowrap", boxShadow: "0 4px 20px rgba(99,102,241,0.4), 0 0 0 1px rgba(99,102,241,0.3)",
+      letterSpacing: 0.2,
+    }}>Get Started Free →</button>
   </div>
 );
 
 // ── Reusable Components ────────────────────────────────────────────────────────
 const Card = ({ title, subtitle, action, children, style = {}, accent }) => (
   <div style={{
-    background: "linear-gradient(145deg, rgba(12,14,22,0.9), rgba(8,10,18,0.95))",
-    border: "1px solid rgba(255,255,255,0.07)",
-    borderRadius: 16, padding: "20px 22px",
-    boxShadow: "0 4px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.04)",
+    background: `linear-gradient(160deg, ${S.surf1} 0%, ${S.surf2} 100%)`,
+    border: `1px solid ${S.border}`,
+    borderRadius: 20, padding: "22px 24px",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.4), 0 8px 32px rgba(0,0,0,0.25)",
     position: "relative", overflow: "hidden",
+    transition: "border-color 0.2s",
     ...style,
-  }}>
-    {accent && <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2,
-      background: `linear-gradient(90deg, ${accent}CC, transparent)`, borderRadius: "16px 16px 0 0" }} />}
+  }}
+    onMouseEnter={e => e.currentTarget.style.borderColor = S.borderHover}
+    onMouseLeave={e => e.currentTarget.style.borderColor = S.border}
+  >
+    {accent && (
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1,
+        background: `linear-gradient(90deg, ${accent}80, ${accent}20, transparent)` }} />
+    )}
     {(title || action) && (
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18 }}>
         <div>
-          {title && <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 14, color: "#E2E8F0" }}>{title}</div>}
-          {subtitle && <div style={{ fontSize: 11, color: "#4B5563", marginTop: 3 }}>{subtitle}</div>}
+          {title && <div style={{ fontFamily: "'Inter', sans-serif", fontWeight: 600, fontSize: 14, color: S.text1, letterSpacing: -0.2 }}>{title}</div>}
+          {subtitle && <div style={{ fontSize: 11, color: S.text3, marginTop: 4, fontWeight: 400 }}>{subtitle}</div>}
         </div>
         {action}
       </div>
@@ -274,45 +300,57 @@ const Card = ({ title, subtitle, action, children, style = {}, accent }) => (
 
 const KPI = ({ label, value, sub, delta, accent, icon, spark }) => (
   <div style={{
-    background: "linear-gradient(145deg, rgba(12,14,22,0.95), rgba(8,10,18,1))",
-    border: "1px solid rgba(255,255,255,0.07)",
-    borderRadius: 16, padding: "18px 20px", position: "relative", overflow: "hidden",
-    transition: "border-color 0.2s, transform 0.18s, box-shadow 0.2s",
-    boxShadow: "0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)",
+    background: `linear-gradient(160deg, ${S.surf1} 0%, ${S.surf2} 100%)`,
+    border: `1px solid ${S.border}`,
+    borderRadius: 20, padding: "20px 22px",
+    position: "relative", overflow: "hidden",
+    transition: "border-color 0.2s, transform 0.2s, box-shadow 0.2s",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.2)",
     cursor: "default",
   }}
     onMouseEnter={e => {
-      e.currentTarget.style.borderColor = `${accent}60`;
-      e.currentTarget.style.transform = "translateY(-3px)";
-      e.currentTarget.style.boxShadow = `0 8px 30px rgba(0,0,0,0.5), 0 0 20px ${accent}22, inset 0 1px 0 rgba(255,255,255,0.04)`;
+      e.currentTarget.style.borderColor = `${accent}50`;
+      e.currentTarget.style.transform = "translateY(-2px)";
+      e.currentTarget.style.boxShadow = `0 4px 20px rgba(0,0,0,0.4), 0 0 0 1px ${accent}20`;
     }}
     onMouseLeave={e => {
-      e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)";
+      e.currentTarget.style.borderColor = S.border;
       e.currentTarget.style.transform = "translateY(0)";
-      e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)";
+      e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.2)";
     }}>
-    <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2,
-      background: `linear-gradient(90deg, ${accent}DD, ${accent}33, transparent)` }} />
-    <div style={{ position: "absolute", top: -20, right: -20, width: 100, height: 100,
-      background: `radial-gradient(circle, ${accent}14 0%, transparent 70%)` }} />
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
-      <span style={{ fontSize: 9, fontFamily: "'Space Mono', monospace", letterSpacing: 1.8,
-        textTransform: "uppercase", color: "#374151", lineHeight: 1.4 }}>{label}</span>
-      <span style={{ fontSize: 16, opacity: 0.5, filter: "saturate(0.7)" }}>{icon}</span>
+    {/* Top accent line */}
+    <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1,
+      background: `linear-gradient(90deg, ${accent}90, ${accent}20, transparent)` }} />
+    {/* Glow blob */}
+    <div style={{ position: "absolute", bottom: -30, right: -30, width: 120, height: 120,
+      background: `radial-gradient(circle, ${accent}0F 0%, transparent 70%)`,
+      pointerEvents: "none" }} />
+
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+      <span style={{ fontSize: 10, fontFamily: "'Space Mono', monospace", letterSpacing: 1.5,
+        textTransform: "uppercase", color: S.text3, fontWeight: 400 }}>{label}</span>
+      <div style={{ width: 28, height: 28, borderRadius: 8,
+        background: `${accent}18`, border: `1px solid ${accent}25`,
+        display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13 }}>{icon}</div>
     </div>
-    <div style={{ fontSize: 30, fontWeight: 800, fontFamily: "'Syne', sans-serif",
-      color: "#F1F5F9", lineHeight: 1, letterSpacing: -1 }}>{value}</div>
-    {sub && <div style={{ fontSize: 11, color: "#374151", marginTop: 4 }}>{sub}</div>}
+
+    <div style={{ fontSize: 32, fontWeight: 700, fontFamily: "'Syne', sans-serif",
+      color: S.text1, lineHeight: 1, letterSpacing: -1, marginBottom: 5 }}>{value}</div>
+
+    {sub && <div style={{ fontSize: 11, color: S.text3, fontWeight: 400, marginBottom: 4 }}>{sub}</div>}
+
     {delta !== undefined && (
-      <div style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10,
-        fontFamily: "'Space Mono', monospace", marginTop: 5,
-        background: delta >= 0 ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)",
-        border: `1px solid ${delta >= 0 ? "rgba(16,185,129,0.25)" : "rgba(239,68,68,0.25)"}`,
-        borderRadius: 6, padding: "2px 7px",
-        color: delta >= 0 ? C.green : C.red }}>
-        {delta >= 0 ? "▲" : "▼"} {Math.abs(delta)}%
+      <div style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 10,
+        fontFamily: "'Inter', sans-serif", fontWeight: 600, marginTop: 2,
+        color: delta >= 0 ? "#34D399" : "#F87171" }}>
+        <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center",
+          width: 14, height: 14, borderRadius: 4,
+          background: delta >= 0 ? "rgba(52,211,153,0.12)" : "rgba(248,113,113,0.12)",
+          fontSize: 8 }}>{delta >= 0 ? "▲" : "▼"}</span>
+        {Math.abs(delta)}% vs last month
       </div>
     )}
+
     {spark && <MiniSpark data={spark} color={accent} />}
   </div>
 );
@@ -330,13 +368,23 @@ const Badge = ({ urgency }) => {
 const Tip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
   return (
-    <div style={{ background: "#070B14", border: "1px solid rgba(99,102,241,0.2)", borderRadius: 10,
-      padding: "10px 14px", fontSize: 11, fontFamily: "'Space Mono', monospace",
-      boxShadow: "0 8px 32px rgba(0,0,0,0.7)" }}>
-      <div style={{ color: "#555", marginBottom: 6 }}>{label}</div>
+    <div style={{
+      background: "rgba(8,12,22,0.96)", backdropFilter: "blur(12px)",
+      border: `1px solid ${S.borderHover}`, borderRadius: 12,
+      padding: "12px 16px", fontSize: 12, fontFamily: "'Inter', sans-serif",
+      boxShadow: "0 20px 60px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.04)",
+      minWidth: 140,
+    }}>
+      <div style={{ color: S.text3, marginBottom: 8, fontSize: 11,
+        fontFamily: "'Space Mono', monospace", letterSpacing: 0.5 }}>{label}</div>
       {payload.map((p, i) => (
-        <div key={i} style={{ color: p.color, marginBottom: 2 }}>
-          {p.name}: <strong>{
+        <div key={i} style={{ display: "flex", justifyContent: "space-between",
+          gap: 16, color: S.text2, marginBottom: 3, alignItems: "center" }}>
+          <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: p.color, flexShrink: 0 }} />
+            {p.name}
+          </span>
+          <strong style={{ color: S.text1, fontFamily: "'Space Mono', monospace", fontSize: 11 }}>{
             p.value > 999 ? `$${p.value.toLocaleString()}` :
             ["occupancy","demand","lastYear"].includes(p.dataKey) ? `${p.value}%` : p.value
           }</strong>
@@ -347,24 +395,24 @@ const Tip = ({ active, payload, label }) => {
 };
 
 const SectionHead = ({ title, sub, right, live = true }) => (
-  <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 26 }}>
+  <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 28 }}>
     <div>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
-        <h1 style={{ fontFamily: "'Syne', sans-serif", fontSize: 24, fontWeight: 800,
-          margin: 0, letterSpacing: -0.5, color: "#fff" }}>{title}</h1>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+        <h1 style={{ fontFamily: "'Syne', sans-serif", fontSize: 26, fontWeight: 700,
+          margin: 0, letterSpacing: -0.8, color: S.text1, lineHeight: 1.1 }}>{title}</h1>
         {live && (
           <div style={{ display: "flex", alignItems: "center", gap: 5,
-            background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.25)",
-            borderRadius: 100, padding: "3px 10px" }}>
+            background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)",
+            borderRadius: 100, padding: "4px 10px" }}>
             <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#10B981",
-              display: "inline-block", boxShadow: "0 0 6px #10B981",
+              display: "inline-block", boxShadow: "0 0 8px rgba(16,185,129,0.8)",
               animation: "livePulse 2s ease-in-out infinite" }} />
-            <span style={{ fontSize: 9, color: "#10B981", fontFamily: "'Space Mono', monospace",
-              letterSpacing: 1.5 }}>LIVE</span>
+            <span style={{ fontSize: 9, color: "#34D399", fontFamily: "'Space Mono', monospace",
+              letterSpacing: 1.5, fontWeight: 700 }}>LIVE</span>
           </div>
         )}
       </div>
-      {sub && <p style={{ color: "#4B5563", margin: 0, fontSize: 13 }}>{sub}</p>}
+      {sub && <p style={{ color: S.text3, margin: 0, fontSize: 13, fontWeight: 400, lineHeight: 1.5 }}>{sub}</p>}
     </div>
     {right}
   </div>
@@ -2211,38 +2259,47 @@ const NAV_GROUPS = [
 function Sidebar({ active, setTab, user, urgentCount }) {
   return (
     <aside style={{
-      width: 230, flexShrink: 0,
-      background: "linear-gradient(180deg, #060A13 0%, #040810 100%)",
-      borderRight: "1px solid rgba(255,255,255,0.05)",
+      width: 240, flexShrink: 0,
+      background: `linear-gradient(180deg, ${S.surf1} 0%, ${S.bg} 100%)`,
+      borderRight: `1px solid ${S.border}`,
       display: "flex", flexDirection: "column",
       position: "sticky", top: 62, height: "calc(100vh - 62px)", overflowY: "auto",
     }}>
-      {/* Property info */}
-      <div style={{
-        padding: "16px 16px 14px",
-        borderBottom: "1px solid rgba(255,255,255,0.05)",
-      }}>
-        <div style={{ fontSize: 9, color: "#374151", fontFamily: "'Space Mono', monospace",
-          letterSpacing: 2, marginBottom: 6, textTransform: "uppercase" }}>Property</div>
-        <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 13,
-          color: "#E2E8F0", lineHeight: 1.3 }}>
-          {user?.hotelName || "The Coastal Grand"}
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 6 }}>
-          <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#10B981",
-            display: "inline-block", boxShadow: "0 0 8px #10B981",
-            animation: "livePulse 2s ease-in-out infinite" }} />
-          <span style={{ fontSize: 9, color: "#10B981", fontFamily: "'Space Mono', monospace",
-            letterSpacing: 1 }}>ALL SYSTEMS LIVE</span>
+      {/* Property card */}
+      <div style={{ padding: "18px 16px 16px", borderBottom: `1px solid ${S.border}` }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{
+            width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+            background: "linear-gradient(135deg, #6366F1, #4F46E5)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 14, fontWeight: 800, color: "#fff", fontFamily: "'Syne', sans-serif",
+            boxShadow: "0 4px 12px rgba(99,102,241,0.4)",
+          }}>
+            {(user?.hotelName || "C")[0].toUpperCase()}
+          </div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontFamily: "'Inter', sans-serif", fontWeight: 600, fontSize: 13,
+              color: S.text1, lineHeight: 1.3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {user?.hotelName || "The Coastal Grand"}
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 3 }}>
+              <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#10B981", flexShrink: 0,
+                display: "inline-block", boxShadow: "0 0 6px rgba(16,185,129,0.8)",
+                animation: "livePulse 2s ease-in-out infinite" }} />
+              <span style={{ fontSize: 10, color: "#34D399", fontFamily: "'Space Mono', monospace",
+                letterSpacing: 0.5 }}>Live</span>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Grouped nav */}
-      <div style={{ flex: 1, padding: "8px 10px" }}>
+      <div style={{ flex: 1, padding: "10px 10px" }}>
         {NAV_GROUPS.map((g, gi) => (
-          <div key={g.label} style={{ marginTop: gi === 0 ? 8 : 16 }}>
-            <div style={{ fontSize: 8.5, color: "#2D3748", fontFamily: "'Space Mono', monospace",
-              letterSpacing: 2, paddingLeft: 8, marginBottom: 4, textTransform: "uppercase" }}>
+          <div key={g.label} style={{ marginTop: gi === 0 ? 6 : 18 }}>
+            <div style={{ fontSize: 9, color: S.text4, fontFamily: "'Space Mono', monospace",
+              letterSpacing: 2, paddingLeft: 10, marginBottom: 4, textTransform: "uppercase",
+              fontWeight: 700 }}>
               {g.label}
             </div>
             {g.items.map(n => {
@@ -2250,26 +2307,33 @@ function Sidebar({ active, setTab, user, urgentCount }) {
               const hasBadge = n.id === "pricing" && urgentCount > 0;
               return (
                 <button key={n.id} onClick={() => setTab(n.id)} style={{
-                  display: "flex", alignItems: "center", gap: 10, justifyContent: "space-between",
-                  padding: "9px 12px", cursor: "pointer", borderRadius: 9, margin: "1px 0",
-                  background: isActive ? "rgba(99,102,241,0.15)" : "transparent",
-                  border: isActive ? "1px solid rgba(99,102,241,0.28)" : "1px solid transparent",
-                  color: isActive ? "#C7D2FE" : "#4B5563",
-                  fontSize: 13, fontFamily: "'DM Sans', sans-serif", fontWeight: isActive ? 600 : 400,
+                  display: "flex", alignItems: "center", gap: 9, justifyContent: "space-between",
+                  padding: "8px 10px", cursor: "pointer", borderRadius: 10, margin: "1px 0",
+                  background: isActive ? "rgba(99,102,241,0.12)" : "transparent",
+                  border: "1px solid transparent",
+                  borderColor: isActive ? "rgba(99,102,241,0.2)" : "transparent",
+                  color: isActive ? "#A5B4FC" : S.text3,
+                  fontSize: 13, fontFamily: "'Inter', sans-serif", fontWeight: isActive ? 500 : 400,
                   textAlign: "left", transition: "all 0.15s", width: "100%",
-                  boxShadow: isActive ? "0 0 10px rgba(99,102,241,0.08)" : "none",
                 }}
-                  onMouseEnter={e => { if (!isActive) e.currentTarget.style.color = "#9CA3AF"; }}
-                  onMouseLeave={e => { if (!isActive) e.currentTarget.style.color = "#4B5563"; }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <span style={{ fontSize: 13, opacity: isActive ? 1 : 0.45 }}>{n.icon}</span>
+                  onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.color = S.text2; } }}
+                  onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = S.text3; } }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+                    <div style={{
+                      width: 26, height: 26, borderRadius: 7, flexShrink: 0,
+                      background: isActive ? "rgba(99,102,241,0.18)" : "rgba(255,255,255,0.04)",
+                      border: `1px solid ${isActive ? "rgba(99,102,241,0.25)" : "rgba(255,255,255,0.04)"}`,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 12, transition: "all 0.15s",
+                    }}>{n.icon}</div>
                     {n.label}
                   </div>
                   {hasBadge && (
                     <span style={{
-                      fontSize: 9, background: C.red, color: "#fff",
-                      borderRadius: 10, padding: "1px 6px",
+                      fontSize: 9, background: "#EF4444", color: "#fff",
+                      borderRadius: 10, padding: "2px 6px",
                       fontFamily: "'Space Mono', monospace", fontWeight: 700,
+                      boxShadow: "0 2px 8px rgba(239,68,68,0.4)",
                     }}>{urgentCount}</span>
                   )}
                 </button>
@@ -2280,9 +2344,10 @@ function Sidebar({ active, setTab, user, urgentCount }) {
       </div>
 
       {/* Footer */}
-      <div style={{ padding: "12px 16px", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
-        <div style={{ fontSize: 9, color: "#1F2937", fontFamily: "'Space Mono', monospace",
-          letterSpacing: 0.5 }}>Hotel IQ · v2.1 · AI Revenue Intelligence</div>
+      <div style={{ padding: "14px 16px", borderTop: `1px solid ${S.border}` }}>
+        <div style={{ fontSize: 10, color: S.text4, fontFamily: "'Space Mono', monospace",
+          letterSpacing: 0.3 }}>Hotel IQ · v2.2</div>
+        <div style={{ fontSize: 10, color: S.text4, marginTop: 2 }}>AI Revenue Intelligence</div>
       </div>
     </aside>
   );
@@ -2371,40 +2436,41 @@ export default function HotelIQ({ user, apiBase, onLogout, onShowAuth }) {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#030712", color: "#E2E8F0", fontFamily: "'DM Sans', sans-serif", position: "relative" }}>
-      <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+    <div style={{ minHeight: "100vh", background: S.bg, color: S.text1, fontFamily: "'Inter', sans-serif", position: "relative" }}>
+      <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Space+Mono:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
       {/* Ambient background glow */}
       <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0,
         background: "radial-gradient(ellipse 70% 40% at 50% 0%, rgba(99,102,241,0.08) 0%, transparent 60%)" }} />
 
       {/* ── Header ── */}
       <header style={{
-        height: 62, padding: "0 28px", display: "flex", alignItems: "center",
+        height: 60, padding: "0 24px", display: "flex", alignItems: "center",
         justifyContent: "space-between", position: "sticky", top: 0, zIndex: 200,
-        background: "rgba(3,7,18,0.97)", backdropFilter: "blur(24px)",
-        borderBottom: "1px solid rgba(255,255,255,0.06)",
+        background: "rgba(3,5,10,0.92)", backdropFilter: "blur(20px) saturate(180%)",
+        borderBottom: `1px solid ${S.border}`,
         isolation: "isolate",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ width: 34, height: 34, borderRadius: 10,
-            background: "linear-gradient(135deg, #6366F1, #4F46E5)",
+          <div style={{ width: 32, height: 32, borderRadius: 9,
+            background: "linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)",
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 15, fontWeight: 800, color: "#fff", fontFamily: "'Syne', sans-serif",
-            boxShadow: "0 0 16px rgba(99,102,241,0.5)" }}>IQ</div>
+            fontSize: 13, fontWeight: 800, color: "#fff", fontFamily: "'Syne', sans-serif",
+            boxShadow: "0 4px 16px rgba(99,102,241,0.45)" }}>IQ</div>
           <div>
-            <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 17, letterSpacing: -0.5, lineHeight: 1.2 }}>
-              Hotel<span style={{ color: C.gold }}>IQ</span>
-            </div>
-            <div style={{ fontSize: 9, color: "#333", fontFamily: "'Space Mono', monospace", letterSpacing: 1.5 }}>
-              REVENUE INTELLIGENCE
+            <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 16, letterSpacing: -0.5, lineHeight: 1.2, color: S.text1 }}>
+              Hotel<span style={{ color: "#818CF8" }}>IQ</span>
             </div>
           </div>
         </div>
 
-        <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, color: "#333", letterSpacing: 1 }}>
-          {user?.hotelName?.toUpperCase() || "THE COASTAL GRAND"}
-          {"  ·  "}
-          {clock.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: S.text4, letterSpacing: 1 }}>
+            {user?.hotelName?.toUpperCase() || "COASTAL GRAND"}
+          </div>
+          <div style={{ width: 1, height: 14, background: S.border }} />
+          <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, color: S.text3, letterSpacing: 0.5, fontVariantNumeric: "tabular-nums" }}>
+            {clock.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+          </div>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -2453,12 +2519,12 @@ export default function HotelIQ({ user, apiBase, onLogout, onShowAuth }) {
 
           {/* AI button */}
           <button onClick={() => user ? setAiOpen(o => !o) : onShowAuth?.("login")} style={{
-            background: aiOpen ? "rgba(99,102,241,0.15)" : "linear-gradient(135deg, #6366F1, #4F46E5)",
-            border: aiOpen ? "1px solid rgba(99,102,241,0.4)" : "none",
+            background: aiOpen ? "rgba(99,102,241,0.12)" : "linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)",
+            border: aiOpen ? "1px solid rgba(99,102,241,0.3)" : "1px solid rgba(99,102,241,0.3)",
             color: aiOpen ? "#818CF8" : "#fff",
-            padding: "8px 16px", borderRadius: 8, cursor: "pointer",
-            fontSize: 12, fontWeight: 700, fontFamily: "'Space Mono', monospace", letterSpacing: 0.5,
-            boxShadow: aiOpen ? "none" : "0 4px 14px rgba(99,102,241,0.4)",
+            padding: "7px 16px", borderRadius: 9, cursor: "pointer",
+            fontSize: 12, fontWeight: 600, fontFamily: "'Inter', sans-serif", letterSpacing: 0.2,
+            boxShadow: aiOpen ? "none" : "0 4px 20px rgba(99,102,241,0.35)",
           }}>✦ ASK AI</button>
 
           {user ? (
@@ -2504,7 +2570,7 @@ export default function HotelIQ({ user, apiBase, onLogout, onShowAuth }) {
       {/* ── Body ── */}
       <div style={{ display: "flex" }}>
         <Sidebar active={activeTab} setTab={setActiveTab} user={user} urgentCount={urgentCount} />
-        <main style={{ flex: 1, padding: "32px 36px", minWidth: 0, overflowX: "hidden" }}>
+        <main style={{ flex: 1, padding: "28px 32px", minWidth: 0, overflowX: "hidden" }}>
           {renderTab()}
         </main>
       </div>
@@ -2512,23 +2578,31 @@ export default function HotelIQ({ user, apiBase, onLogout, onShowAuth }) {
       {aiOpen && <AIChat user={user} property={propertyData} apiBase={apiBase} onClose={() => setAiOpen(false)} />}
 
       <style>{`
-        @keyframes aipulse   { 0%,100%{opacity:.3;transform:scale(.8)} 50%{opacity:1;transform:scale(1.2)} }
-        @keyframes livePulse { 0%,100%{opacity:.5;transform:scale(.8)} 50%{opacity:1;transform:scale(1.2)} }
-        @keyframes fadeUp    { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes shimmer   { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        @keyframes aipulse   { 0%,100%{opacity:.3;transform:scale(.85)} 50%{opacity:1;transform:scale(1.15)} }
+        @keyframes livePulse { 0%,100%{opacity:.4;transform:scale(.85)} 50%{opacity:1;transform:scale(1.15)} }
+        @keyframes fadeUp    { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes slideIn   { from{opacity:0;transform:translateX(-8px)} to{opacity:1;transform:translateX(0)} }
         * { box-sizing: border-box; }
-        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+        ::-webkit-scrollbar { width: 3px; height: 3px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.25); border-radius: 2px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(99,102,241,0.45); }
-        button { transition: filter 0.12s, transform 0.12s; }
-        button:hover { filter: brightness(1.1); }
-        button:active { transform: scale(0.97); }
+        ::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.2); border-radius: 2px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(99,102,241,0.4); }
+        button { transition: all 0.15s ease; outline: none; }
+        button:hover { filter: brightness(1.08); }
+        button:active { transform: scale(0.97) !important; filter: brightness(0.95); }
+        input, select, textarea { font-family: 'Inter', sans-serif; }
         input, select { transition: border-color 0.15s, box-shadow 0.15s; }
-        input:focus, select:focus { border-color: rgba(99,102,241,0.5) !important; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); outline: none; }
-        input::placeholder { color: #2D3748; }
-        select option { background: #0D0D18; }
-        main > div > * { animation: fadeUp 0.22s ease both; }
+        input:focus, select:focus { border-color: rgba(99,102,241,0.5) !important; box-shadow: 0 0 0 3px rgba(99,102,241,0.08) !important; outline: none; }
+        input::placeholder { color: #1E293B; }
+        select option { background: #080C16; }
+        main > div > * { animation: fadeUp 0.2s ease both; }
+        main > div > *:nth-child(1) { animation-delay: 0ms; }
+        main > div > *:nth-child(2) { animation-delay: 30ms; }
+        main > div > *:nth-child(3) { animation-delay: 60ms; }
+        main > div > *:nth-child(4) { animation-delay: 90ms; }
+        main > div > *:nth-child(5) { animation-delay: 120ms; }
         @media (max-width: 1100px) {
           .kpi6 { grid-template-columns: repeat(3,1fr) !important; }
           .chart2col { grid-template-columns: 1fr !important; }
