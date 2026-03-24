@@ -21,16 +21,16 @@ const C = {
 
 // Semantic surface colors
 const S = {
-  bg:      "#03050A",
-  surf1:   "#080C16",
-  surf2:   "#0C1120",
-  surf3:   "#111827",
-  border:  "rgba(148,163,184,0.08)",
-  borderHover: "rgba(148,163,184,0.16)",
-  text1:   "#F8FAFC",
+  bg:      "#020408",
+  surf1:   "#070B14",
+  surf2:   "#0B101C",
+  surf3:   "#0F1623",
+  border:  "rgba(148,163,184,0.09)",
+  borderHover: "rgba(148,163,184,0.18)",
+  text1:   "#F1F5F9",
   text2:   "#94A3B8",
-  text3:   "#475569",
-  text4:   "#1E293B",
+  text3:   "#64748B",
+  text4:   "#334155",
 };
 
 // ── Deterministic pseudo-random (avoids hydration mismatch) ──────────────────
@@ -257,7 +257,7 @@ const DemoBanner = ({ onAction }) => (
   }}>
     <div style={{ width: 36, height: 36, borderRadius: 10, flexShrink: 0,
       background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.25)",
-      display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>✦</div>
+      display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>✦</div>
     <div style={{ flex: 1 }}>
       <div style={{ fontSize: 13, fontWeight: 600, color: S.text1, marginBottom: 2 }}>
         You're viewing demo data
@@ -448,18 +448,18 @@ function Overview({ user, property, setTab, applied, skipped, onApply, onShowAut
         title="Revenue Overview"
         sub={`${user?.hotelName || p.hotelName || "The Coastal Grand"} · ${hasRealData ? `Updated ${new Date(m.updatedAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}` : "Demo data — enter real KPIs in Settings"}`}
         live={hasRealData}
-        right={<span style={{ fontSize: 11, color: "#374151", fontFamily: "'Space Mono', monospace" }}>
+        right={<span style={{ fontSize: 11, color: "#64748B", fontFamily: "'Space Mono', monospace" }}>
           {new Date().toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" })}
         </span>}
       />
 
       <div className="kpi6" style={{ display: "grid", gridTemplateColumns: "repeat(6,1fr)", gap: 12 }}>
-        <KPI icon="🏨" label="Occupancy"   value={`${occ}%`}                            sub={`${Math.round(occ / 100 * totalRooms)} / ${totalRooms} rooms`} delta={4.2}  accent={C.gold}   spark={SPARKS.occupancy} />
-        <KPI icon="📈" label="RevPAR"      value={`$${revpar}`}                         sub="vs $131 last mo."  delta={7.8}  accent={C.orange} spark={SPARKS.revpar} />
-        <KPI icon="💰" label="ADR"         value={`$${adr}`}                            sub="Avg daily rate"    delta={2.1}  accent={C.blue}   spark={SPARKS.adr} />
-        <KPI icon="🏷️" label="TRevPAR"    value={`$${trevpar}`}                        sub="Total rev / room"  delta={5.4}  accent={C.purple} spark={SPARKS.trevpar} />
-        <KPI icon="📊" label="Revenue MTD" value={revMtd >= 1000 ? `$${(revMtd/1000).toFixed(1)}K` : `$${revMtd}`} sub="Month to date" delta={11.3} accent={C.green} spark={SPARKS.revenueMtd} />
-        <KPI icon="✨" label="GOPPAR"      value={`$${goppar}`}                         sub="Gross op. profit"  delta={3.1}  accent={C.pink}   spark={SPARKS.goppar} />
+        <KPI icon="◈" label="Occupancy"   value={`${occ}%`}                            sub={`${Math.round(occ / 100 * totalRooms)} / ${totalRooms} rooms`} delta={4.2}  accent={C.gold}   spark={SPARKS.occupancy} />
+        <KPI icon="↗" label="RevPAR"      value={`$${revpar}`}                         sub="vs $131 last mo."  delta={7.8}  accent={C.orange} spark={SPARKS.revpar} />
+        <KPI icon="◆" label="ADR"         value={`$${adr}`}                            sub="Avg daily rate"    delta={2.1}  accent={C.blue}   spark={SPARKS.adr} />
+        <KPI icon="⊞" label="TRevPAR"    value={`$${trevpar}`}                        sub="Total rev / room"  delta={5.4}  accent={C.purple} spark={SPARKS.trevpar} />
+        <KPI icon="▦" label="Revenue MTD" value={revMtd >= 1000 ? `$${(revMtd/1000).toFixed(1)}K` : `$${revMtd}`} sub="Month to date" delta={11.3} accent={C.green} spark={SPARKS.revenueMtd} />
+        <KPI icon="✦" label="GOPPAR"      value={`$${goppar}`}                         sub="Gross op. profit"  delta={3.1}  accent={C.pink}   spark={SPARKS.goppar} />
       </div>
 
       <div className="chart2col" style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16 }}>
@@ -472,29 +472,29 @@ function Overview({ user, property, setTab, applied, skipped, onApply, onShowAut
                   <stop offset="95%" stopColor="#6366F1" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(99,102,241,0.08)" />
-              <XAxis dataKey="month" tick={{ fill: "#4B5563", fontSize: 10 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: "#4B5563", fontSize: 10 }} axisLine={false} tickLine={false} domain={[30,100]} tickFormatter={v=>`${v}%`} />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.07)" />
+              <XAxis dataKey="month" tick={{ fill: "#64748B", fontSize: 10 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: "#64748B", fontSize: 10 }} axisLine={false} tickLine={false} domain={[30,100]} tickFormatter={v=>`${v}%`} />
               <Tooltip content={<Tip />} />
               <Area type="monotone" dataKey="occupancy" stroke="#6366F1" strokeWidth={2} fill="url(#gOcc)" name="This Year" />
-              <Area type="monotone" dataKey="lastYear" stroke="#374151" strokeWidth={1.5} fill="transparent" strokeDasharray="4 4" name="Last Year" />
+              <Area type="monotone" dataKey="lastYear" stroke="#64748B" strokeWidth={1.5} fill="transparent" strokeDasharray="4 4" name="Last Year" />
             </AreaChart>
           </ResponsiveContainer>
-          <div style={{ display: "flex", gap: 20, marginTop: 10, fontSize: 11, fontFamily: "'Space Mono', monospace", color: "#4B5563" }}>
+          <div style={{ display: "flex", gap: 20, marginTop: 10, fontSize: 11, fontFamily: "'Space Mono', monospace", color: "#64748B" }}>
             <span><span style={{ color: "#6366F1" }}>—</span> This Year</span>
-            <span><span style={{ color: "#374151" }}>- -</span> Last Year</span>
+            <span><span style={{ color: "#64748B" }}>- -</span> Last Year</span>
           </div>
         </Card>
 
         <Card title="This Week Revenue" subtitle="Gold = weekend">
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={weeklyRevenue} barSize={22}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(99,102,241,0.07)" vertical={false} />
-              <XAxis dataKey="day" tick={{ fill: "#555", fontSize: 10 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: "#555", fontSize: 9 }} axisLine={false} tickLine={false} tickFormatter={v=>`$${(v/1000).toFixed(0)}k`} />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.07)" vertical={false} />
+              <XAxis dataKey="day" tick={{ fill: "#64748B", fontSize: 10 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: "#64748B", fontSize: 9 }} axisLine={false} tickLine={false} tickFormatter={v=>`$${(v/1000).toFixed(0)}k`} />
               <Tooltip content={<Tip />} />
               <Bar dataKey="revenue" radius={[5,5,0,0]} name="Revenue">
-                {weeklyRevenue.map((_, i) => <Cell key={i} fill={i >= 4 ? "#6366F1" : "#1A1A28"} />)}
+                {weeklyRevenue.map((_, i) => <Cell key={i} fill={i >= 4 ? "#6366F1" : "rgba(99,102,241,0.25)"} />)}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
@@ -544,7 +544,7 @@ function Overview({ user, property, setTab, applied, skipped, onApply, onShowAut
             }}>REVIEW PRICING →</button>
             <button onClick={() => setTab("forecast")} style={{
               background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)",
-              color: "#6B7280", padding: "9px 16px", borderRadius: 9, cursor: "pointer",
+              color: "#64748B", padding: "9px 16px", borderRadius: 9, cursor: "pointer",
               fontSize: 11, fontFamily: "'Space Mono', monospace",
             }}>VIEW FORECAST</button>
           </div>
@@ -560,7 +560,7 @@ function Overview({ user, property, setTab, applied, skipped, onApply, onShowAut
               }}>
                 <div>
                   <div style={{ fontSize: 12, fontWeight: 600, color: "#fff" }}>{r.room}</div>
-                  <div style={{ fontSize: 10, color: "#555", fontFamily: "'Space Mono', monospace" }}>
+                  <div style={{ fontSize: 10, color: "#64748B", fontFamily: "'Space Mono', monospace" }}>
                     ${r.current} → <span style={{ color: C.gold }}>${r.suggested}</span>
                     {" · "}<span style={{ color: C.green }}>+${r.impact.toLocaleString()}</span>
                   </div>
@@ -597,8 +597,8 @@ function Overview({ user, property, setTab, applied, skipped, onApply, onShowAut
                   display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12,
                 }}>{a.icon}</div>
                 <div>
-                  <div style={{ fontSize: 12, color: "#ccc", lineHeight: 1.5 }}>{a.text}</div>
-                  <div style={{ fontSize: 10, color: "#444", marginTop: 2, fontFamily: "'Space Mono', monospace" }}>{a.time}</div>
+                  <div style={{ fontSize: 12, color: "#CBD5E1", lineHeight: 1.5 }}>{a.text}</div>
+                  <div style={{ fontSize: 10, color: "#475569", marginTop: 2, fontFamily: "'Space Mono', monospace" }}>{a.time}</div>
                 </div>
               </div>
             );
@@ -626,19 +626,19 @@ function Revenue({ property }) {
     <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
       <SectionHead title="Revenue Analysis" sub="Breakdown by segment, channel & performance metrics" />
       <div className="kpi4" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12 }}>
-        <KPI icon="💵" label="Room Revenue"    value={fmtK(roomRev)}   sub="Month to date"              delta={11.3} accent={C.gold}   spark={SPARKS.roomRev} />
-        <KPI icon="🍽️" label="F&B Revenue"    value={fmtK(fbRev)}     sub="Month to date"              delta={6.4}  accent={C.orange} spark={SPARKS.fbRev} />
-        <KPI icon="💆" label="Spa & Ancillary" value={fmtK(ancillary)} sub="Month to date"              delta={14.2} accent={C.blue}   spark={SPARKS.trevpar} />
-        <KPI icon="📉" label="Gross Profit"    value={fmtK(profit)}    sub={`${gopMargin}% GOP margin`} delta={8.1}  accent={C.green}  spark={SPARKS.profit} />
+        <KPI icon="◆" label="Room Revenue"    value={fmtK(roomRev)}   sub="Month to date"              delta={11.3} accent={C.gold}   spark={SPARKS.roomRev} />
+        <KPI icon="◇" label="F&B Revenue"    value={fmtK(fbRev)}     sub="Month to date"              delta={6.4}  accent={C.orange} spark={SPARKS.fbRev} />
+        <KPI icon="⊕" label="Spa & Ancillary" value={fmtK(ancillary)} sub="Month to date"              delta={14.2} accent={C.blue}   spark={SPARKS.trevpar} />
+        <KPI icon="↗" label="Gross Profit"    value={fmtK(profit)}    sub={`${gopMargin}% GOP margin`} delta={8.1}  accent={C.green}  spark={SPARKS.profit} />
       </div>
 
       <div className="chart2col" style={{ display: "grid", gridTemplateColumns: "3fr 2fr", gap: 16 }}>
         <Card title="Revenue by Channel" subtitle="Last 6 months — stacked">
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={channelData} barSize={30}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(99,102,241,0.07)" vertical={false} />
-              <XAxis dataKey="month" tick={{ fill: "#555", fontSize: 10 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: "#555", fontSize: 9 }} axisLine={false} tickLine={false} tickFormatter={v=>`$${(v/1000).toFixed(0)}k`} />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.07)" vertical={false} />
+              <XAxis dataKey="month" tick={{ fill: "#64748B", fontSize: 10 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: "#64748B", fontSize: 9 }} axisLine={false} tickLine={false} tickFormatter={v=>`$${(v/1000).toFixed(0)}k`} />
               <Tooltip content={<Tip />} />
               {Object.entries(channelColors).map(([key, color]) => (
                 <Bar key={key} dataKey={key} stackId="ch" fill={color} name={key} />
@@ -647,7 +647,7 @@ function Revenue({ property }) {
           </ResponsiveContainer>
           <div style={{ display: "flex", gap: 16, marginTop: 12, flexWrap: "wrap" }}>
             {Object.entries(channelColors).map(([k, c]) => (
-              <span key={k} style={{ fontSize: 11, color: "#666", display: "flex", alignItems: "center", gap: 6 }}>
+              <span key={k} style={{ fontSize: 11, color: "#64748B", display: "flex", alignItems: "center", gap: 6 }}>
                 <span style={{ width: 8, height: 8, borderRadius: 2, background: c, display: "inline-block" }} />{k}
               </span>
             ))}
@@ -668,7 +668,7 @@ function Revenue({ property }) {
               <div key={s.name} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <div style={{ width: 8, height: 8, borderRadius: 2, background: s.color }} />
-                  <span style={{ fontSize: 12, color: "#aaa" }}>{s.name}</span>
+                  <span style={{ fontSize: 12, color: "#94A3B8" }}>{s.name}</span>
                 </div>
                 <span style={{ fontSize: 12, fontFamily: "'Space Mono', monospace", color: "#fff" }}>{s.value}%</span>
               </div>
@@ -680,15 +680,15 @@ function Revenue({ property }) {
       <Card title="ADR & RevPAR Trend" subtitle="12 months">
         <ResponsiveContainer width="100%" height={200}>
           <LineChart data={monthlyData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(99,102,241,0.07)" />
-            <XAxis dataKey="month" tick={{ fill: "#555", fontSize: 10 }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fill: "#555", fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v=>`$${v}`} />
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.07)" />
+            <XAxis dataKey="month" tick={{ fill: "#64748B", fontSize: 10 }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fill: "#64748B", fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v=>`$${v}`} />
             <Tooltip content={<Tip />} />
             <Line type="monotone" dataKey="adr"    stroke={C.gold}  strokeWidth={2.5} dot={false} name="ADR" />
             <Line type="monotone" dataKey="revpar" stroke={C.blue}  strokeWidth={2.5} dot={false} name="RevPAR" />
           </LineChart>
         </ResponsiveContainer>
-        <div style={{ display: "flex", gap: 20, marginTop: 10, fontSize: 11, fontFamily: "'Space Mono', monospace", color: "#555" }}>
+        <div style={{ display: "flex", gap: 20, marginTop: 10, fontSize: 11, fontFamily: "'Space Mono', monospace", color: "#64748B" }}>
           <span><span style={{ color: C.gold }}>—</span> ADR</span>
           <span><span style={{ color: C.blue }}>—</span> RevPAR</span>
         </div>
@@ -732,13 +732,13 @@ function Pricing({ applied, skipped, onApply, onSkip, onRestore, property }) {
             {/* Yield score */}
             <div style={{ textAlign: "center", background: "rgba(255,255,255,0.03)",
               border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: "8px 14px" }}>
-              <div style={{ fontSize: 9, color: "#374151", fontFamily: "'Space Mono', monospace", marginBottom: 3, letterSpacing: 1 }}>YIELD SCORE</div>
+              <div style={{ fontSize: 9, color: "#64748B", fontFamily: "'Space Mono', monospace", marginBottom: 3, letterSpacing: 1 }}>YIELD SCORE</div>
               <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 22,
                 color: yieldScore >= 80 ? C.green : yieldScore >= 65 ? C.gold : C.orange }}>{yieldScore}</div>
             </div>
             {totalPending > 0 && (
               <div style={{ textAlign: "right" }}>
-                <div style={{ fontSize: 9, color: "#374151", fontFamily: "'Space Mono', monospace", marginBottom: 3, letterSpacing: 1 }}>PENDING OPP.</div>
+                <div style={{ fontSize: 9, color: "#64748B", fontFamily: "'Space Mono', monospace", marginBottom: 3, letterSpacing: 1 }}>PENDING OPP.</div>
                 <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 22, fontWeight: 800, color: C.green }}>+${totalPending.toLocaleString()}</div>
               </div>
             )}
@@ -760,11 +760,11 @@ function Pricing({ applied, skipped, onApply, onSkip, onRestore, property }) {
             }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
                 <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 13,
-                  color: active ? s.color : "#6B7280" }}>{s.label}</span>
+                  color: active ? s.color : "#64748B" }}>{s.label}</span>
                 {active && <span style={{ width: 7, height: 7, borderRadius: "50%", background: s.color,
                   display: "inline-block", boxShadow: `0 0 8px ${s.color}` }} />}
               </div>
-              <div style={{ fontSize: 11, color: "#4B5563", lineHeight: 1.5 }}>{s.desc}</div>
+              <div style={{ fontSize: 11, color: "#64748B", lineHeight: 1.5 }}>{s.desc}</div>
               {active && (
                 <div style={{ fontSize: 9, color: s.color, fontFamily: "'Space Mono', monospace",
                   letterSpacing: 1, marginTop: 6 }}>
@@ -783,8 +783,8 @@ function Pricing({ applied, skipped, onApply, onSkip, onRestore, property }) {
             padding: "7px 16px", borderRadius: 8, cursor: "pointer",
             background: calView === isCalendar ? "rgba(99,102,241,0.15)" : "transparent",
             border: calView === isCalendar ? "1px solid rgba(99,102,241,0.35)" : "1px solid rgba(255,255,255,0.07)",
-            color: calView === isCalendar ? "#C7D2FE" : "#4B5563",
-            fontSize: 12, fontFamily: "'DM Sans', sans-serif", fontWeight: calView === isCalendar ? 600 : 400,
+            color: calView === isCalendar ? "#C7D2FE" : "#64748B",
+            fontSize: 12, fontFamily: "'Inter', sans-serif", fontWeight: calView === isCalendar ? 600 : 400,
             transition: "all 0.15s",
           }}>{label}</button>
         ))}
@@ -810,7 +810,7 @@ function Pricing({ applied, skipped, onApply, onSkip, onRestore, property }) {
         <Card title="30-Day Rate Optimization Calendar" subtitle={`Strategy: ${strat.label} — click any day to see details`} accent={strat.color}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 5, marginBottom: 12 }}>
             {["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(d => (
-              <div key={d} style={{ textAlign: "center", fontSize: 9, color: "#2D3748",
+              <div key={d} style={{ textAlign: "center", fontSize: 9, color: "#64748B",
                 fontFamily: "'Space Mono', monospace", paddingBottom: 6 }}>{d}</div>
             ))}
             {/* offset for first day */}
@@ -841,12 +841,12 @@ function Pricing({ applied, skipped, onApply, onSkip, onRestore, property }) {
                   cursor: "pointer", transition: "all 0.15s",
                   boxShadow: isSelected ? `0 0 12px ${strat.color}44` : "none",
                 }}>
-                  <div style={{ fontSize: 8, color: "#374151", fontFamily: "'Space Mono', monospace", marginBottom: 2 }}>
+                  <div style={{ fontSize: 8, color: "#64748B", fontFamily: "'Space Mono', monospace", marginBottom: 2 }}>
                     {d.dow}{d.isToday ? "●" : ""}
                   </div>
-                  <div style={{ fontSize: 10, color: "#555", marginBottom: 3 }}>{d.day}</div>
+                  <div style={{ fontSize: 10, color: "#64748B", marginBottom: 3 }}>{d.day}</div>
                   <div style={{ fontSize: 12, fontWeight: 800, fontFamily: "'Syne', sans-serif",
-                    color: d.hasEvent ? C.purple : hasBigGap ? C.green : "#6B7280" }}>
+                    color: d.hasEvent ? C.purple : hasBigGap ? C.green : "#64748B" }}>
                     ${d.optimal}
                   </div>
                   {hasBigGap && (
@@ -870,7 +870,7 @@ function Pricing({ applied, skipped, onApply, onSkip, onRestore, property }) {
               display: "flex", gap: 24, alignItems: "center", flexWrap: "wrap",
             }}>
               <div>
-                <div style={{ fontSize: 10, color: "#4B5563", fontFamily: "'Space Mono', monospace", marginBottom: 3 }}>DATE</div>
+                <div style={{ fontSize: 10, color: "#64748B", fontFamily: "'Space Mono', monospace", marginBottom: 3 }}>DATE</div>
                 <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 16, color: "#E2E8F0" }}>{selectedDay.label}</div>
               </div>
               {[
@@ -880,7 +880,7 @@ function Pricing({ applied, skipped, onApply, onSkip, onRestore, property }) {
                 ["OPPORTUNITY", `+$${selectedDay.gap}`,      C.green],
               ].map(([l, v, c]) => (
                 <div key={l} style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: 9, color: "#374151", fontFamily: "'Space Mono', monospace", marginBottom: 3 }}>{l}</div>
+                  <div style={{ fontSize: 9, color: "#64748B", fontFamily: "'Space Mono', monospace", marginBottom: 3 }}>{l}</div>
                   <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 20, color: c }}>{v}</div>
                 </div>
               ))}
@@ -901,7 +901,7 @@ function Pricing({ applied, skipped, onApply, onSkip, onRestore, property }) {
 
           {/* Legend */}
           <div style={{ display: "flex", gap: 16, marginTop: 12, fontSize: 10, fontFamily: "'Space Mono', monospace", flexWrap: "wrap" }}>
-            {[[C.green, ">$20 opportunity"], [C.purple, "Event detected"], [C.blue, "Weekend", ], ["#4B5563", "Standard"]].map(([c, l]) => (
+            {[[C.green, ">$20 opportunity"], [C.purple, "Event detected"], [C.blue, "Weekend", ], ["#64748B", "Standard"]].map(([c, l]) => (
               <span key={l}><span style={{ color: c }}>■</span> {l}</span>
             ))}
           </div>
@@ -922,7 +922,7 @@ function Pricing({ applied, skipped, onApply, onSkip, onRestore, property }) {
               <div style={{ flex: 2 }}>
                 <div style={{ fontWeight: 600, fontSize: 14, color: "#fff", marginBottom: 3,
                   textDecoration: isSkipped ? "line-through" : "none" }}>{r.room}</div>
-                <div style={{ fontSize: 12, color: "#555", marginBottom: 6 }}>{r.reason}</div>
+                <div style={{ fontSize: 12, color: "#64748B", marginBottom: 6 }}>{r.reason}</div>
                 {/* AI confidence bar */}
                 {!isSkipped && r.impact !== 0 && (
                   <div style={{ marginBottom: 4 }}>
@@ -945,10 +945,10 @@ function Pricing({ applied, skipped, onApply, onSkip, onRestore, property }) {
                 {isApplied && <div style={{ fontSize: 10, color: C.green, fontFamily: "'Space Mono', monospace", marginTop: 2 }}>✓ RATE UPDATED</div>}
               </div>
               <div style={{ textAlign: "center", minWidth: 70 }}>
-                <div style={{ fontSize: 10, color: "#555", fontFamily: "'Space Mono', monospace", marginBottom: 4, letterSpacing: 1 }}>CURRENT</div>
+                <div style={{ fontSize: 10, color: "#64748B", fontFamily: "'Space Mono', monospace", marginBottom: 4, letterSpacing: 1 }}>CURRENT</div>
                 <div style={{ fontSize: 26, fontFamily: "'Syne', sans-serif", fontWeight: 800, color: "#fff" }}>${r.current}</div>
               </div>
-              <div style={{ color: "#2A2A2A", fontSize: 20, fontWeight: 200 }}>→</div>
+              <div style={{ color: "#475569", fontSize: 20, fontWeight: 200 }}>→</div>
               <div style={{ textAlign: "center", minWidth: 70 }}>
                 <div style={{ fontSize: 10, fontFamily: "'Space Mono', monospace", marginBottom: 4, letterSpacing: 1,
                   color: isApplied ? C.green : C.gold }}>
@@ -958,9 +958,9 @@ function Pricing({ applied, skipped, onApply, onSkip, onRestore, property }) {
                   color: isApplied ? C.green : C.gold }}>${r.suggested}</div>
               </div>
               <div style={{ textAlign: "center", minWidth: 70 }}>
-                <div style={{ fontSize: 10, color: "#555", fontFamily: "'Space Mono', monospace", marginBottom: 4, letterSpacing: 1 }}>IMPACT</div>
+                <div style={{ fontSize: 10, color: "#64748B", fontFamily: "'Space Mono', monospace", marginBottom: 4, letterSpacing: 1 }}>IMPACT</div>
                 <div style={{ fontSize: 15, fontWeight: 700,
-                  color: r.impact > 0 ? C.green : r.impact < 0 ? C.red : "#555" }}>
+                  color: r.impact > 0 ? C.green : r.impact < 0 ? C.red : "#64748B" }}>
                   {r.impact > 0 ? `+$${r.impact.toLocaleString()}` : r.impact < 0 ? `-$${Math.abs(r.impact)}` : "—"}
                 </div>
               </div>
@@ -983,7 +983,7 @@ function Pricing({ applied, skipped, onApply, onSkip, onRestore, property }) {
                 )}
                 <button onClick={() => isSkipped ? onRestore(r.id) : onSkip(r.id)} style={{
                   background: "transparent", border: "1px solid rgba(255,255,255,0.08)",
-                  color: "#555", padding: "8px 14px", borderRadius: 8, cursor: "pointer",
+                  color: "#64748B", padding: "8px 14px", borderRadius: 8, cursor: "pointer",
                   fontSize: 11, fontFamily: "'Space Mono', monospace",
                 }}>{isSkipped ? "RESTORE" : "SKIP"}</button>
               </div>
@@ -1001,7 +1001,7 @@ function Pricing({ applied, skipped, onApply, onSkip, onRestore, property }) {
             <div>
               <div style={{ fontSize: 10, color: C.green, fontFamily: "'Space Mono', monospace", letterSpacing: 1 }}>REMAINING OPPORTUNITY</div>
               <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 28, fontWeight: 800, color: C.green }}>+${totalPending.toLocaleString()}</div>
-              <div style={{ color: "#555", fontSize: 12 }}>from {pending.length} open recommendation{pending.length !== 1 ? "s" : ""}</div>
+              <div style={{ color: "#64748B", fontSize: 12 }}>from {pending.length} open recommendation{pending.length !== 1 ? "s" : ""}</div>
             </div>
             <button onClick={() => pending.forEach(r => onApply(r.id))} style={{
               marginLeft: "auto", background: "rgba(74,222,128,0.14)", border: "1px solid rgba(74,222,128,0.35)",
@@ -1015,7 +1015,7 @@ function Pricing({ applied, skipped, onApply, onSkip, onRestore, property }) {
             borderRadius: 14, padding: "16px 22px" }}>
             <div style={{ fontSize: 10, color: C.blue, fontFamily: "'Space Mono', monospace", letterSpacing: 1 }}>APPLIED REVENUE GAIN</div>
             <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 28, fontWeight: 800, color: C.blue }}>+${totalApplied.toLocaleString()}</div>
-            <div style={{ color: "#555", fontSize: 12 }}>from {applied.size} applied recommendation{applied.size !== 1 ? "s" : ""}</div>
+            <div style={{ color: "#64748B", fontSize: 12 }}>from {applied.size} applied recommendation{applied.size !== 1 ? "s" : ""}</div>
           </div>
         )}
       </div>
@@ -1026,7 +1026,7 @@ function Pricing({ applied, skipped, onApply, onSkip, onRestore, property }) {
           {/* Min Stay */}
           <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)",
             borderRadius: 12, padding: "14px 16px" }}>
-            <div style={{ fontSize: 10, color: "#4B5563", fontFamily: "'Space Mono', monospace",
+            <div style={{ fontSize: 10, color: "#64748B", fontFamily: "'Space Mono', monospace",
               letterSpacing: 1, marginBottom: 10 }}>MIN STAY (NIGHTS)</div>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <button onClick={() => setRestrictions(p => ({ ...p, minStay: Math.max(1, p.minStay - 1) }))} style={{
@@ -1034,7 +1034,7 @@ function Pricing({ applied, skipped, onApply, onSkip, onRestore, property }) {
                 border: "1px solid rgba(255,255,255,0.08)", color: "#fff", cursor: "pointer", fontSize: 14,
               }}>−</button>
               <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 22,
-                color: restrictions.minStay > 1 ? C.purple : "#4B5563" }}>{restrictions.minStay}</span>
+                color: restrictions.minStay > 1 ? C.purple : "#64748B" }}>{restrictions.minStay}</span>
               <button onClick={() => setRestrictions(p => ({ ...p, minStay: Math.min(7, p.minStay + 1) }))} style={{
                 width: 28, height: 28, borderRadius: 7, background: "rgba(255,255,255,0.05)",
                 border: "1px solid rgba(255,255,255,0.08)", color: "#fff", cursor: "pointer", fontSize: 14,
@@ -1054,9 +1054,9 @@ function Pricing({ applied, skipped, onApply, onSkip, onRestore, property }) {
               borderRadius: 12, padding: "14px 16px", cursor: "pointer",
               transition: "all 0.15s",
             }} onClick={() => setRestrictions(p => ({ ...p, [key]: !p[key] }))}>
-              <div style={{ fontSize: 10, color: restrictions[key] ? C.purple : "#374151",
+              <div style={{ fontSize: 10, color: restrictions[key] ? C.purple : "#64748B",
                 fontFamily: "'Space Mono', monospace", letterSpacing: 1, marginBottom: 6 }}>{label}</div>
-              <div style={{ fontSize: 11, color: "#4B5563", marginBottom: 10 }}>{desc}</div>
+              <div style={{ fontSize: 11, color: "#64748B", marginBottom: 10 }}>{desc}</div>
               <div style={{
                 width: 36, height: 20, borderRadius: 10, position: "relative", cursor: "pointer",
                 background: restrictions[key] ? "linear-gradient(90deg, #8B5CF6, #6366F1)" : "rgba(255,255,255,0.08)",
@@ -1066,7 +1066,7 @@ function Pricing({ applied, skipped, onApply, onSkip, onRestore, property }) {
                 <div style={{
                   position: "absolute", top: 2, left: restrictions[key] ? 18 : 2,
                   width: 14, height: 14, borderRadius: "50%",
-                  background: restrictions[key] ? "#fff" : "#374151", transition: "left 0.2s",
+                  background: restrictions[key] ? "#fff" : "#334155", transition: "left 0.2s",
                 }} />
               </div>
             </div>
@@ -1084,10 +1084,10 @@ function Forecast({ setTab }) {
       <SectionHead title="Demand Forecast" sub="14-day AI prediction · 90-day training window · 94% historical accuracy" />
 
       <div className="kpi4" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12 }}>
-        <KPI icon="📅" label="7-Day Avg Demand"  value="81%"    sub="High demand period" delta={12}   accent={C.blue}   spark={SPARKS.forecast7} />
-        <KPI icon="🎯" label="Forecast Accuracy" value="94.2%" sub="Last 90 days"        delta={1.1}  accent={C.green}  spark={SPARKS.forecastAcc} />
-        <KPI icon="💵" label="Projected Revenue" value="$41.2K" sub="Next 7 days"        delta={18.4} accent={C.gold}   spark={SPARKS.projRev} />
-        <KPI icon="📍" label="Events Detected"   value="2"     sub="Conference + weekend" delta={0}   accent={C.purple} />
+        <KPI icon="▦" label="7-Day Avg Demand"  value="81%"    sub="High demand period" delta={12}   accent={C.blue}   spark={SPARKS.forecast7} />
+        <KPI icon="◎" label="Forecast Accuracy" value="94.2%" sub="Last 90 days"        delta={1.1}  accent={C.green}  spark={SPARKS.forecastAcc} />
+        <KPI icon="◆" label="Projected Revenue" value="$41.2K" sub="Next 7 days"        delta={18.4} accent={C.gold}   spark={SPARKS.projRev} />
+        <KPI icon="⟁" label="Events Detected"   value="2"     sub="Conference + weekend" delta={0}   accent={C.purple} />
       </div>
 
       <div style={{ background: "rgba(99,102,241,0.07)", border: "1px solid rgba(99,102,241,0.2)",
@@ -1097,7 +1097,7 @@ function Forecast({ setTab }) {
           <div style={{ fontWeight: 600, fontSize: 13, color: C.blue, marginBottom: 2 }}>
             Event Detected — Regional Tech Conference (Days 6–8)
           </div>
-          <div style={{ fontSize: 12, color: "#555" }}>
+          <div style={{ fontSize: 12, color: "#64748B" }}>
             Expected +34% demand spike · Raise rates 12–18% · Consider 3-night minimum stay restriction
           </div>
         </div>
@@ -1117,9 +1117,9 @@ function Forecast({ setTab }) {
                 <stop offset="95%" stopColor={C.blue} stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(99,102,241,0.07)" />
-            <XAxis dataKey="date" tick={{ fill: "#555", fontSize: 10 }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fill: "#555", fontSize: 10 }} axisLine={false} tickLine={false} domain={[0,100]} tickFormatter={v=>`${v}%`} />
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.07)" />
+            <XAxis dataKey="date" tick={{ fill: "#64748B", fontSize: 10 }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fill: "#64748B", fontSize: 10 }} axisLine={false} tickLine={false} domain={[0,100]} tickFormatter={v=>`${v}%`} />
             <Tooltip content={<Tip />} />
             <Area type="monotone" dataKey="demand" stroke={C.blue} strokeWidth={2.5} fill="url(#gDemand)" name="demand" />
           </AreaChart>
@@ -1130,15 +1130,15 @@ function Forecast({ setTab }) {
         <Card title="Booking Pickup" subtitle="New bookings made per day (last 7 days)">
           <ResponsiveContainer width="100%" height={180}>
             <BarChart data={pickupData} barSize={18} barGap={4}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(99,102,241,0.07)" vertical={false} />
-              <XAxis dataKey="date" tick={{ fill: "#555", fontSize: 10 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: "#555", fontSize: 10 }} axisLine={false} tickLine={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.07)" vertical={false} />
+              <XAxis dataKey="date" tick={{ fill: "#64748B", fontSize: 10 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: "#64748B", fontSize: 10 }} axisLine={false} tickLine={false} />
               <Tooltip content={<Tip />} />
               <Bar dataKey="bookings"      fill={C.green}  radius={[4,4,0,0]} name="Bookings" />
               <Bar dataKey="cancellations" fill={C.red}    radius={[4,4,0,0]} name="Cancellations" />
             </BarChart>
           </ResponsiveContainer>
-          <div style={{ display: "flex", gap: 16, marginTop: 10, fontSize: 11, fontFamily: "'Space Mono', monospace", color: "#555" }}>
+          <div style={{ display: "flex", gap: 16, marginTop: 10, fontSize: 11, fontFamily: "'Space Mono', monospace", color: "#64748B" }}>
             <span><span style={{ color: C.green }}>■</span> New Bookings</span>
             <span><span style={{ color: C.red }}>■</span> Cancellations</span>
           </div>
@@ -1155,12 +1155,12 @@ function Forecast({ setTab }) {
                   border: isEvent ? "1px solid rgba(99,102,241,0.35)" : isHigh ? "1px solid rgba(16,185,129,0.25)" : "1px solid transparent",
                   borderRadius: 10, padding: "10px 6px", textAlign: "center",
                 }}>
-                  <div style={{ fontSize: 9, color: "#555", fontFamily: "'Space Mono', monospace", marginBottom: 6 }}>{d.date}</div>
+                  <div style={{ fontSize: 9, color: "#64748B", fontFamily: "'Space Mono', monospace", marginBottom: 6 }}>{d.date}</div>
                   <div style={{ fontSize: 18, fontWeight: 800, fontFamily: "'Syne', sans-serif",
-                    color: isEvent ? "#818CF8" : isHigh ? C.green : "#6B7280" }}>{d.demand}%</div>
+                    color: isEvent ? "#818CF8" : isHigh ? C.green : "#64748B" }}>{d.demand}%</div>
                   {d.event && <div style={{ fontSize: 7, color: isEvent ? "#818CF8" : C.green,
                     fontFamily: "'Space Mono', monospace", marginTop: 4 }}>{d.event.toUpperCase()}</div>}
-                  <div style={{ fontSize: 8, color: "#444", marginTop: 4, fontFamily: "'Space Mono', monospace" }}>
+                  <div style={{ fontSize: 8, color: "#475569", marginTop: 4, fontFamily: "'Space Mono', monospace" }}>
                     {d.confidence}%
                   </div>
                 </div>
@@ -1254,7 +1254,7 @@ function CompSet({ apiBase, property }) {
             </div>
             {!hasKey && (
               <a href="https://serpapi.com/register" target="_blank" rel="noopener" style={{
-                fontSize: 10, color: "#4B5563", fontFamily: "'Space Mono', monospace",
+                fontSize: 10, color: "#64748B", fontFamily: "'Space Mono', monospace",
                 textDecoration: "none", letterSpacing: 0.5,
               }}>Add SERPAPI_KEY for live rates →</a>
             )}
@@ -1285,7 +1285,7 @@ function CompSet({ apiBase, property }) {
               <div style={{ fontSize: 13, fontWeight: 600, color: isLive ? C.green : "#C7D2FE" }}>
                 {isLive ? "Google Hotels Live Data" : "Connect Live Competitor Data"}
               </div>
-              {!isLive && <div style={{ fontSize: 11, color: "#4B5563", marginTop: 1 }}>
+              {!isLive && <div style={{ fontSize: 11, color: "#64748B", marginTop: 1 }}>
                 Free SerpAPI key pulls real-time Google Hotels rates
               </div>}
             </div>
@@ -1296,7 +1296,7 @@ function CompSet({ apiBase, property }) {
               : <button onClick={() => setShowSerpConfig(v => !v)} style={{
                   background: showSerpConfig ? "transparent" : "linear-gradient(135deg, #6366F1, #4F46E5)",
                   border: showSerpConfig ? "1px solid rgba(255,255,255,0.08)" : "none",
-                  color: showSerpConfig ? "#4B5563" : "#fff", padding: "7px 14px", borderRadius: 8,
+                  color: showSerpConfig ? "#64748B" : "#fff", padding: "7px 14px", borderRadius: 8,
                   cursor: "pointer", fontSize: 11, fontFamily: "'Space Mono', monospace", fontWeight: 700,
                   boxShadow: showSerpConfig ? "none" : "0 4px 12px rgba(99,102,241,0.35)",
                 }}>{showSerpConfig ? "Cancel" : "Configure →"}</button>
@@ -1304,7 +1304,7 @@ function CompSet({ apiBase, property }) {
           </div>
           {showSerpConfig && (
             <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 12 }}>
-              <div style={{ fontSize: 10, color: "#4B5563", marginBottom: 8 }}>
+              <div style={{ fontSize: 10, color: "#64748B", marginBottom: 8 }}>
                 Get 100 free searches/month at <strong style={{ color: "#818CF8" }}>serpapi.com/register</strong> — no credit card needed.
                 Then add <code style={{ color: "#818CF8", background: "rgba(99,102,241,0.12)", padding: "1px 5px", borderRadius: 3 }}>SERPAPI_KEY=your_key</code> to your backend <code style={{ color: "#818CF8" }}>.env</code> file and restart the server.
               </div>
@@ -1332,7 +1332,7 @@ function CompSet({ apiBase, property }) {
             <span style={{ fontSize: 18 }}>➕</span>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: "#E2E8F0" }}>Track a Competitor</div>
-              <div style={{ fontSize: 11, color: "#4B5563", marginTop: 1 }}>Manually add hotels to your comp set</div>
+              <div style={{ fontSize: 11, color: "#64748B", marginTop: 1 }}>Manually add hotels to your comp set</div>
             </div>
             <button onClick={() => setShowAddComp(v => !v)} style={{
               background: showAddComp ? "transparent" : "rgba(255,255,255,0.05)",
@@ -1348,11 +1348,11 @@ function CompSet({ apiBase, property }) {
                   placeholder="Hotel name (e.g. The Meridian)"
                   style={{ flex: 1, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)",
                     borderRadius: 8, padding: "9px 12px", color: "#E2E8F0", fontSize: 12,
-                    fontFamily: "'DM Sans', sans-serif", outline: "none" }} />
+                    fontFamily: "'Inter', sans-serif", outline: "none" }} />
                 <select value={newComp.stars} onChange={e => setNewComp(p => ({ ...p, stars: Number(e.target.value) }))}
                   style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)",
                     borderRadius: 8, padding: "9px 10px", color: "#E2E8F0", fontSize: 12,
-                    fontFamily: "'DM Sans', sans-serif", outline: "none", cursor: "pointer" }}>
+                    fontFamily: "'Inter', sans-serif", outline: "none", cursor: "pointer" }}>
                   {[3,4,5].map(s => <option key={s} value={s} style={{ background: "#0D0D18" }}>{s}★</option>)}
                 </select>
                 <button onClick={() => {
@@ -1379,7 +1379,7 @@ function CompSet({ apiBase, property }) {
                 }}>
                   {c.name}
                   <span onClick={() => setCustomComps(p => p.filter(x => x.id !== c.id))}
-                    style={{ cursor: "pointer", color: "#4B5563", fontSize: 12 }}>×</span>
+                    style={{ cursor: "pointer", color: "#64748B", fontSize: 12 }}>×</span>
                 </span>
               ))}
             </div>
@@ -1412,7 +1412,7 @@ function CompSet({ apiBase, property }) {
               }}>
                 {/* Rank */}
                 <div style={{ width: 26, fontFamily: "'Space Mono', monospace", fontSize: 12,
-                  color: i === 0 ? C.gold : "#374151", fontWeight: 700, textAlign: "center", flexShrink: 0 }}>
+                  color: i === 0 ? C.gold : "#64748B", fontWeight: 700, textAlign: "center", flexShrink: 0 }}>
                   #{i + 1}
                 </div>
 
@@ -1432,11 +1432,11 @@ function CompSet({ apiBase, property }) {
                         display: "flex", alignItems: "center", gap: 4 }}>
                         TRACKED
                         <span onClick={() => setCustomComps(p => p.filter(x => x.id !== c.id))}
-                          style={{ cursor: "pointer", color: "#555", fontSize: 10 }}>×</span>
+                          style={{ cursor: "pointer", color: "#64748B", fontSize: 10 }}>×</span>
                       </span>
                     )}
                   </div>
-                  <div style={{ fontSize: 11, color: "#374151", marginTop: 3 }}>
+                  <div style={{ fontSize: 11, color: "#64748B", marginTop: 3 }}>
                     {"★".repeat(c.stars || 3)}{"☆".repeat(5 - (c.stars || 3))}
                     {c.score ? ` · ${c.score} ⭐` : ""}
                     {c.reviews ? ` · ${c.reviews.toLocaleString()} reviews` : ""}
@@ -1448,17 +1448,17 @@ function CompSet({ apiBase, property }) {
                   <div style={{ fontSize: 28, fontFamily: "'Syne', sans-serif", fontWeight: 800,
                     color: isYou ? "#818CF8" : "#fff", letterSpacing: -1 }}>${c.rate}</div>
                   <div style={{ fontSize: 10, fontFamily: "'Space Mono', monospace", marginTop: 2,
-                    color: (c.change || 0) > 0 ? C.green : (c.change || 0) < 0 ? C.red : "#374151" }}>
+                    color: (c.change || 0) > 0 ? C.green : (c.change || 0) < 0 ? C.red : "#64748B" }}>
                     {(c.change || 0) > 0 ? `▲ ${c.change}%` : (c.change || 0) < 0 ? `▼ ${Math.abs(c.change)}%` : "— steady"}
                   </div>
                 </div>
 
                 {/* vs comp avg */}
                 <div style={{ textAlign: "center", minWidth: 70, flexShrink: 0 }}>
-                  <div style={{ fontSize: 9, color: "#374151", fontFamily: "'Space Mono', monospace",
+                  <div style={{ fontSize: 9, color: "#64748B", fontFamily: "'Space Mono', monospace",
                     marginBottom: 3 }}>VS AVG</div>
                   <div style={{ fontSize: 14, fontWeight: 700,
-                    color: vsAvg > 0 ? C.green : vsAvg < 0 ? C.red : "#374151" }}>
+                    color: vsAvg > 0 ? C.green : vsAvg < 0 ? C.red : "#64748B" }}>
                     {vsAvg > 0 ? `+$${vsAvg}` : vsAvg < 0 ? `-$${Math.abs(vsAvg)}` : "—"}
                   </div>
                 </div>
@@ -1484,7 +1484,7 @@ function CompSet({ apiBase, property }) {
                     }} />
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4,
-                    fontSize: 8, color: "#2D3748", fontFamily: "'Space Mono', monospace" }}>
+                    fontSize: 8, color: "#64748B", fontFamily: "'Space Mono', monospace" }}>
                     <span>${rateMin}</span><span>${rateMax}</span>
                   </div>
                 </div>
@@ -1497,9 +1497,9 @@ function CompSet({ apiBase, property }) {
       <Card title="Rate Trend — Last 7 Days" subtitle="Your hotel vs top competitors">
         <ResponsiveContainer width="100%" height={200}>
           <LineChart data={rateHistory}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(99,102,241,0.07)" />
-            <XAxis dataKey="day" tick={{ fill: "#4B5563", fontSize: 10 }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fill: "#4B5563", fontSize: 10 }} axisLine={false} tickLine={false} domain={[140, 260]} tickFormatter={v=>`$${v}`} />
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.07)" />
+            <XAxis dataKey="day" tick={{ fill: "#64748B", fontSize: 10 }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fill: "#64748B", fontSize: 10 }} axisLine={false} tickLine={false} domain={[140, 260]} tickFormatter={v=>`$${v}`} />
             <Tooltip content={<Tip />} />
             <Line type="monotone" dataKey="Your Hotel"    stroke="#818CF8" strokeWidth={2.5} dot={false} />
             <Line type="monotone" dataKey="Grand Regency" stroke={C.gold}   strokeWidth={1.5} dot={false} strokeDasharray="4 4" />
@@ -1507,7 +1507,7 @@ function CompSet({ apiBase, property }) {
             <Line type="monotone" dataKey="Blue Harbor"   stroke={C.orange} strokeWidth={1.5} dot={false} strokeDasharray="4 4" />
           </LineChart>
         </ResponsiveContainer>
-        <div style={{ display: "flex", gap: 20, marginTop: 10, flexWrap: "wrap", fontSize: 11, fontFamily: "'Space Mono', monospace", color: "#555" }}>
+        <div style={{ display: "flex", gap: 20, marginTop: 10, flexWrap: "wrap", fontSize: 11, fontFamily: "'Space Mono', monospace", color: "#64748B" }}>
           {[["Your Hotel", "#818CF8"], ["Grand Regency", C.gold], ["The Meridian", C.purple], ["Blue Harbor", C.orange]].map(([n, c]) => (
             <span key={n}><span style={{ color: c }}>—</span> {n}</span>
           ))}
@@ -1523,7 +1523,7 @@ function CalendarSection({ property }) {
   const now = new Date();
   const monthName = now.toLocaleDateString("en-US", { month: "long", year: "numeric" });
   const occColor = (occ) =>
-    occ >= 90 ? C.red : occ >= 80 ? C.orange : occ >= 65 ? C.gold : occ >= 50 ? C.green : "#2A2A30";
+    occ >= 90 ? C.red : occ >= 80 ? C.orange : occ >= 65 ? C.gold : occ >= 50 ? C.green : "#475569";
 
   const m = property?.metrics || {};
   const occMtd = m.occupancy ? `${m.occupancy}%` : "73%";
@@ -1536,16 +1536,16 @@ function CalendarSection({ property }) {
       <SectionHead title="Revenue Calendar" sub={`${monthName} · Daily occupancy, ADR & revenue`} />
 
       <div className="kpi4" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12 }}>
-        <KPI icon="📊" label="Avg Occupancy MTD" value={occMtd}              sub="vs 69% last month"  delta={4.2} accent={C.gold} />
-        <KPI icon="💵" label="Avg ADR MTD"       value={adrMtd}              sub="vs $191 last month" delta={2.1} accent={C.blue} />
-        <KPI icon="📈" label="Best Day"          value={fmtK(bestDay)}       sub="Revenue single day"             accent={C.green} />
-        <KPI icon="📉" label="Lowest Occ Day"    value={`${lowestOcc}%`}     sub="Opportunity exists"             accent={C.red} />
+        <KPI icon="▦" label="Avg Occupancy MTD" value={occMtd}              sub="vs 69% last month"  delta={4.2} accent={C.gold} />
+        <KPI icon="◆" label="Avg ADR MTD"       value={adrMtd}              sub="vs $191 last month" delta={2.1} accent={C.blue} />
+        <KPI icon="↗" label="Best Day"          value={fmtK(bestDay)}       sub="Revenue single day"             accent={C.green} />
+        <KPI icon="◇" label="Lowest Occ Day"    value={`${lowestOcc}%`}     sub="Opportunity exists"             accent={C.red} />
       </div>
 
       <Card title={`${monthName} — Occupancy Heatmap`} subtitle="Click a day to see details">
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 6, marginBottom: 8 }}>
           {["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(d => (
-            <div key={d} style={{ textAlign: "center", fontSize: 10, color: "#444",
+            <div key={d} style={{ textAlign: "center", fontSize: 10, color: "#64748B",
               fontFamily: "'Space Mono', monospace", paddingBottom: 6 }}>{d}</div>
           ))}
           {Array.from({ length: offset }, (_, i) => <div key={`e${i}`} />)}
@@ -1556,15 +1556,15 @@ function CalendarSection({ property }) {
               borderRadius: 10, padding: "8px 6px", textAlign: "center", cursor: "default",
               transition: "transform 0.15s",
             }}>
-              <div style={{ fontSize: 10, color: "#555", fontFamily: "'Space Mono', monospace", marginBottom: 4 }}>
+              <div style={{ fontSize: 10, color: "#64748B", fontFamily: "'Space Mono', monospace", marginBottom: 4 }}>
                 {d.day}{d.isToday ? " ●" : ""}
               </div>
               <div style={{ fontSize: 16, fontWeight: 800, fontFamily: "'Syne', sans-serif",
                 color: occColor(d.occupancy) }}>{d.occupancy}%</div>
-              <div style={{ fontSize: 9, color: "#444", fontFamily: "'Space Mono', monospace", marginTop: 3 }}>
+              <div style={{ fontSize: 9, color: "#64748B", fontFamily: "'Space Mono', monospace", marginTop: 3 }}>
                 ${d.adr}
               </div>
-              <div style={{ fontSize: 8, color: "#333", fontFamily: "'Space Mono', monospace" }}>
+              <div style={{ fontSize: 8, color: "#475569", fontFamily: "'Space Mono', monospace" }}>
                 ${(d.revenue / 1000).toFixed(1)}k
               </div>
             </div>
@@ -1653,7 +1653,7 @@ function Reports({ property }) {
             }}>📄</div>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 14, fontWeight: 600, color: "#fff", marginBottom: 3 }}>{r.name}</div>
-              <div style={{ fontSize: 12, color: "#555" }}>{r.desc}</div>
+              <div style={{ fontSize: 12, color: "#64748B" }}>{r.desc}</div>
               <div style={{ display: "flex", gap: 10, marginTop: 6 }}>
                 <span style={{ fontSize: 10, fontFamily: "'Space Mono', monospace",
                   color: C.blue, background: "rgba(99,102,241,0.1)", padding: "2px 8px", borderRadius: 4 }}>
@@ -1675,7 +1675,7 @@ function Reports({ property }) {
                   r.status === "Ready" ? "rgba(99,102,241,0.1)" : "rgba(255,255,255,0.04)",
                 border: `1px solid ${downloading === r.name ? "rgba(16,185,129,0.3)" :
                   r.status === "Ready" ? "rgba(99,102,241,0.3)" : "rgba(255,255,255,0.06)"}`,
-                color: downloading === r.name ? C.green : r.status === "Ready" ? "#818CF8" : "#444",
+                color: downloading === r.name ? C.green : r.status === "Ready" ? "#818CF8" : "#64748B",
                 padding: "8px 16px", borderRadius: 8, cursor: r.status === "Ready" ? "pointer" : "not-allowed",
                 fontSize: 11, fontFamily: "'Space Mono', monospace", fontWeight: 700, whiteSpace: "nowrap",
               }}>
@@ -1692,12 +1692,12 @@ function Reports({ property }) {
 function SettingsInput({ label, value, onChange, type = "text", placeholder }) {
   return (
     <div>
-      <div style={{ fontSize: 10, color: "#444", fontFamily: "'Space Mono', monospace",
+      <div style={{ fontSize: 10, color: "#64748B", fontFamily: "'Space Mono', monospace",
         letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 6 }}>{label}</div>
       <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
         style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
           borderRadius: 8, padding: "9px 12px", color: "#fff", fontSize: 13,
-          fontFamily: "'DM Sans', sans-serif", outline: "none", boxSizing: "border-box" }} />
+          fontFamily: "'Inter', sans-serif", outline: "none", boxSizing: "border-box" }} />
     </div>
   );
 }
@@ -1793,7 +1793,7 @@ function Settings({ user, property, apiBase, onPropertyUpdate, onLogout, theme, 
       }}>{saving ? "SAVING…" : "SAVE CHANGES"}</button>
       {msg === "saved" && <span style={{ fontSize: 12, color: C.green, fontFamily: "'Space Mono', monospace" }}>✓ Saved</span>}
       {msg === "error" && <span style={{ fontSize: 12, color: C.red,  fontFamily: "'Space Mono', monospace" }}>✕ Error</span>}
-      {!user && <span style={{ fontSize: 11, color: "#444" }}>Sign in to save</span>}
+      {!user && <span style={{ fontSize: 11, color: "#64748B" }}>Sign in to save</span>}
     </div>
   );
 
@@ -1819,7 +1819,7 @@ function Settings({ user, property, apiBase, onPropertyUpdate, onLogout, theme, 
               ["Member Since", user?.createdAt ? new Date(user.createdAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : "—"],
             ].map(([label, val]) => (
               <div key={label}>
-                <div style={{ fontSize: 10, color: "#444", fontFamily: "'Space Mono', monospace",
+                <div style={{ fontSize: 10, color: "#64748B", fontFamily: "'Space Mono', monospace",
                   letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 5 }}>{label}</div>
                 <div style={{ fontSize: 14, color: "#ddd", fontWeight: 500 }}>{val}</div>
               </div>
@@ -1860,14 +1860,14 @@ function Settings({ user, property, apiBase, onPropertyUpdate, onLogout, theme, 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
             <div style={{ fontSize: 13, fontWeight: 500, color: "#ddd" }}>Theme</div>
-            <div style={{ fontSize: 12, color: "#555", marginTop: 2 }}>
+            <div style={{ fontSize: 12, color: "#64748B", marginTop: 2 }}>
               Currently: <strong style={{ color: "#ddd" }}>{isDark ? "Dark mode" : "Light mode"}</strong>
             </div>
           </div>
           <button onClick={toggleTheme} style={{
             background: "transparent", border: "1px solid rgba(255,255,255,0.1)",
             color: "#ddd", padding: "9px 20px", borderRadius: 8, cursor: "pointer",
-            fontFamily: "'DM Sans', sans-serif", fontSize: 13,
+            fontFamily: "'Inter', sans-serif", fontSize: 13,
           }}>{isDark ? "☀ Light Mode" : "☾ Dark Mode"}</button>
         </div>
       </Card>
@@ -1877,12 +1877,12 @@ function Settings({ user, property, apiBase, onPropertyUpdate, onLogout, theme, 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
             <div style={{ fontSize: 13, fontWeight: 600, color: C.red }}>Sign Out</div>
-            <div style={{ fontSize: 12, color: "#555", marginTop: 2 }}>End your current session</div>
+            <div style={{ fontSize: 12, color: "#64748B", marginTop: 2 }}>End your current session</div>
           </div>
           <button onClick={onLogout} style={{
             background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)",
             color: C.red, padding: "9px 20px", borderRadius: 8, cursor: "pointer",
-            fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 500,
+            fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 500,
           }}>Sign Out</button>
         </div>
       </div>
@@ -1955,11 +1955,11 @@ Be concise, data-driven, give specific actionable advice with $ and % figures.`;
             boxShadow: "0 0 12px rgba(99,102,241,0.5)" }}>✦</div>
           <div>
             <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 14 }}>AI Revenue Analyst</div>
-            <div style={{ fontSize: 9, color: "#444", fontFamily: "'Space Mono', monospace", letterSpacing: 1 }}>POWERED BY GEMINI</div>
+            <div style={{ fontSize: 9, color: "#64748B", fontFamily: "'Space Mono', monospace", letterSpacing: 1 }}>POWERED BY GEMINI</div>
           </div>
         </div>
         <button onClick={onClose} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)",
-          borderRadius: 7, width: 28, height: 28, color: "#555", cursor: "pointer", fontSize: 14,
+          borderRadius: 7, width: 28, height: 28, color: "#64748B", cursor: "pointer", fontSize: 14,
           display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
       </div>
 
@@ -1976,14 +1976,14 @@ Be concise, data-driven, give specific actionable advice with $ and % figures.`;
               background: m.role === "user" ? "rgba(99,102,241,0.15)" : "rgba(255,255,255,0.04)",
               border: m.role === "user" ? "1px solid rgba(99,102,241,0.35)" : "1px solid rgba(255,255,255,0.06)",
               borderRadius: m.role === "user" ? "14px 14px 4px 14px" : "14px 14px 14px 4px",
-              color: m.role === "user" ? "#e0e0ff" : "#ccc",
+              color: m.role === "user" ? "#e0e0ff" : "#CBD5E1",
             }}>{m.text}</div>
           </div>
         ))}
         {/* Quick-prompt chips — visible only on fresh conversation */}
         {msgs.length === 1 && !loading && (
           <div style={{ marginTop: 4, display: "flex", flexDirection: "column", gap: 6 }}>
-            <div style={{ fontSize: 10, color: "#374151", fontFamily: "'Space Mono', monospace",
+            <div style={{ fontSize: 10, color: "#64748B", fontFamily: "'Space Mono', monospace",
               letterSpacing: 1, marginBottom: 2 }}>SUGGESTED</div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
               {QUICK_PROMPTS.map((q, i) => (
@@ -2022,7 +2022,7 @@ Be concise, data-driven, give specific actionable advice with $ and % figures.`;
           placeholder="Ask about pricing, demand, strategy…"
           style={{ flex: 1, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)",
             borderRadius: 10, padding: "10px 13px", color: "#fff", fontSize: 13,
-            fontFamily: "'DM Sans', sans-serif", outline: "none" }} />
+            fontFamily: "'Inter', sans-serif", outline: "none" }} />
         <button onClick={send} disabled={loading} style={{
           background: loading ? "rgba(99,102,241,0.3)" : "linear-gradient(135deg, #6366F1, #4F46E5)",
           border: "none", borderRadius: 10, padding: "10px 16px",
@@ -2045,7 +2045,7 @@ function IntegrationCard({ item, connected, onToggle }) {
     setTimeout(() => { setSaving(false); setSaved(true); onToggle(item.id); }, 1200);
   };
 
-  const statusColor  = connected ? C.green  : "#374151";
+  const statusColor  = connected ? C.green  : "#64748B";
   const statusBg     = connected ? "rgba(16,185,129,0.1)" : "rgba(255,255,255,0.03)";
   const statusBorder = connected ? "rgba(16,185,129,0.25)" : "rgba(255,255,255,0.07)";
 
@@ -2071,7 +2071,7 @@ function IntegrationCard({ item, connected, onToggle }) {
         {/* Info */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 14, fontWeight: 600, color: "#E2E8F0", marginBottom: 2 }}>{item.name}</div>
-          <div style={{ fontSize: 11, color: "#4B5563" }}>{item.desc}</div>
+          <div style={{ fontSize: 11, color: "#64748B" }}>{item.desc}</div>
         </div>
 
         {/* Status badge */}
@@ -2094,7 +2094,7 @@ function IntegrationCard({ item, connected, onToggle }) {
           fontSize: 11, fontFamily: "'Space Mono', monospace", fontWeight: 700,
           background: connected ? "transparent" : "linear-gradient(135deg, #6366F1, #4F46E5)",
           border: connected ? "1px solid rgba(255,255,255,0.08)" : "none",
-          color: connected ? "#4B5563" : "#fff",
+          color: connected ? "#64748B" : "#fff",
           boxShadow: connected ? "none" : "0 4px 12px rgba(99,102,241,0.35)",
           transition: "all 0.15s",
         }}>
@@ -2108,13 +2108,13 @@ function IntegrationCard({ item, connected, onToggle }) {
           borderTop: "1px solid rgba(255,255,255,0.06)", padding: "16px 18px",
           background: "rgba(0,0,0,0.2)",
         }}>
-          <div style={{ fontSize: 12, color: "#6B7280", marginBottom: 12, fontFamily: "'Space Mono', monospace", letterSpacing: 0.5 }}>
+          <div style={{ fontSize: 12, color: "#64748B", marginBottom: 12, fontFamily: "'Space Mono', monospace", letterSpacing: 0.5 }}>
             ENTER CREDENTIALS
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
             {item.fields.map(f => (
               <div key={f}>
-                <div style={{ fontSize: 10, color: "#4B5563", marginBottom: 5,
+                <div style={{ fontSize: 10, color: "#64748B", marginBottom: 5,
                   fontFamily: "'Space Mono', monospace", letterSpacing: 1 }}>{f.toUpperCase()}</div>
                 <input
                   type={f.toLowerCase().includes("password") || f.toLowerCase().includes("token") || f.toLowerCase().includes("key") ? "password" : "text"}
@@ -2125,7 +2125,7 @@ function IntegrationCard({ item, connected, onToggle }) {
                     width: "100%", background: "rgba(255,255,255,0.04)",
                     border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8,
                     padding: "9px 12px", color: "#E2E8F0", fontSize: 12,
-                    fontFamily: "'DM Sans', sans-serif", outline: "none",
+                    fontFamily: "'Inter', sans-serif", outline: "none",
                   }}
                 />
               </div>
@@ -2142,7 +2142,7 @@ function IntegrationCard({ item, connected, onToggle }) {
             }}>{saving ? "Testing connection…" : saved ? "✓ Connected!" : "Test & Connect"}</button>
             {item.docs && (
               <a href={item.docs} target="_blank" rel="noopener" style={{
-                fontSize: 11, color: "#4B5563", fontFamily: "'Space Mono', monospace",
+                fontSize: 11, color: "#64748B", fontFamily: "'Space Mono', monospace",
                 textDecoration: "none", letterSpacing: 0.5,
               }}>View API docs →</a>
             )}
@@ -2159,7 +2159,7 @@ function IntegrationSection({ title, desc, items, connected, onToggle, accent })
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
         <div style={{ flex: 1 }}>
           <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 15, color: "#E2E8F0" }}>{title}</div>
-          <div style={{ fontSize: 12, color: "#4B5563", marginTop: 2 }}>{desc}</div>
+          <div style={{ fontSize: 12, color: "#64748B", marginTop: 2 }}>{desc}</div>
         </div>
         <div style={{ fontSize: 10, fontFamily: "'Space Mono', monospace", color: accent,
           background: `${accent}18`, border: `1px solid ${accent}30`,
@@ -2195,10 +2195,10 @@ function Integrations({ user }) {
         live={false}
         right={
           <div style={{ textAlign: "right" }}>
-            <div style={{ fontSize: 10, color: "#374151", fontFamily: "'Space Mono', monospace", marginBottom: 2 }}>CONNECTIONS</div>
+            <div style={{ fontSize: 10, color: "#64748B", fontFamily: "'Space Mono', monospace", marginBottom: 2 }}>CONNECTIONS</div>
             <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 22,
-              color: totalConnected > 0 ? C.green : "#374151" }}>
-              {totalConnected} <span style={{ fontSize: 14, color: "#374151" }}>/ {totalAvailable}</span>
+              color: totalConnected > 0 ? C.green : "#64748B" }}>
+              {totalConnected} <span style={{ fontSize: 14, color: "#64748B" }}>/ {totalAvailable}</span>
             </div>
           </div>
         }
@@ -2230,7 +2230,7 @@ function Integrations({ user }) {
           }}>
             <div style={{ fontSize: 22, marginBottom: 8 }}>{f.icon}</div>
             <div style={{ fontWeight: 600, fontSize: 13, color: "#E2E8F0", marginBottom: 4 }}>{f.label}</div>
-            <div style={{ fontSize: 11, color: "#4B5563", lineHeight: 1.6 }}>{f.desc}</div>
+            <div style={{ fontSize: 11, color: "#64748B", lineHeight: 1.6 }}>{f.desc}</div>
           </div>
         ))}
       </div>
@@ -2266,7 +2266,7 @@ function Integrations({ user }) {
       <Card title="Hotel IQ Inbound API" subtitle="Push data from your own systems via REST" accent={C.teal}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
           <div>
-            <div style={{ fontSize: 11, color: "#4B5563", marginBottom: 8 }}>
+            <div style={{ fontSize: 11, color: "#64748B", marginBottom: 8 }}>
               Use our inbound API to push occupancy, revenue and ADR from any source — custom PMS, spreadsheet automation, or internal BI.
             </div>
             <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 10,
@@ -2277,11 +2277,11 @@ function Integrations({ user }) {
             </div>
           </div>
           <div>
-            <div style={{ fontSize: 10, color: "#374151", fontFamily: "'Space Mono', monospace",
+            <div style={{ fontSize: 10, color: "#64748B", fontFamily: "'Space Mono', monospace",
               letterSpacing: 1, marginBottom: 8 }}>PAYLOAD EXAMPLE</div>
             <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 10,
               background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.07)",
-              borderRadius: 8, padding: "10px 14px", color: "#6B7280", lineHeight: 1.8 }}>
+              borderRadius: 8, padding: "10px 14px", color: "#64748B", lineHeight: 1.8 }}>
               {`{ "occupancy": 78,\n  "adr": 195,\n  "revpar": 152,\n  "revenueMtd": 89400 }`}
             </div>
           </div>
@@ -2293,30 +2293,21 @@ function Integrations({ user }) {
 
 // ── Sidebar ───────────────────────────────────────────────────────────────────
 const NAV_GROUPS = [
-  {
-    label: "CORE",
-    items: [
-      { id: "overview",  label: "Overview",  icon: "▦" },
-      { id: "revenue",   label: "Revenue",   icon: "💰" },
-      { id: "pricing",   label: "Pricing",   icon: "🏷️" },
-    ],
-  },
-  {
-    label: "INTELLIGENCE",
-    items: [
-      { id: "forecast",  label: "Forecast",  icon: "📈" },
-      { id: "compset",   label: "Comp Set",  icon: "🏨" },
-    ],
-  },
-  {
-    label: "TOOLS",
-    items: [
-      { id: "calendar",     label: "Calendar",     icon: "📅" },
-      { id: "reports",      label: "Reports",      icon: "📄" },
-      { id: "integrations", label: "Integrations", icon: "🔌" },
-      { id: "settings",     label: "Settings",     icon: "⚙️" },
-    ],
-  },
+  { label: "CORE", items: [
+    { id: "overview",  label: "Overview",  icon: "◈" },
+    { id: "revenue",   label: "Revenue",   icon: "◆" },
+    { id: "pricing",   label: "Pricing",   icon: "◇" },
+  ]},
+  { label: "INTELLIGENCE", items: [
+    { id: "forecast",  label: "Forecast",  icon: "⟁" },
+    { id: "compset",   label: "Comp Set",  icon: "⊞" },
+  ]},
+  { label: "TOOLS", items: [
+    { id: "calendar",     label: "Calendar",     icon: "▦" },
+    { id: "reports",      label: "Reports",      icon: "≡" },
+    { id: "integrations", label: "Integrations", icon: "⊕" },
+    { id: "settings",     label: "Settings",     icon: "◎" },
+  ]},
 ];
 
 
@@ -2554,7 +2545,7 @@ export default function HotelIQ({ user, apiBase, onLogout, onShowAuth }) {
               border: `1px solid ${showNotif ? "rgba(99,102,241,0.3)" : "rgba(255,255,255,0.07)"}`,
               borderRadius: 8, width: 34, height: 34, cursor: "pointer", position: "relative",
               display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, color: "#fff",
-            }}>🔔
+            }}>⊙
               {urgentCount > 0 && (
                 <span style={{ position: "absolute", top: -4, right: -4, width: 16, height: 16,
                   background: C.red, borderRadius: "50%", fontSize: 9, color: "#fff", fontWeight: 700,
@@ -2564,7 +2555,7 @@ export default function HotelIQ({ user, apiBase, onLogout, onShowAuth }) {
             </button>
             {showNotif && (
               <div style={{ position: "absolute", top: "calc(100% + 6px)", right: 0, width: 310,
-                background: "#0D0D10", border: "1px solid rgba(255,255,255,0.07)",
+                background: "#0B101C", border: "1px solid rgba(255,255,255,0.07)",
                 borderRadius: 12, overflow: "hidden", boxShadow: "0 16px 40px rgba(0,0,0,0.6)", zIndex: 300 }}>
                 <div style={{ padding: "12px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)",
                   fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 13,
@@ -2581,8 +2572,8 @@ export default function HotelIQ({ user, apiBase, onLogout, onShowAuth }) {
                     <div style={{ width: 6, height: 6, borderRadius: "50%", flexShrink: 0, marginTop: 5,
                       background: n.type === "alert" ? C.red : n.type === "warning" ? C.orange : C.blue }} />
                     <div>
-                      <div style={{ fontSize: 12, color: "#ccc" }}>{n.text}</div>
-                      <div style={{ fontSize: 10, color: "#333", marginTop: 2, fontFamily: "'Space Mono', monospace" }}>{n.time}</div>
+                      <div style={{ fontSize: 12, color: "#CBD5E1" }}>{n.text}</div>
+                      <div style={{ fontSize: 10, color: "#475569", marginTop: 2, fontFamily: "'Space Mono', monospace" }}>{n.time}</div>
                     </div>
                   </div>
                 ))}
@@ -2620,14 +2611,14 @@ export default function HotelIQ({ user, apiBase, onLogout, onShowAuth }) {
                   boxShadow: "0 0 10px rgba(99,102,241,0.4)" }}>
                   {(user.firstName?.[0] || "H").toUpperCase()}
                 </div>
-                <span style={{ fontSize: 12, color: "#666", fontFamily: "'Space Mono', monospace" }}>
+                <span style={{ fontSize: 12, color: "#64748B", fontFamily: "'Space Mono', monospace" }}>
                   Hi, {user.firstName}
                 </span>
               </div>
               <button onClick={onLogout} style={{
                 background: "transparent", border: "1px solid rgba(255,255,255,0.07)",
-                color: "#444", padding: "7px 14px", borderRadius: 8, cursor: "pointer",
-                fontSize: 12, fontFamily: "'DM Sans', sans-serif",
+                color: "#64748B", padding: "7px 14px", borderRadius: 8, cursor: "pointer",
+                fontSize: 12, fontFamily: "'Inter', sans-serif",
               }}>Sign Out</button>
             </>
           ) : (
@@ -2636,13 +2627,13 @@ export default function HotelIQ({ user, apiBase, onLogout, onShowAuth }) {
                 background: "transparent",
                 border: "1px solid rgba(99,102,241,0.4)",
                 color: "#818CF8", padding: "7px 16px", borderRadius: 8, cursor: "pointer",
-                fontSize: 12, fontWeight: 600, fontFamily: "'DM Sans', sans-serif",
+                fontSize: 12, fontWeight: 600, fontFamily: "'Inter', sans-serif",
               }}>Sign In</button>
               <button onClick={() => onShowAuth?.("register")} style={{
                 background: "linear-gradient(135deg, #6366F1, #4F46E5)",
                 border: "none",
                 color: "#fff", padding: "7px 16px", borderRadius: 8, cursor: "pointer",
-                fontSize: 12, fontWeight: 700, fontFamily: "'DM Sans', sans-serif",
+                fontSize: 12, fontWeight: 700, fontFamily: "'Inter', sans-serif",
                 boxShadow: "0 4px 14px rgba(99,102,241,0.4)",
               }}>Register Free</button>
             </>
@@ -2680,7 +2671,7 @@ export default function HotelIQ({ user, apiBase, onLogout, onShowAuth }) {
         input, select, textarea { font-family: 'Inter', sans-serif; }
         input, select { transition: border-color 0.15s, box-shadow 0.15s; }
         input:focus, select:focus { border-color: rgba(99,102,241,0.5) !important; box-shadow: 0 0 0 3px rgba(99,102,241,0.08) !important; outline: none; }
-        input::placeholder { color: #1E293B; }
+        input::placeholder { color: #334155; }
         select option { background: #080C16; }
         main > div > * { animation: fadeUp 0.2s ease both; }
         main > div > *:nth-child(1) { animation-delay: 0ms; }
