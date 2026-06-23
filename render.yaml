@@ -27,10 +27,10 @@ services:
     name: hotel-iq-app
     env: static
     buildCommand: |
-      git clone https://github.com/flutter/flutter.git --depth 1 -b stable $HOME/flutter
-      export PATH="$PATH:$HOME/flutter/bin"
-      flutter config --no-analytics
-      cd flutter_app && flutter pub get && flutter build web --release --dart-define=API_BASE=https://hotel-iq-api.onrender.com
+      git clone https://github.com/flutter/flutter.git --depth 1 -b stable /tmp/flutter
+      export PATH="$PATH:/tmp/flutter/bin"
+      flutter config --no-analytics --enable-web
+      cd flutter_app && /tmp/flutter/bin/flutter pub get && /tmp/flutter/bin/flutter build web --release --dart-define=API_BASE=https://hotel-iq-api.onrender.com
     staticPublishPath: flutter_app/build/web
     headers:
       - path: /*
