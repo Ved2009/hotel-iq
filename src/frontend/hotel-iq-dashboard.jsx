@@ -427,19 +427,215 @@ const SectionHead = ({ title, sub, right, live = true }) => (
   </div>
 );
 
+// ── Setup Wizard (shown when user is logged in but hasn't entered metrics yet) ─
+function SetupWizard({ user, property, apiBase, onPropertyUpdate, setTab }) {
+  const [step, setStep]   = useState(0); // 0 = profile, 1 = metrics
+  const [saving, setSaving] = useState(false);
+  const [done, setDone]   = useState(false);
+
+  const p = property?.profile || {};
+  const [profile, setProfile] = useState({
+    hotelName:  user?.hotelName || p.hotelName || "",
+    location:   p.location  || "",
+    totalRooms: p.totalRooms ? String(p.totalRooms) : "",
+    stars:      p.stars     ? String(p.stars) : "4",
+  });
+  const [metrics, setMetrics] = useState({
+    occupancy: "", adr: "", revpar: "", revenueMtd: "",
+  });
+
+  const inp = (label, key, obj, setObj, placeholder, type = "text") => (
+    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      <label style={{ fontSize: 11, fontFamily: "'Space Mono', monospace",
+        letterSpacing: 1, color: S.text3, textTransform: "uppercase" }}>{label}</label>
+      <input
+        type={type} value={obj[key]} placeholder={placeholder}
+        onChange={e => setObj(o => ({ ...o, [key]: e.target.value }))}
+        style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${S.border}`,
+          borderRadius: 10, padding: "10px 14px", color: S.text1, fontSize: 13,
+          fontFamily: "'Inter', sans-serif", width: "100%", outline: "none" }}
+      />
+    </div>
+  );
+
+  const saveProfile = async () => {
+    setSaving(true);
+    try {
+      const token = localStorage.getItem("hiq-token");
+      const res = await fetch(`${apiBase}/api/property/profile`, {
+        method: "PUT", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ ...profile, totalRooms: Number(profile.totalRooms), stars: Number(profile.stars) }),
+      });
+      if (res.ok) { const data = await res.json(); onPropertyUpdate(p => ({ ...p, profile: { ...p?.profile, ...data } })); }
+    } catch {}
+    setSaving(false);
+    setStep(1);
+  };
+
+  const saveMetrics = async () => {
+    setSaving(true);
+    try {
+      const token = localStorage.getItem("hiq-token");
+      const body = {};
+      for (const [k, v] of Object.entries(metrics)) { if (v !== "") body[k] = Number(v); }
+      if (Object.keys(body).length > 0) {
+        const res = await fetch(`${apiBase}/api/property/metrics`, {
+          method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify(body),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          onPropertyUpdate(p => ({ ...p, metrics: { ...p?.metrics, ...data } }));
+        }
+      }
+    } catch {}
+    setSaving(false);
+    setDone(true);
+  };
+
+  if (done) return null; // parent will rerender with real data
+
+  const steps = ["Hotel Profile", "Current Metrics"];
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 28, maxWidth: 680, margin: "0 auto" }}>
+      {/* Welcome header */}
+      <div style={{ textAlign: "center", paddingTop: 16 }}>
+        <div style={{ width: 56, height: 56, borderRadius: 16, margin: "0 auto 16px",
+          background: "linear-gradient(135deg, #6366F1, #4F46E5)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 24, boxShadow: "0 8px 32px rgba(99,102,241,0.4)" }}>✦</div>
+        <h1 style={{ fontFamily: "'Syne', sans-serif", fontSize: 28, fontWeight: 700,
+          color: S.text1, margin: "0 0 8px", letterSpacing: -0.5 }}>
+          Welcome, {user?.firstName}!
+        </h1>
+        <p style={{ color: S.text2, fontSize: 14, margin: 0, lineHeight: 1.6 }}>
+          Let's set up your hotel so HotelIQ can give you real AI recommendations.
+        </p>
+      </div>
+
+      {/* Step indicators */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+        {steps.map((s, i) => (
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{
+              width: 28, height: 28, borderRadius: "50%", fontSize: 12, fontWeight: 700,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontFamily: "'Space Mono', monospace",
+              background: i < step ? C.green : i === step ? C.blue : "rgba(255,255,255,0.06)",
+              color: i <= step ? "#fff" : S.text3,
+              border: `1px solid ${i < step ? C.green : i === step ? C.blue : S.border}`,
+              boxShadow: i === step ? "0 0 16px rgba(99,102,241,0.4)" : "none",
+            }}>{i < step ? "✓" : i + 1}</div>
+            <span style={{ fontSize: 12, color: i === step ? S.text1 : S.text3,
+              fontFamily: "'Inter', sans-serif", fontWeight: i === step ? 600 : 400 }}>{s}</span>
+            {i < steps.length - 1 && <div style={{ width: 40, height: 1, background: i < step ? C.green : S.border, marginLeft: 4 }} />}
+          </div>
+        ))}
+      </div>
+
+      {/* Step panels */}
+      <div style={{ background: `linear-gradient(160deg, ${S.surf1}, ${S.surf2})`,
+        border: `1px solid ${S.border}`, borderRadius: 20, padding: "28px 32px",
+        boxShadow: "0 8px 32px rgba(0,0,0,0.3)", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, borderRadius: "20px 20px 0 0",
+          background: "linear-gradient(90deg, #6366F1, #8B5CF6)" }} />
+
+        {step === 0 && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+            <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 16, color: S.text1, marginBottom: 4 }}>
+              Hotel Profile
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              {inp("Hotel Name",   "hotelName",   profile, setProfile, "e.g. The Grand Palace")}
+              {inp("Location",     "location",    profile, setProfile, "e.g. Miami Beach, FL")}
+              {inp("Total Rooms",  "totalRooms",  profile, setProfile, "e.g. 120", "number")}
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <label style={{ fontSize: 11, fontFamily: "'Space Mono', monospace", letterSpacing: 1,
+                  color: S.text3, textTransform: "uppercase" }}>Star Rating</label>
+                <select value={profile.stars} onChange={e => setProfile(o => ({ ...o, stars: e.target.value }))}
+                  style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${S.border}`,
+                    borderRadius: 10, padding: "10px 14px", color: S.text1, fontSize: 13,
+                    fontFamily: "'Inter', sans-serif" }}>
+                  {[1,2,3,4,5].map(n => <option key={n} value={n}>{n} Star{n > 1 ? "s" : ""}</option>)}
+                </select>
+              </div>
+            </div>
+            <button onClick={saveProfile} disabled={saving || !profile.hotelName} style={{
+              background: "linear-gradient(135deg, #6366F1, #4F46E5)", border: "none",
+              color: "#fff", padding: "12px 28px", borderRadius: 10, cursor: saving ? "not-allowed" : "pointer",
+              fontSize: 13, fontWeight: 600, fontFamily: "'Inter', sans-serif",
+              opacity: !profile.hotelName ? 0.5 : 1,
+              boxShadow: "0 4px 20px rgba(99,102,241,0.4)", alignSelf: "flex-end",
+            }}>{saving ? "Saving…" : "Continue →"}</button>
+          </div>
+        )}
+
+        {step === 1 && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+            <div>
+              <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 16, color: S.text1, marginBottom: 4 }}>
+                Current Metrics
+              </div>
+              <div style={{ fontSize: 12, color: S.text2, lineHeight: 1.6 }}>
+                Enter your current numbers so the AI can benchmark you against competitors and give accurate recommendations.
+                You can skip any you don't have — you can update these anytime in Settings.
+              </div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              {inp("Occupancy %",       "occupancy",   metrics, setMetrics, "e.g. 72", "number")}
+              {inp("ADR ($)",           "adr",         metrics, setMetrics, "e.g. 189", "number")}
+              {inp("RevPAR ($)",        "revpar",      metrics, setMetrics, "e.g. 136", "number")}
+              {inp("Revenue MTD ($)",   "revenueMtd",  metrics, setMetrics, "e.g. 85000", "number")}
+            </div>
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <button onClick={() => { setDone(true); }} style={{
+                background: "transparent", border: `1px solid ${S.border}`,
+                color: S.text2, padding: "12px 20px", borderRadius: 10, cursor: "pointer",
+                fontSize: 12, fontFamily: "'Inter', sans-serif",
+              }}>Skip for now</button>
+              <button onClick={saveMetrics} disabled={saving} style={{
+                background: "linear-gradient(135deg, #10B981, #059669)", border: "none",
+                color: "#fff", padding: "12px 28px", borderRadius: 10,
+                cursor: saving ? "not-allowed" : "pointer",
+                fontSize: 13, fontWeight: 600, fontFamily: "'Inter', sans-serif",
+                boxShadow: "0 4px 20px rgba(16,185,129,0.4)",
+              }}>{saving ? "Saving…" : "Finish Setup ✓"}</button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div style={{ textAlign: "center", fontSize: 12, color: S.text3 }}>
+        You can update all of this anytime in{" "}
+        <button onClick={() => setTab("settings")} style={{
+          background: "none", border: "none", color: C.blue, cursor: "pointer",
+          fontSize: 12, fontFamily: "'Inter', sans-serif", textDecoration: "underline",
+        }}>Settings</button>
+      </div>
+    </div>
+  );
+}
+
 // ── Section: Overview ─────────────────────────────────────────────────────────
-function Overview({ user, property, setTab, applied, skipped, onApply, onShowAuth }) {
+function Overview({ user, property, apiBase, onPropertyUpdate, setTab, applied, skipped, onApply, onShowAuth }) {
   const urgent = pricingRecs.filter(r => r.urgency === "high" && !applied.has(r.id) && !skipped.has(r.id));
   const m = property?.metrics || {};
   const p = property?.profile || {};
-  const totalRooms = p.totalRooms ?? 292;
-  const occ = m.occupancy ?? 73;
-  const adr = m.adr ?? 195;
-  const revpar = m.revpar ?? 142;
-  const trevpar = m.trevpar ?? 168;
-  const revMtd = m.revenueMtd ?? 89400;
-  const goppar = m.goppar ?? 89;
   const hasRealData = m.updatedAt != null;
+
+  // Show setup wizard for logged-in users who haven't entered any data yet
+  if (user && !hasRealData && property !== null) {
+    return <SetupWizard user={user} property={property} apiBase={apiBase} onPropertyUpdate={onPropertyUpdate} setTab={setTab} />;
+  }
+
+  const totalRooms = p.totalRooms ?? 292;
+  const occ    = m.occupancy   ?? 73;
+  const adr    = m.adr         ?? 195;
+  const revpar = m.revpar      ?? 142;
+  const trevpar= m.trevpar     ?? 168;
+  const revMtd = m.revenueMtd  ?? 89400;
+  const goppar = m.goppar      ?? 89;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -2477,7 +2673,7 @@ export default function HotelIQ({ user, apiBase, onLogout, onShowAuth }) {
 
   const renderTab = () => {
     switch (activeTab) {
-      case "overview":  return <Overview user={user} property={propertyData} setTab={setActiveTab} applied={applied} skipped={skipped} onApply={handleApply} onShowAuth={onShowAuth} />;
+      case "overview":  return <Overview user={user} property={propertyData} apiBase={apiBase} onPropertyUpdate={setPropertyData} setTab={setActiveTab} applied={applied} skipped={skipped} onApply={handleApply} onShowAuth={onShowAuth} />;
       case "revenue":   return <Revenue property={propertyData} />;
       case "pricing":   return <Pricing applied={applied} skipped={skipped} onApply={handleApply} onSkip={handleSkip} onRestore={handleRestore} property={propertyData} />;
       case "forecast":  return <Forecast setTab={setActiveTab} />;

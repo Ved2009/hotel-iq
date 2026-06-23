@@ -1,10 +1,11 @@
 services:
+  # ── Express backend (API) ──────────────────────────────────────────────────
   - type: web
-    name: hotel-iq
+    name: hotel-iq-api
     env: node
     region: oregon
     plan: free
-    buildCommand: npm run render:build
+    buildCommand: npm install --prefix src/backend
     startCommand: node src/backend/server.js
     healthCheckPath: /api/health
     envVars:
@@ -12,9 +13,32 @@ services:
         value: production
       - key: JWT_SECRET
         generateValue: true
-      - key: GEMINI_API_KEY
+      - key: ANTHROPIC_API_KEY
         sync: false
       - key: SERPAPI_KEY
         sync: false
       - key: FRONTEND_URL
-        value: https://hoteliq.us
+        value: https://hotel-iq-app.onrender.com
+      - key: MONGODB_URI
+        sync: false
+
+  # ── Flutter web frontend (static site) ────────────────────────────────────
+  - type: web
+    name: hotel-iq-app
+    env: static
+    region: oregon
+    plan: free
+    buildCommand: |
+      git clone https://github.com/flutter/flutter.git --depth 1 -b stable /opt/flutter
+      export PATH="$PATH:/opt/flutter/bin"
+      flutter config --no-analytics
+      cd flutter_app && flutter pub get && flutter build web --release --dart-define=API_BASE=https://hotel-iq-api.onrender.com
+    staticPublishPath: flutter_app/build/web
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: no-cache
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
