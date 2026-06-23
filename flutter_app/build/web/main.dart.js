@@ -82291,7 +82291,7 @@ jc(a,b){return this.aiC(a,b)},
 aiC(a,b){var s=0,r=A.R(t.yd),q,p=2,o=[],n=this,m,l,k,j,i,h,g
 var $async$jc=A.S(function(c,d){if(c===1){o.push(d)
 s=p}while(true)switch(s){case 0:p=4
-k=A.eV("https://hotel-iq-api.onrender.com/api/auth/login",0,null)
+k=A.eV("https://hoteliq.us/api/auth/login",0,null)
 s=7
 return A.N(n.om(!1),$async$jc)
 case 7:j=d
@@ -82328,7 +82328,7 @@ jg(a,b,c,d,e){return this.akn(a,b,c,d,e)},
 akn(a,b,c,d,e){var s=0,r=A.R(t.yd),q,p=2,o=[],n=this,m,l,k,j,i,h,g
 var $async$jg=A.S(function(f,a0){if(f===1){o.push(a0)
 s=p}while(true)switch(s){case 0:p=4
-k=A.eV("https://hotel-iq-api.onrender.com/api/auth/register",0,null)
+k=A.eV("https://hoteliq.us/api/auth/register",0,null)
 s=7
 return A.N(n.om(!1),$async$jg)
 case 7:j=a0
@@ -82365,7 +82365,7 @@ q3(){var s=0,r=A.R(t.Bu),q,p=2,o=[],n=this,m,l,k,j,i,h,g,f
 var $async$q3=A.S(function(a,b){if(a===1){o.push(b)
 s=p}while(true)switch(s){case 0:p=4
 g=A
-f=A.eV("https://hotel-iq-api.onrender.com/api/auth/me",0,null)
+f=A.eV("https://hoteliq.us/api/auth/me",0,null)
 s=8
 return A.N(n.BM(),$async$q3)
 case 8:s=7
@@ -82400,7 +82400,7 @@ q4(){var s=0,r=A.R(t.bn),q,p=2,o=[],n=this,m,l,k,j,i,h
 var $async$q4=A.S(function(a,b){if(a===1){o.push(b)
 s=p}while(true)switch(s){case 0:p=4
 i=A
-h=A.eV("https://hotel-iq-api.onrender.com/api/property/me",0,null)
+h=A.eV("https://hoteliq.us/api/property/me",0,null)
 s=8
 return A.N(n.BM(),$async$q4)
 case 8:s=7
@@ -82433,7 +82433,7 @@ rG(a,b){return this.adG(a,b)},
 adG(a,b){var s=0,r=A.R(t.eY),q,p=2,o=[],n=this,m,l,k,j,i
 var $async$rG=A.S(function(c,d){if(c===1){o.push(d)
 s=p}while(true)switch(s){case 0:p=4
-l=A.eV("https://hotel-iq-api.onrender.com/api/ai/chat",0,null)
+l=A.eV("https://hoteliq.us/api/ai/chat",0,null)
 s=7
 return A.N(n.BM(),$async$rG)
 case 7:k=d

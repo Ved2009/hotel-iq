@@ -34,12 +34,12 @@ app.use('/api/property', propertyRoutes);
 // Health check
 app.get('/api/health', (_req, res) => res.json({ status: 'ok', ts: new Date().toISOString() }));
 
-// Serve built frontend in production
-const frontendBuild = path.join(__dirname, '..', 'frontend', 'build');
-app.use(express.static(frontendBuild));
+// Serve Flutter web build in production
+const flutterBuild = path.join(__dirname, '..', '..', 'flutter_app', 'build', 'web');
+app.use(express.static(flutterBuild));
 app.get('*', (_req, res) => {
-  res.sendFile(path.join(frontendBuild, 'index.html'), err => {
-    if (err) res.status(404).send('Frontend not built yet. Run: npm run build:frontend');
+  res.sendFile(path.join(flutterBuild, 'index.html'), err => {
+    if (err) res.status(404).send('Frontend not built.');
   });
 });
 
