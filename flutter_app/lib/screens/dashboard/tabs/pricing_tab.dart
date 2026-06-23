@@ -164,7 +164,7 @@ class _PricingTabState extends State<PricingTab> {
             sub: 'from ${pending.length} open rec${pending.length != 1 ? "s" : ""}',
             color: C.green,
             action: GestureDetector(
-              onTap: () { for (final r in pending) prov.applyRec(r.id); },
+              onTap: () { for (final r in pending) prov.applyRec(r.id, roomId: r.roomId, oldRate: r.current, newRate: r.suggested, reason: r.reason); },
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
@@ -265,9 +265,9 @@ class _RecsList extends StatelessWidget {
                     const SizedBox(height: 12),
                     Row(children: [
                       if (!isApplied && !isSkipped && r.urgency != 'low')
-                        _RecBtn(label: 'APPLY', primary: true, onTap: () => prov.applyRec(r.id)),
+                        _RecBtn(label: 'APPLY', primary: true, onTap: () => prov.applyRec(r.id, roomId: r.roomId, oldRate: r.current, newRate: r.suggested, reason: r.reason)),
                       if (isApplied)
-                        _RecBtn(label: '✓ APPLIED', primary: false, green: true, onTap: () => prov.applyRec(r.id)),
+                        _RecBtn(label: '✓ APPLIED', primary: false, green: true, onTap: () => prov.applyRec(r.id, roomId: r.roomId, oldRate: r.current, newRate: r.suggested, reason: r.reason)),
                       const SizedBox(width: 8),
                       _RecBtn(label: isSkipped ? 'RESTORE' : 'SKIP', primary: false,
                         onTap: () => isSkipped ? prov.restoreRec(r.id) : prov.skipRec(r.id)),
@@ -315,9 +315,9 @@ class _RecsList extends StatelessWidget {
       const SizedBox(width: 12),
       Row(children: [
         if (!isApplied && !isSkipped && r.urgency != 'low')
-          _RecBtn(label: 'APPLY', primary: true, onTap: () => prov.applyRec(r.id)),
+          _RecBtn(label: 'APPLY', primary: true, onTap: () => prov.applyRec(r.id, roomId: r.roomId, oldRate: r.current, newRate: r.suggested, reason: r.reason)),
         if (isApplied)
-          _RecBtn(label: '✓ APPLIED', primary: false, green: true, onTap: () => prov.applyRec(r.id)),
+          _RecBtn(label: '✓ APPLIED', primary: false, green: true, onTap: () => prov.applyRec(r.id, roomId: r.roomId, oldRate: r.current, newRate: r.suggested, reason: r.reason)),
         const SizedBox(width: 8),
         _RecBtn(label: isSkipped ? 'RESTORE' : 'SKIP', primary: false,
           onTap: () => isSkipped ? prov.restoreRec(r.id) : prov.skipRec(r.id)),

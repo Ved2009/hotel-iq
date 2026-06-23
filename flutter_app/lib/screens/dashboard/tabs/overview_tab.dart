@@ -21,6 +21,28 @@ class OverviewTab extends StatelessWidget {
     final m = prov.property?.metrics;
     final p = prov.property?.profile;
 
+    // Loading state
+    if (prov.propertyLoading && prov.property == null) {
+      return const Center(child: Padding(
+        padding: EdgeInsets.symmetric(vertical: 80),
+        child: CircularProgressIndicator(color: C.violet, strokeWidth: 2),
+      ));
+    }
+
+    // Error state
+    if (prov.propertyError != null && prov.property == null) {
+      return Center(child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 60),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          const Text('⚠', style: TextStyle(fontSize: 40)),
+          const SizedBox(height: 16),
+          Text('Could not load property data', style: GoogleFonts.syne(fontSize: 18, color: C.text1)),
+          const SizedBox(height: 8),
+          Text(prov.propertyError!, style: GoogleFonts.inter(fontSize: 13, color: C.text3)),
+        ]),
+      ));
+    }
+
     final occ    = m?.occupancy   ?? 73.0;
     final adr    = m?.adr         ?? 195.0;
     final revpar = m?.revpar      ?? 142.0;
@@ -36,14 +58,20 @@ class OverviewTab extends StatelessWidget {
       !prov.skipped.contains(r.id)).toList();
 
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      // Setup wizard for new signed-in users
+      if (prov.isNewUser) ...[
+        _SetupWizard(setTab: setTab),
+        const SizedBox(height: 20),
+      ],
+
       // Header
       SectionHeader(
         title: user?.hotelName ?? p?.hotelName ?? 'Hotel IQ Dashboard',
         sub: hasReal
             ? 'Live data · Updated ${_timeAgo(m!.updatedAt!)}'
             : user != null
-                ? 'Enter your metrics in Settings to see live data'
-                : 'Viewing demo data — sign in to connect your property',
+                ? 'Demo data shown — enter real metrics in Settings'
+                : 'Demo data — sign in to connect your property',
         live: hasReal,
         right: user == null
             ? GestureDetector(
@@ -383,7 +411,7 @@ class _UrgentActions extends StatelessWidget {
                     ])),
                   ])),
                   GestureDetector(
-                    onTap: () => prov.applyRec(r.id),
+                    onTap: () => prov.applyRec(r.id, roomId: r.roomId, oldRate: r.current, newRate: r.suggested, reason: r.reason),
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                       decoration: BoxDecoration(
@@ -459,4 +487,86 @@ class _ActivityLog extends StatelessWidget {
       );
     }),
   );
+}
+
+// ── Setup Wizard ──────────────────────────────────────────────────────────────
+
+class _SetupWizard extends StatelessWidget {
+  final void Function(String) setTab;
+  const _SetupWizard({required this.setTab});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft, end: Alignment.bottomRight,
+          colors: [C.violet.withValues(alpha: 0.12), C.violetDark.withValues(alpha: 0.06)],
+        ),
+        border: Border.all(color: C.violet.withValues(alpha: 0.3)),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Row(children: [
+        Container(
+          width: 52, height: 52,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(colors: [C.violet, C.violetDark]),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [BoxShadow(color: C.violet.withValues(alpha: 0.5), blurRadius: 20)],
+          ),
+          child: const Center(child: Text('🏨', style: TextStyle(fontSize: 24))),
+        ),
+        const SizedBox(width: 20),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('Set up your property',
+            style: GoogleFonts.syne(fontSize: 17, fontWeight: FontWeight.w700, color: C.text1)),
+          const SizedBox(height: 4),
+          Text(
+            'Enter your hotel metrics in Settings to unlock live AI pricing recommendations, accurate forecasting, and real comp set analysis.',
+            style: GoogleFonts.inter(fontSize: 13, color: C.text2, height: 1.5),
+          ),
+          const SizedBox(height: 14),
+          Row(children: [
+            GestureDetector(
+              onTap: () => setTab('settings'),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(colors: [C.violet, C.violetDark]),
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: [BoxShadow(color: C.violet.withValues(alpha: 0.4), blurRadius: 14)],
+                ),
+                child: Text('Enter My Metrics →',
+                  style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white)),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text('Takes 2 minutes', style: GoogleFonts.spaceMono(fontSize: 10, color: C.text3, letterSpacing: 0.5)),
+          ]),
+        ])),
+        const SizedBox(width: 20),
+        Column(children: [
+          for (final step in [('1', 'Enter KPIs', C.green), ('2', 'AI analyses', C.violet), ('3', 'Get recs', C.gold)])
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Container(
+                  width: 22, height: 22,
+                  decoration: BoxDecoration(
+                    color: step.$3.withValues(alpha: 0.15),
+                    border: Border.all(color: step.$3.withValues(alpha: 0.4)),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(child: Text(step.$1,
+                    style: GoogleFonts.spaceMono(fontSize: 9, color: step.$3, fontWeight: FontWeight.w700))),
+                ),
+                const SizedBox(width: 8),
+                Text(step.$2, style: GoogleFonts.inter(fontSize: 12, color: C.text2)),
+              ]),
+            ),
+        ]),
+      ]),
+    );
+  }
 }

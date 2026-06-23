@@ -48,22 +48,46 @@ class _CompSetTabState extends State<CompSetTab> {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       SectionHeader(
         title: 'Comp Set Intelligence',
-        sub: 'Fetched just now',
+        sub: 'Competitor rate tracking & positioning',
         right: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
           decoration: BoxDecoration(
-            color: const Color(0x1A6366F1),
-            border: Border.all(color: const Color(0x406366F1)),
+            color: C.orange.withValues(alpha: 0.1),
+            border: Border.all(color: C.orange.withValues(alpha: 0.3)),
             borderRadius: BorderRadius.circular(100),
           ),
           child: Row(mainAxisSize: MainAxisSize.min, children: [
             Container(width: 5, height: 5,
-              decoration: const BoxDecoration(shape: BoxShape.circle, color: C.blue,
-                boxShadow: [BoxShadow(color: C.blue, blurRadius: 6)])),
+              decoration: BoxDecoration(shape: BoxShape.circle, color: C.orange,
+                boxShadow: [BoxShadow(color: C.orange.withValues(alpha: 0.8), blurRadius: 6)])),
             const SizedBox(width: 6),
-            Text('DEMO DATA', style: GoogleFonts.spaceMono(fontSize: 9, color: const Color(0xFF818CF8), letterSpacing: 1)),
+            Text('DEMO RATES', style: GoogleFonts.spaceMono(fontSize: 9, color: C.orange, letterSpacing: 1)),
           ]),
         ),
+      ),
+      const SizedBox(height: 16),
+
+      // Demo data notice with SerpAPI instructions
+      Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: C.orange.withValues(alpha: 0.06),
+          border: Border.all(color: C.orange.withValues(alpha: 0.2)),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(children: [
+          const Text('📡', style: TextStyle(fontSize: 22)),
+          const SizedBox(width: 14),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('Competitor rates shown are demo data',
+              style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: C.orange)),
+            const SizedBox(height: 4),
+            Text(
+              'To get live Google Hotels rates, add a free SerpAPI key to your backend .env file: SERPAPI_KEY=your_key. Get one free at serpapi.com (100 searches/month).',
+              style: GoogleFonts.inter(fontSize: 12, color: C.text2, height: 1.5),
+            ),
+          ])),
+        ]),
       ),
       const SizedBox(height: 20),
       LayoutBuilder(builder: (_, c) {
