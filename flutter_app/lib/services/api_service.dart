@@ -43,6 +43,7 @@ class ApiService {
     return h;
   }
 
+  bool _ok(http.Response r) => r.statusCode >= 200 && r.statusCode < 300;
   Map<String, dynamic> _body(http.Response r) => json.decode(r.body) as Map<String, dynamic>;
 
   // ── Auth ───────────────────────────────────────────────────────────────────
@@ -54,7 +55,7 @@ class ApiService {
         body: json.encode({'email': email, 'password': password}),
       );
       final b = _body(r);
-      if (!r.ok) return ApiResult.err(b['error'] ?? 'Login failed');
+      if (!_ok(r)) return ApiResult.err(b['error'] ?? 'Login failed');
       return ApiResult.ok(b);
     } catch (e) {
       return ApiResult.err('Network error');
@@ -73,7 +74,7 @@ class ApiService {
         }),
       );
       final b = _body(r);
-      if (!r.ok) return ApiResult.err(b['error'] ?? 'Registration failed');
+      if (!_ok(r)) return ApiResult.err(b['error'] ?? 'Registration failed');
       return ApiResult.ok(b);
     } catch (e) {
       return ApiResult.err('Network error');
@@ -86,7 +87,7 @@ class ApiService {
         Uri.parse('$base/api/auth/me'),
         headers: await _headers(),
       );
-      if (!r.ok) return const ApiResult.err('Session expired');
+      if (!_ok(r)) return const ApiResult.err('Session expired');
       final b = _body(r);
       return ApiResult.ok(User.fromJson(b['user'] as Map<String, dynamic>));
     } catch (e) {
@@ -101,7 +102,7 @@ class ApiService {
         Uri.parse('$base/api/property/me'),
         headers: await _headers(),
       );
-      if (!r.ok) return const ApiResult.err('Failed to load property');
+      if (!_ok(r)) return const ApiResult.err('Failed to load property');
       return ApiResult.ok(PropertyData.fromJson(_body(r)));
     } catch (e) {
       return const ApiResult.err('Network error');
@@ -115,7 +116,7 @@ class ApiService {
         headers: await _headers(),
         body: json.encode(p.toJson()),
       );
-      if (!r.ok) return const ApiResult.err('Failed to save');
+      if (!_ok(r)) return const ApiResult.err('Failed to save');
       return ApiResult.ok(HotelProfile.fromJson(_body(r)));
     } catch (e) {
       return const ApiResult.err('Network error');
@@ -129,7 +130,7 @@ class ApiService {
         headers: await _headers(),
         body: json.encode(metrics),
       );
-      if (!r.ok) return const ApiResult.err('Failed to save');
+      if (!_ok(r)) return const ApiResult.err('Failed to save');
       return ApiResult.ok(HotelMetrics.fromJson(_body(r)));
     } catch (e) {
       return const ApiResult.err('Network error');
@@ -144,7 +145,7 @@ class ApiService {
         headers: await _headers(),
         body: json.encode({'roomId': roomId, 'oldRate': oldRate, 'newRate': newRate, 'reason': reason}),
       );
-      if (!r.ok) return const ApiResult.err('Failed to apply');
+      if (!_ok(r)) return const ApiResult.err('Failed to apply');
       return ApiResult.ok(_body(r));
     } catch (e) {
       return const ApiResult.err('Network error');
@@ -159,7 +160,7 @@ class ApiService {
         headers: await _headers(),
         body: json.encode({'context': context, 'messages': messages}),
       );
-      if (!r.ok) return ApiResult.err(_body(r)['error'] ?? 'AI error');
+      if (!_ok(r)) return ApiResult.err(_body(r)['error'] ?? 'AI error');
       return ApiResult.ok(_body(r)['reply'] as String);
     } catch (e) {
       return const ApiResult.err('Network error');
@@ -173,7 +174,7 @@ class ApiService {
         Uri.parse('$base/api/compset/rates?yourRate=$yourRate'),
         headers: await _headers(),
       );
-      if (!r.ok) return const ApiResult.err('Failed to fetch');
+      if (!_ok(r)) return const ApiResult.err('Failed to fetch');
       return ApiResult.ok(_body(r));
     } catch (e) {
       return const ApiResult.err('Network error');

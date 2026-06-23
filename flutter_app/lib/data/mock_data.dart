@@ -209,7 +209,7 @@ List<CalendarDay> buildCalendar() {
   return List.generate(daysInMonth, (i) {
     final d = DateTime(now.year, now.month, i + 1);
     final isWknd = d.weekday == 6 || d.weekday == 7;
-    final occ = (52 + _rng(i) * 38 + (isWknd ? 12 : 0)).roundToDouble().clamp(0, 100);
+    final occ = (52 + _rng(i) * 38 + (isWknd ? 12 : 0)).roundToDouble().clamp(0.0, 100.0);
     final adr = (178 + _rng(i * 2) * 42).roundToDouble();
     return CalendarDay(
       i + 1,

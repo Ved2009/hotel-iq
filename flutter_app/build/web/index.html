@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base href="/">
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="Hotel IQ — AI Revenue Intelligence">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="Hotel IQ">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="favicon.png"/>
+  <title>Hotel IQ</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background-color: #030712;
+      overflow: hidden;
+    }
+    #splash {
+      position: fixed;
+      inset: 0;
+      background: #030712;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      transition: opacity 0.4s;
+    }
+    #splash.hidden { opacity: 0; pointer-events: none; }
+    .splash-logo {
+      font-family: system-ui, sans-serif;
+      font-size: 28px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -1px;
+    }
+    .splash-logo span { color: #F59E0B; }
+    .splash-dots {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 28px;
+    }
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #6366F1;
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+    .dot:nth-child(2) { animation-delay: 0.2s; }
+    .dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.2; transform: scale(0.8); }
+      50% { opacity: 1; transform: scale(1.2); }
+    }
+  </style>
+</head>
+<body>
+  <div id="splash">
+    <div style="text-align:center">
+      <div class="splash-logo">Hotel<span>IQ</span></div>
+      <div class="splash-dots">
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    window.addEventListener('flutter-first-frame', () => {
+      const splash = document.getElementById('splash');
+      splash.classList.add('hidden');
+      setTimeout(() => splash.remove(), 400);
+    });
+  </script>
+
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>
