@@ -12,14 +12,13 @@ class AppProvider extends ChangeNotifier {
   AppView _view = AppView.loading;
   User? _user;
   PropertyData? _property;
-  bool _aiOpen = false;
+
   final Set<int> _applied = {};
   final Set<int> _skipped = {};
 
   AppView get view => _view;
   User? get user => _user;
   PropertyData? get property => _property;
-  bool get aiOpen => _aiOpen;
   Set<int> get applied => _applied;
   Set<int> get skipped => _skipped;
 
@@ -85,23 +84,12 @@ class AppProvider extends ChangeNotifier {
     _property = null;
     _applied.clear();
     _skipped.clear();
-    _aiOpen = false;
     _view = AppView.landing;
     notifyListeners();
   }
 
   void updateProperty(PropertyData p) {
     _property = p;
-    notifyListeners();
-  }
-
-  void toggleAi() {
-    _aiOpen = !_aiOpen;
-    notifyListeners();
-  }
-
-  void closeAi() {
-    _aiOpen = false;
     notifyListeners();
   }
 
