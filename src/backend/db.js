@@ -156,6 +156,47 @@ module.exports = {
     return hotels[userId];
   },
 
+  // ── Invite tokens ──
+  async createInvite(token, createdBy) {
+    const invite = { token, createdBy, createdAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), usedAt: null, usedBy: null };
+    if (MONGO_URI) {
+      const db = await mongo();
+      await db.collection('invites').insertOne(invite);
+      return invite;
+    }
+    const data = fileLoad(path.join(DATA_DIR, 'invites.json'));
+    data[token] = invite;
+    fileSave(path.join(DATA_DIR, 'invites.json'), data);
+    return invite;
+  },
+
+  async getInvite(token) {
+    if (MONGO_URI) {
+      const db = await mongo();
+      return db.collection('invites').findOne({ token }, { projection: { _id: 0 } });
+    }
+    return fileLoad(path.join(DATA_DIR, 'invites.json'))[token] || null;
+  },
+
+  async useInvite(token, usedBy) {
+    if (MONGO_URI) {
+      const db = await mongo();
+      await db.collection('invites').updateOne({ token }, { $set: { usedAt: new Date().toISOString(), usedBy } });
+      return;
+    }
+    const data = fileLoad(path.join(DATA_DIR, 'invites.json'));
+    if (data[token]) { data[token].usedAt = new Date().toISOString(); data[token].usedBy = usedBy; }
+    fileSave(path.join(DATA_DIR, 'invites.json'), data);
+  },
+
+  async listInvites() {
+    if (MONGO_URI) {
+      const db = await mongo();
+      return db.collection('invites').find({}, { projection: { _id: 0 } }).sort({ createdAt: -1 }).toArray();
+    }
+    return Object.values(fileLoad(path.join(DATA_DIR, 'invites.json')));
+  },
+
   // ── User management (admin) ──
   async listUsers() {
     if (MONGO_URI) {

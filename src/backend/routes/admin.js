@@ -1,4 +1,5 @@
 const express = require('express');
+const crypto  = require('crypto');
 const { requireAdmin } = require('../middleware/requireAuth');
 const db = require('../db');
 
@@ -40,6 +41,29 @@ router.post('/users/:id/deactivate', async (req, res) => {
     res.json({ user });
   } catch (err) {
     console.error('admin/deactivate error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// POST /api/admin/invites — generate an invite link
+router.post('/invites', async (req, res) => {
+  try {
+    const token = crypto.randomBytes(24).toString('hex');
+    const invite = await db.createInvite(token, req.user.id);
+    const baseUrl = process.env.FRONTEND_URL || 'https://hoteliq.us';
+    res.json({ invite, link: `${baseUrl}?invite=${token}` });
+  } catch (err) {
+    console.error('create invite error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// GET /api/admin/invites — list all invites
+router.get('/invites', async (req, res) => {
+  try {
+    const invites = await db.listInvites();
+    res.json({ invites });
+  } catch (err) {
     res.status(500).json({ error: 'Server error' });
   }
 });

@@ -8,8 +8,9 @@ class AuthScreen extends StatefulWidget {
   final bool isModal;
   final String initialTab;
   final VoidCallback? onClose;
+  final String? inviteToken;
 
-  const AuthScreen({super.key, this.isModal = false, this.initialTab = 'login', this.onClose});
+  const AuthScreen({super.key, this.isModal = false, this.initialTab = 'login', this.onClose, this.inviteToken});
 
   @override
   State<AuthScreen> createState() => _AuthScreenState();
@@ -44,8 +45,11 @@ class _AuthScreenState extends State<AuthScreen> {
     if (_tab == 'login') {
       err = await prov.login(_loginEmail.text.trim(), _loginPwd.text);
     } else {
-      err = await prov.register(_regFirst.text.trim(), _regLast.text.trim(),
-          _regHotel.text.trim(), _regEmail.text.trim(), _regPwd.text);
+      err = await prov.register(
+        _regFirst.text.trim(), _regLast.text.trim(),
+        _regHotel.text.trim(), _regEmail.text.trim(), _regPwd.text,
+        inviteToken: widget.inviteToken,
+      );
     }
     if (!mounted) return;
     setState(() { _loading = false; _error = err; });
@@ -145,6 +149,25 @@ class _AuthScreenState extends State<AuthScreen> {
             ]),
           ),
           const SizedBox(height: 28),
+          // Invite banner
+          if (widget.inviteToken != null && _tab == 'register') ...[
+            Container(
+              padding: const EdgeInsets.all(14),
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                color: C.green.withValues(alpha: 0.08),
+                border: Border.all(color: C.green.withValues(alpha: 0.3)),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(children: [
+                const Text('✓ ', style: TextStyle(color: C.green, fontSize: 16)),
+                Expanded(child: Text(
+                  'You\'ve been invited! Register below and you\'ll get instant access.',
+                  style: GoogleFonts.inter(fontSize: 13, color: C.green, height: 1.4),
+                )),
+              ]),
+            ),
+          ],
           // Error
           if (_error != null) ...[
             Container(

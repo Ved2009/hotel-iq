@@ -31,9 +31,19 @@ router.post('/register', async (req, res) => {
   if (firstName.length > 100 || hotelName.length > 200)
     return res.status(400).json({ error: 'Input too long' });
 
-  // Admin email is auto-approved with admin role; everyone else starts pending
+  // Check invite token if provided
+  const inviteToken = typeof req.body.inviteToken === 'string' ? req.body.inviteToken.trim() : null;
+  let inviteValid = false;
+  if (inviteToken) {
+    const invite = await db.getInvite(inviteToken);
+    if (invite && !invite.usedAt && new Date(invite.expiresAt) > new Date()) {
+      inviteValid = true;
+    }
+  }
+
+  // Admin email or valid invite = auto-approved
   const isAdmin    = ADMIN_EMAIL && email === ADMIN_EMAIL;
-  const isApproved = isAdmin;
+  const isApproved = isAdmin || inviteValid;
 
   try {
     const user = {
@@ -46,6 +56,8 @@ router.post('/register', async (req, res) => {
       createdAt:  new Date().toISOString(),
     };
     await db.insert(user);
+    // Mark invite as used
+    if (inviteValid && inviteToken) await db.useInvite(inviteToken, user.id);
     if (!isApproved) {
       return res.status(201).json({
         pending: true,

@@ -63,15 +63,18 @@ class ApiService {
   }
 
   Future<ApiResult<Map<String, dynamic>>> register(
-      String firstName, String lastName, String hotelName, String email, String password) async {
+      String firstName, String lastName, String hotelName, String email, String password,
+      {String? inviteToken}) async {
     try {
+      final body = <String, dynamic>{
+        'firstName': firstName, 'lastName': lastName,
+        'hotelName': hotelName, 'email': email, 'password': password,
+      };
+      if (inviteToken != null) body['inviteToken'] = inviteToken;
       final r = await http.post(
         Uri.parse('$base/api/auth/register'),
         headers: await _headers(auth: false),
-        body: json.encode({
-          'firstName': firstName, 'lastName': lastName,
-          'hotelName': hotelName, 'email': email, 'password': password,
-        }),
+        body: json.encode(body),
       );
       final b = _body(r);
       if (!_ok(r)) return ApiResult.err(b['error'] ?? 'Registration failed');
@@ -181,6 +184,22 @@ class ApiService {
       final r = await http.post(Uri.parse('$base/api/admin/users/$userId/approve'), headers: await _headers());
       if (!_ok(r)) return ApiResult.err(_body(r)['error'] ?? 'Failed');
       return const ApiResult.ok(null);
+    } catch (e) { return const ApiResult.err('Network error'); }
+  }
+
+  Future<ApiResult<Map<String, dynamic>>> generateInvite() async {
+    try {
+      final r = await http.post(Uri.parse('$base/api/admin/invites'), headers: await _headers());
+      if (!_ok(r)) return const ApiResult.err('Failed to generate invite');
+      return ApiResult.ok(_body(r));
+    } catch (e) { return const ApiResult.err('Network error'); }
+  }
+
+  Future<ApiResult<List<dynamic>>> listInvites() async {
+    try {
+      final r = await http.get(Uri.parse('$base/api/admin/invites'), headers: await _headers());
+      if (!_ok(r)) return const ApiResult.err('Failed to load invites');
+      return ApiResult.ok(_body(r)['invites'] as List<dynamic>);
     } catch (e) { return const ApiResult.err('Network error'); }
   }
 

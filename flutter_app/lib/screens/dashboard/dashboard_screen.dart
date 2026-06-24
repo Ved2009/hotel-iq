@@ -69,6 +69,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       body: DotGridBackground(
         child: Column(children: [
           _Header(clock: _clock, onShowAuth: _showAuth),
+          if (context.watch<AppProvider>().view == AppView.demo)
+            _DemoBanner(onSignUp: () => _showAuth('register'), onExit: context.read<AppProvider>().exitDemo),
           Expanded(
             child: LayoutBuilder(builder: (_, c) {
               if (c.maxWidth > 900) {
@@ -87,6 +89,62 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
     );
   }
+}
+
+// ── Demo Banner ───────────────────────────────────────────────────────────────
+
+class _DemoBanner extends StatelessWidget {
+  final VoidCallback onSignUp, onExit;
+  const _DemoBanner({required this.onSignUp, required this.onExit});
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
+    decoration: const BoxDecoration(
+      gradient: LinearGradient(colors: [Color(0xFF2D1B69), Color(0xFF1A0D3D)]),
+      border: Border(bottom: BorderSide(color: Color(0x4D7C3AED))),
+    ),
+    child: Row(children: [
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+        decoration: BoxDecoration(
+          color: C.gold.withValues(alpha: 0.15),
+          border: Border.all(color: C.gold.withValues(alpha: 0.4)),
+          borderRadius: BorderRadius.circular(100),
+        ),
+        child: Text('LIVE DEMO', style: GoogleFonts.spaceMono(fontSize: 9, color: C.gold, letterSpacing: 1.5, fontWeight: FontWeight.w700)),
+      ),
+      const SizedBox(width: 14),
+      Expanded(
+        child: Text(
+          'You\'re viewing a live demo with sample data. Sign up to connect your property and get real AI pricing recommendations.',
+          style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFFD4C6FF)),
+        ),
+      ),
+      const SizedBox(width: 14),
+      GestureDetector(
+        onTap: onSignUp,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(colors: [C.violet, C.violetDark]),
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: [BoxShadow(color: C.violet.withValues(alpha: 0.5), blurRadius: 12)],
+          ),
+          child: Text('Get My Account →', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white)),
+        ),
+      ),
+      const SizedBox(width: 10),
+      GestureDetector(
+        onTap: onExit,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(border: Border.all(color: const Color(0x337C3AED)), borderRadius: BorderRadius.circular(8)),
+          child: Text('← Back', style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF9F8FEF))),
+        ),
+      ),
+    ]),
+  );
 }
 
 // ── Header ────────────────────────────────────────────────────────────────────

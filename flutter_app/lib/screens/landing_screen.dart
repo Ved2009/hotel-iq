@@ -1,6 +1,8 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import '../providers/app_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/dot_grid.dart';
 import 'auth_screen.dart';
@@ -23,6 +25,8 @@ class _LandingScreenState extends State<LandingScreen> {
 
   @override
   void dispose() { _scroll.dispose(); super.dispose(); }
+
+  void _enterDemo() => context.read<AppProvider>().enterDemo();
 
   void _showAuth(String tab) => showDialog(
     context: context,
@@ -66,7 +70,7 @@ class _LandingScreenState extends State<LandingScreen> {
               ],
             ),
             SliverList(delegate: SliverChildListDelegate([
-              _Hero(onSignIn: () => _showAuth('login'), onGetStarted: () => _showAuth('register')),
+              _Hero(onSignIn: () => _showAuth('login'), onGetStarted: () => _showAuth('register'), onDemo: _enterDemo),
               _LogoBar(),
               _StatsRow(),
               _Features(),
@@ -156,8 +160,8 @@ class _OutlineBtn extends StatelessWidget {
 // ── Hero ──────────────────────────────────────────────────────────────────────
 
 class _Hero extends StatelessWidget {
-  final VoidCallback onSignIn, onGetStarted;
-  const _Hero({required this.onSignIn, required this.onGetStarted});
+  final VoidCallback onSignIn, onGetStarted, onDemo;
+  const _Hero({required this.onSignIn, required this.onGetStarted, required this.onDemo});
 
   @override
   Widget build(BuildContext context) {
@@ -167,12 +171,12 @@ class _Hero extends StatelessWidget {
       padding: EdgeInsets.fromLTRB(wide ? 80 : 24, 100, wide ? 80 : 24, 80),
       child: wide
           ? Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-              Expanded(child: _HeroCopy(onSignIn: onSignIn, onGetStarted: onGetStarted)),
+              Expanded(child: _HeroCopy(onSignIn: onSignIn, onGetStarted: onGetStarted, onDemo: onDemo)),
               const SizedBox(width: 80),
               Expanded(child: _DashCard()),
             ])
           : Column(children: [
-              _HeroCopy(onSignIn: onSignIn, onGetStarted: onGetStarted),
+              _HeroCopy(onSignIn: onSignIn, onGetStarted: onGetStarted, onDemo: onDemo),
               const SizedBox(height: 60),
               _DashCard(),
             ]),
@@ -181,8 +185,8 @@ class _Hero extends StatelessWidget {
 }
 
 class _HeroCopy extends StatelessWidget {
-  final VoidCallback onSignIn, onGetStarted;
-  const _HeroCopy({required this.onSignIn, required this.onGetStarted});
+  final VoidCallback onSignIn, onGetStarted, onDemo;
+  const _HeroCopy({required this.onSignIn, required this.onGetStarted, required this.onDemo});
 
   @override
   Widget build(BuildContext context) {
@@ -235,24 +239,38 @@ class _HeroCopy extends StatelessWidget {
         style: GoogleFonts.inter(fontSize: 17, color: C.text2, height: 1.8),
       ),
       const SizedBox(height: 40),
-      Row(children: [
+      Wrap(spacing: 12, runSpacing: 12, children: [
         GestureDetector(
           onTap: onGetStarted,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 15),
             decoration: BoxDecoration(
               gradient: const LinearGradient(colors: [C.violet, C.violetDark]),
               borderRadius: BorderRadius.circular(12),
               boxShadow: [BoxShadow(color: C.violet.withValues(alpha: 0.6), blurRadius: 30, offset: const Offset(0, 8))],
             ),
-            child: Text('Start Free Trial →', style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white)),
+            child: Text('Get Started →', style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white)),
           ),
         ),
-        const SizedBox(width: 16),
+        GestureDetector(
+          onTap: onDemo,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 15),
+            decoration: BoxDecoration(
+              color: C.gold.withValues(alpha: 0.08),
+              border: Border.all(color: C.gold.withValues(alpha: 0.4)),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              Text('▶  ', style: TextStyle(fontSize: 12, color: C.gold)),
+              Text('Try Live Demo', style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600, color: C.gold)),
+            ]),
+          ),
+        ),
         GestureDetector(
           onTap: onSignIn,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 15),
             decoration: BoxDecoration(
               border: Border.all(color: C.borderMid),
               borderRadius: BorderRadius.circular(12),

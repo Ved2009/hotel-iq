@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import '../models/models.dart';
 import '../services/api_service.dart';
 
-enum AppView { loading, landing, pending, app }
+enum AppView { loading, landing, pending, demo, app }
 
 const String _apiBase = String.fromEnvironment('API_BASE', defaultValue: 'http://localhost:5000');
 
@@ -94,8 +94,9 @@ class AppProvider extends ChangeNotifier {
   }
 
   Future<String?> register(
-      String firstName, String lastName, String hotelName, String email, String password) async {
-    final res = await api.register(firstName, lastName, hotelName, email, password);
+      String firstName, String lastName, String hotelName, String email, String password,
+      {String? inviteToken}) async {
+    final res = await api.register(firstName, lastName, hotelName, email, password, inviteToken: inviteToken);
     if (!res.ok) return res.error;
     final data = res.data!;
     // pending response — no token issued
@@ -110,6 +111,16 @@ class AppProvider extends ChangeNotifier {
     notifyListeners();
     await _loadProperty();
     return null;
+  }
+
+  void enterDemo() {
+    _view = AppView.demo;
+    notifyListeners();
+  }
+
+  void exitDemo() {
+    _view = AppView.landing;
+    notifyListeners();
   }
 
   Future<void> logout() async {

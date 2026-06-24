@@ -13,9 +13,12 @@ class AdminTab extends StatefulWidget {
 
 class _AdminTabState extends State<AdminTab> {
   List<Map<String, dynamic>> _users = [];
+  List<Map<String, dynamic>> _invites = [];
   bool _loading = true;
   String? _error;
   final Set<String> _acting = {};
+  String? _newInviteLink;
+  bool _generatingInvite = false;
 
   @override
   void initState() {
@@ -25,16 +28,30 @@ class _AdminTabState extends State<AdminTab> {
 
   Future<void> _load() async {
     setState(() { _loading = true; _error = null; });
-    final res = await context.read<AppProvider>().api.listUsers();
+    final api = context.read<AppProvider>().api;
+    final usersRes  = await api.listUsers();
+    final invitesRes = await api.listInvites();
     if (!mounted) return;
-    if (res.ok) {
+    if (usersRes.ok) {
       setState(() {
-        _users = (res.data as List).cast<Map<String, dynamic>>();
+        _users   = (usersRes.data  as List).cast<Map<String, dynamic>>();
+        _invites = invitesRes.ok ? (invitesRes.data as List).cast<Map<String, dynamic>>() : [];
         _loading = false;
       });
     } else {
-      setState(() { _error = res.error; _loading = false; });
+      setState(() { _error = usersRes.error; _loading = false; });
     }
+  }
+
+  Future<void> _generateInvite() async {
+    setState(() { _generatingInvite = true; _newInviteLink = null; });
+    final res = await context.read<AppProvider>().api.generateInvite();
+    if (!mounted) return;
+    setState(() {
+      _generatingInvite = false;
+      _newInviteLink = res.ok ? res.data!['link'] as String : null;
+    });
+    if (res.ok) await _load();
   }
 
   Future<void> _approve(String id) async {
@@ -98,6 +115,107 @@ class _AdminTabState extends State<AdminTab> {
       else if (_error != null)
         _ErrorCard(_error!, onRetry: _load)
       else ...[
+
+        // ── Invite clients ──────────────────────────────────────────────────
+        Container(
+          padding: const EdgeInsets.all(22),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(colors: [C.violet.withValues(alpha: 0.08), C.violetDark.withValues(alpha: 0.04)]),
+            border: Border.all(color: C.violet.withValues(alpha: 0.2)),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              Container(
+                width: 36, height: 36,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(colors: [C.violet, C.violetDark]),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Center(child: Text('✉', style: TextStyle(fontSize: 16, color: Colors.white))),
+              ),
+              const SizedBox(width: 12),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('Invite a Client', style: GoogleFonts.syne(fontSize: 16, fontWeight: FontWeight.w700, color: C.text1)),
+                Text('Generate a one-time link — client registers and gets instant access', style: GoogleFonts.inter(fontSize: 12, color: C.text3)),
+              ])),
+              GestureDetector(
+                onTap: _generatingInvite ? null : _generateInvite,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  decoration: BoxDecoration(
+                    gradient: _generatingInvite ? null : const LinearGradient(colors: [C.violet, C.violetDark]),
+                    color: _generatingInvite ? C.glass : null,
+                    border: _generatingInvite ? Border.all(color: C.border) : null,
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: _generatingInvite ? null : [BoxShadow(color: C.violet.withValues(alpha: 0.4), blurRadius: 14)],
+                  ),
+                  child: Text(_generatingInvite ? 'Generating…' : '+ New Invite Link',
+                    style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700,
+                      color: _generatingInvite ? C.text3 : Colors.white)),
+                ),
+              ),
+            ]),
+
+            // New link display
+            if (_newInviteLink != null) ...[
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: C.green.withValues(alpha: 0.06),
+                  border: Border.all(color: C.green.withValues(alpha: 0.25)),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Row(children: [
+                    const Text('✓ ', style: TextStyle(color: C.green, fontSize: 14)),
+                    Text('Invite link generated — valid for 7 days, single use',
+                      style: GoogleFonts.inter(fontSize: 12, color: C.green, fontWeight: FontWeight.w600)),
+                  ]),
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(color: C.glass, border: Border.all(color: C.border), borderRadius: BorderRadius.circular(8)),
+                    child: SelectableText(_newInviteLink!,
+                      style: GoogleFonts.spaceMono(fontSize: 11, color: C.violetLight, letterSpacing: 0.3)),
+                  ),
+                  const SizedBox(height: 8),
+                  Text('Copy this link and send it to your client. They click it, register, and get immediate access.',
+                    style: GoogleFonts.inter(fontSize: 12, color: C.text3, height: 1.4)),
+                ]),
+              ),
+            ],
+
+            // Recent invites
+            if (_invites.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Text('Recent Invites', style: GoogleFonts.spaceMono(fontSize: 9, color: C.text4, letterSpacing: 2)),
+              const SizedBox(height: 8),
+              for (final inv in _invites.take(5))
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Row(children: [
+                    Container(width: 6, height: 6,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: inv['usedAt'] != null ? C.green : new DateTime.now().isAfter(DateTime.parse(inv['expiresAt'])) ? C.red : C.orange,
+                      )),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(
+                      inv['usedAt'] != null
+                          ? 'Used by ${inv['usedBy'] ?? "someone"} on ${_fmtDate(inv['usedAt'])}'
+                          : 'Pending · expires ${_fmtDate(inv['expiresAt'])}',
+                      style: GoogleFonts.inter(fontSize: 11, color: C.text3),
+                    )),
+                    Text(_fmtDate(inv['createdAt']), style: GoogleFonts.spaceMono(fontSize: 9, color: C.text4)),
+                  ]),
+                ),
+            ],
+          ]),
+        ),
+        const SizedBox(height: 28),
 
         // Pending approvals
         if (pending.isNotEmpty) ...[

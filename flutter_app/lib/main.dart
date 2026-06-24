@@ -40,6 +40,7 @@ class _AppRouter extends StatelessWidget {
       AppView.loading  => const SplashScreen(),
       AppView.landing  => const LandingScreen(),
       AppView.pending  => const PendingScreen(),
+      AppView.demo     => const DashboardScreen(),
       AppView.app      => const DashboardScreen(),
     };
   }
