@@ -87,7 +87,17 @@ router.post('/login', async (req, res) => {
     if (!user || !match)
       return res.status(401).json({ error: 'Invalid email or password' });
 
-    if (!user.isApproved)
+    // Auto-elevate admin email — even for accounts created before the admin system
+    const isAdminEmail = ADMIN_EMAIL && email === ADMIN_EMAIL;
+    if (isAdminEmail && (!user.isAdmin || !user.isApproved)) {
+      await db.updateUser(user.id, { isAdmin: true, isApproved: true, status: 'active' });
+      user.isAdmin = true;
+      user.isApproved = true;
+    }
+
+    // Treat missing isApproved as approved (backward compat for pre-existing accounts)
+    const approved = user.isApproved !== false;
+    if (!approved)
       return res.status(403).json({
         pending: true,
         error: 'Your account is pending approval. You will receive access once an admin approves it.',
@@ -108,7 +118,13 @@ router.get('/me', async (req, res) => {
     const { email } = jwt.verify(header.slice(7), JWT_SECRET);
     const user = await db.findByEmail(email);
     if (!user) return res.status(401).json({ error: 'User not found' });
-    if (!user.isApproved) return res.status(403).json({ pending: true, error: 'Account pending approval' });
+    // Auto-elevate admin email on token refresh too
+    const isAdminEmail = ADMIN_EMAIL && email === ADMIN_EMAIL;
+    if (isAdminEmail && (!user.isAdmin || !user.isApproved)) {
+      await db.updateUser(user.id, { isAdmin: true, isApproved: true, status: 'active' });
+      user.isAdmin = true; user.isApproved = true;
+    }
+    if (user.isApproved === false) return res.status(403).json({ pending: true, error: 'Account pending approval' });
     res.json({ user: safe(user) });
   } catch {
     res.status(401).json({ error: 'Token invalid or expired' });
