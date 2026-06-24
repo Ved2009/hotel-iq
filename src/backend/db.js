@@ -156,6 +156,55 @@ module.exports = {
     return hotels[userId];
   },
 
+  // ── Password reset tokens ──
+  async createResetToken(email, token) {
+    const record = { token, email: email.toLowerCase(), createdAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(), usedAt: null };
+    if (MONGO_URI) {
+      const db = await mongo();
+      await db.collection('resetTokens').deleteMany({ email: email.toLowerCase() }); // clear old tokens
+      await db.collection('resetTokens').insertOne(record);
+      return record;
+    }
+    const file = path.join(DATA_DIR, 'reset_tokens.json');
+    const data = fileLoad(file);
+    // Clear old tokens for this email
+    for (const k of Object.keys(data)) { if (data[k].email === email.toLowerCase()) delete data[k]; }
+    data[token] = record;
+    fileSave(file, data);
+    return record;
+  },
+
+  async getResetToken(token) {
+    if (MONGO_URI) {
+      const db = await mongo();
+      return db.collection('resetTokens').findOne({ token }, { projection: { _id: 0 } });
+    }
+    return fileLoad(path.join(DATA_DIR, 'reset_tokens.json'))[token] || null;
+  },
+
+  async useResetToken(token) {
+    if (MONGO_URI) {
+      const db = await mongo();
+      await db.collection('resetTokens').updateOne({ token }, { $set: { usedAt: new Date().toISOString() } });
+      return;
+    }
+    const file = path.join(DATA_DIR, 'reset_tokens.json');
+    const data = fileLoad(file);
+    if (data[token]) data[token].usedAt = new Date().toISOString();
+    fileSave(file, data);
+  },
+
+  async setPassword(email, hashedPassword) {
+    if (MONGO_URI) {
+      const db = await mongo();
+      await db.collection('users').updateOne({ email: email.toLowerCase() }, { $set: { password: hashedPassword } });
+      return;
+    }
+    const data = fileLoad(DB_FILE);
+    const key = email.toLowerCase();
+    if (data[key]) { data[key].password = hashedPassword; fileSave(DB_FILE, data); }
+  },
+
   // ── Invite tokens ──
   async createInvite(token, createdBy) {
     const invite = { token, createdBy, createdAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), usedAt: null, usedBy: null };

@@ -1,5 +1,6 @@
 const express = require('express');
 const bcrypt  = require('bcryptjs');
+const crypto  = require('crypto');
 const jwt     = require('jsonwebtoken');
 const db      = require('../db');
 
@@ -128,6 +129,92 @@ router.get('/me', async (req, res) => {
     res.json({ user: safe(user) });
   } catch {
     res.status(401).json({ error: 'Token invalid or expired' });
+  }
+});
+
+// POST /api/auth/forgot-password
+router.post('/forgot-password', async (req, res) => {
+  const email = clean(req.body.email ?? '').toLowerCase();
+  if (!email || !validEmail(email))
+    return res.status(400).json({ error: 'Valid email required' });
+
+  // Always respond success — don't reveal whether email exists
+  res.json({ message: 'If that email is registered, a reset link has been sent.' });
+
+  try {
+    const user = await db.findByEmail(email);
+    if (!user) return; // silently do nothing
+
+    const token  = crypto.randomBytes(32).toString('hex');
+    await db.createResetToken(email, token);
+
+    const frontendUrl = process.env.FRONTEND_URL || 'https://hoteliq.us';
+    const resetLink   = `${frontendUrl}?reset=${token}`;
+
+    const RESEND_KEY = process.env.RESEND_API_KEY;
+    if (!RESEND_KEY) {
+      console.log(`[DEV] Password reset link for ${email}: ${resetLink}`);
+      return;
+    }
+
+    const { Resend } = require('resend');
+    const resend = new Resend(RESEND_KEY);
+    await resend.emails.send({
+      from: 'Hotel IQ <noreply@hoteliq.us>',
+      to: email,
+      subject: 'Reset your Hotel IQ password',
+      html: `
+        <div style="font-family:sans-serif;max-width:480px;margin:0 auto;background:#05050A;color:#F8F8FF;padding:40px;border-radius:16px">
+          <div style="font-size:22px;font-weight:800;margin-bottom:8px">Hotel<span style="color:#F59E0B">IQ</span></div>
+          <h2 style="font-size:20px;margin:24px 0 12px">Reset your password</h2>
+          <p style="color:#A0A0C0;line-height:1.6">
+            Someone (hopefully you) requested a password reset for <strong style="color:#fff">${email}</strong>.
+            Click the button below to set a new password. This link expires in 1 hour.
+          </p>
+          <div style="margin:32px 0">
+            <a href="${resetLink}" style="display:inline-block;background:linear-gradient(135deg,#7C3AED,#5B21B6);color:#fff;text-decoration:none;padding:14px 32px;border-radius:10px;font-weight:700;font-size:15px">
+              Reset Password →
+            </a>
+          </div>
+          <p style="color:#606080;font-size:12px">
+            If you didn't request this, you can safely ignore this email.
+            This link will expire in 1 hour and can only be used once.
+          </p>
+        </div>
+      `,
+    });
+  } catch (err) {
+    console.error('forgot-password error:', err);
+  }
+});
+
+// POST /api/auth/reset-password
+router.post('/reset-password', async (req, res) => {
+  const token    = clean(req.body.token ?? '');
+  const password = typeof req.body.password === 'string' ? req.body.password : '';
+
+  if (!token || !password)
+    return res.status(400).json({ error: 'Token and new password required' });
+  if (password.length < 8)
+    return res.status(400).json({ error: 'Password must be at least 8 characters' });
+
+  try {
+    const record = await db.getResetToken(token);
+    if (!record)
+      return res.status(400).json({ error: 'Invalid or expired reset link' });
+    if (record.usedAt)
+      return res.status(400).json({ error: 'This reset link has already been used' });
+    if (new Date(record.expiresAt) < new Date())
+      return res.status(400).json({ error: 'This reset link has expired. Request a new one.' });
+
+    const hashed = await bcrypt.hash(password, 12);
+    await db.setPassword(record.email, hashed);
+    await db.useResetToken(token);
+
+    res.json({ message: 'Password updated successfully. You can now log in.' });
+  } catch (err) {
+    console.error('reset-password error:', err);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 

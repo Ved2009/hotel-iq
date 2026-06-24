@@ -17,12 +17,14 @@ class AuthScreen extends StatefulWidget {
 }
 
 class _AuthScreenState extends State<AuthScreen> {
-  late String _tab;
+  late String _tab; // 'login' | 'register' | 'forgot' | 'forgot_sent'
   bool _loading = false;
   String? _error;
+  String? _success;
 
-  final _loginEmail = TextEditingController();
-  final _loginPwd   = TextEditingController();
+  final _loginEmail  = TextEditingController();
+  final _loginPwd    = TextEditingController();
+  final _forgotEmail = TextEditingController();
   final _regFirst   = TextEditingController();
   final _regLast    = TextEditingController();
   final _regHotel   = TextEditingController();
@@ -34,13 +36,25 @@ class _AuthScreenState extends State<AuthScreen> {
 
   @override
   void dispose() {
-    for (final c in [_loginEmail, _loginPwd, _regFirst, _regLast, _regHotel, _regEmail, _regPwd]) c.dispose();
+    for (final c in [_loginEmail, _loginPwd, _forgotEmail, _regFirst, _regLast, _regHotel, _regEmail, _regPwd]) c.dispose();
     super.dispose();
   }
 
   Future<void> _submit() async {
-    setState(() { _loading = true; _error = null; });
+    setState(() { _loading = true; _error = null; _success = null; });
     final prov = context.read<AppProvider>();
+
+    if (_tab == 'forgot') {
+      final res = await prov.api.forgotPassword(_forgotEmail.text.trim());
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        if (res.ok) { _tab = 'forgot_sent'; }
+        else { _error = res.error; }
+      });
+      return;
+    }
+
     String? err;
     if (_tab == 'login') {
       err = await prov.login(_loginEmail.text.trim(), _loginPwd.text);
@@ -126,28 +140,29 @@ class _AuthScreenState extends State<AuthScreen> {
           Text(_tab == 'login' ? 'Sign in to your revenue dashboard' : 'Create your free account',
             style: GoogleFonts.inter(fontSize: 13, color: C.text3)),
           const SizedBox(height: 32),
-          // Tabs
-          Container(
-            decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: C.border))),
-            child: Row(children: [
-              for (final t in [('login', 'Sign In'), ('register', 'Register')])
-                GestureDetector(
-                  onTap: () => setState(() { _tab = t.$1; _error = null; }),
-                  child: Container(
-                    padding: const EdgeInsets.fromLTRB(4, 0, 20, 12),
-                    decoration: BoxDecoration(
-                      border: Border(bottom: BorderSide(
-                        color: _tab == t.$1 ? C.violet : Colors.transparent, width: 2,
+          // Tabs (hidden for forgot password screens)
+          if (_tab == 'login' || _tab == 'register')
+            Container(
+              decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: C.border))),
+              child: Row(children: [
+                for (final t in [('login', 'Sign In'), ('register', 'Register')])
+                  GestureDetector(
+                    onTap: () => setState(() { _tab = t.$1; _error = null; _success = null; }),
+                    child: Container(
+                      padding: const EdgeInsets.fromLTRB(4, 0, 20, 12),
+                      decoration: BoxDecoration(
+                        border: Border(bottom: BorderSide(
+                          color: _tab == t.$1 ? C.violet : Colors.transparent, width: 2,
+                        )),
+                      ),
+                      child: Text(t.$2, style: GoogleFonts.inter(
+                        fontSize: 14, fontWeight: FontWeight.w600,
+                        color: _tab == t.$1 ? C.text1 : C.text3,
                       )),
                     ),
-                    child: Text(t.$2, style: GoogleFonts.inter(
-                      fontSize: 14, fontWeight: FontWeight.w600,
-                      color: _tab == t.$1 ? C.text1 : C.text3,
-                    )),
                   ),
-                ),
-            ]),
-          ),
+              ]),
+            ),
           const SizedBox(height: 28),
           // Invite banner
           if (widget.inviteToken != null && _tab == 'register') ...[
@@ -185,7 +200,10 @@ class _AuthScreenState extends State<AuthScreen> {
             ),
             const SizedBox(height: 20),
           ],
-          if (_tab == 'login') _loginForm() else _regForm(),
+          if (_tab == 'login') _loginForm()
+          else if (_tab == 'register') _regForm()
+          else if (_tab == 'forgot') _forgotForm()
+          else if (_tab == 'forgot_sent') _forgotSent(),
         ]),
       ),
     ]),
@@ -195,8 +213,73 @@ class _AuthScreenState extends State<AuthScreen> {
     _Field('Email Address', _loginEmail, 'you@hotel.com', type: TextInputType.emailAddress),
     const SizedBox(height: 20),
     _Field('Password', _loginPwd, '••••••••', obscure: true),
-    const SizedBox(height: 28),
+    const SizedBox(height: 12),
+    Align(
+      alignment: Alignment.centerRight,
+      child: GestureDetector(
+        onTap: () => setState(() { _tab = 'forgot'; _error = null; _forgotEmail.text = _loginEmail.text; }),
+        child: Text('Forgot password?',
+          style: GoogleFonts.inter(fontSize: 12, color: C.violetLight,
+            decoration: TextDecoration.underline, decorationColor: C.violetLight)),
+      ),
+    ),
+    const SizedBox(height: 20),
     _SubmitBtn(label: 'Access Dashboard', loading: _loading, onTap: _submit),
+  ]);
+
+  Widget _forgotForm() => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    GestureDetector(
+      onTap: () => setState(() { _tab = 'login'; _error = null; }),
+      child: Row(children: [
+        const Text('←  ', style: TextStyle(color: C.violetLight)),
+        Text('Back to sign in', style: GoogleFonts.inter(fontSize: 13, color: C.violetLight)),
+      ]),
+    ),
+    const SizedBox(height: 20),
+    Text('Reset Password',
+      style: GoogleFonts.syne(fontSize: 18, fontWeight: FontWeight.w700, color: C.text1)),
+    const SizedBox(height: 6),
+    Text('Enter your email address and we\'ll send you a link to reset your password.',
+      style: GoogleFonts.inter(fontSize: 13, color: C.text3, height: 1.5)),
+    const SizedBox(height: 24),
+    _Field('Email Address', _forgotEmail, 'you@hotel.com', type: TextInputType.emailAddress),
+    const SizedBox(height: 24),
+    _SubmitBtn(label: 'Send Reset Link', loading: _loading, onTap: _submit),
+  ]);
+
+  Widget _forgotSent() => Column(children: [
+    Container(
+      width: 64, height: 64,
+      decoration: BoxDecoration(
+        color: C.green.withValues(alpha: 0.1),
+        border: Border.all(color: C.green.withValues(alpha: 0.3)),
+        shape: BoxShape.circle,
+      ),
+      child: const Center(child: Text('✉', style: TextStyle(fontSize: 28))),
+    ),
+    const SizedBox(height: 20),
+    Text('Check your email',
+      style: GoogleFonts.syne(fontSize: 18, fontWeight: FontWeight.w700, color: C.text1)),
+    const SizedBox(height: 8),
+    Text(
+      'We\'ve sent a password reset link to ${_forgotEmail.text}. Click the link in the email to set a new password.\n\nThe link expires in 1 hour.',
+      textAlign: TextAlign.center,
+      style: GoogleFonts.inter(fontSize: 13, color: C.text3, height: 1.6),
+    ),
+    const SizedBox(height: 24),
+    GestureDetector(
+      onTap: () => setState(() { _tab = 'login'; _error = null; }),
+      child: Text('Back to sign in',
+        style: GoogleFonts.inter(fontSize: 13, color: C.violetLight,
+          decoration: TextDecoration.underline, decorationColor: C.violetLight)),
+    ),
+    const SizedBox(height: 8),
+    GestureDetector(
+      onTap: () => setState(() { _tab = 'forgot'; }),
+      child: Text('Didn\'t receive it? Try again',
+        style: GoogleFonts.inter(fontSize: 12, color: C.text3,
+          decoration: TextDecoration.underline, decorationColor: C.text3)),
+    ),
   ]);
 
   Widget _regForm() => Column(children: [

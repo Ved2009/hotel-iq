@@ -170,6 +170,31 @@ class ApiService {
     }
   }
 
+  // ── Password reset ────────────────────────────────────────────────────────
+  Future<ApiResult<String>> forgotPassword(String email) async {
+    try {
+      final r = await http.post(
+        Uri.parse('$base/api/auth/forgot-password'),
+        headers: await _headers(auth: false),
+        body: json.encode({'email': email}),
+      );
+      if (!_ok(r)) return ApiResult.err(_body(r)['error'] ?? 'Failed');
+      return ApiResult.ok(_body(r)['message'] as String);
+    } catch (e) { return const ApiResult.err('Network error'); }
+  }
+
+  Future<ApiResult<String>> resetPassword(String token, String password) async {
+    try {
+      final r = await http.post(
+        Uri.parse('$base/api/auth/reset-password'),
+        headers: await _headers(auth: false),
+        body: json.encode({'token': token, 'password': password}),
+      );
+      if (!_ok(r)) return ApiResult.err(_body(r)['error'] ?? 'Failed');
+      return ApiResult.ok(_body(r)['message'] as String);
+    } catch (e) { return const ApiResult.err('Network error'); }
+  }
+
   // ── Admin ─────────────────────────────────────────────────────────────────
   Future<ApiResult<List<dynamic>>> listUsers() async {
     try {
