@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import '../models/models.dart';
 import '../services/api_service.dart';
 
-enum AppView { loading, landing, app }
+enum AppView { loading, landing, pending, app }
 
 const String _apiBase = String.fromEnvironment('API_BASE', defaultValue: 'http://localhost:5000');
 
@@ -75,7 +75,15 @@ class AppProvider extends ChangeNotifier {
 
   Future<String?> login(String email, String password) async {
     final res = await api.login(email, password);
-    if (!res.ok) return res.error;
+    if (!res.ok) {
+      // pending === account exists but not approved
+      if (res.data != null && (res.data as Map?)?.containsKey('pending') == true) {
+        _view = AppView.pending;
+        notifyListeners();
+        return null;
+      }
+      return res.error;
+    }
     final data = res.data!;
     await ApiService.saveToken(data['token'] as String);
     _user = User.fromJson(data['user'] as Map<String, dynamic>);
@@ -90,6 +98,12 @@ class AppProvider extends ChangeNotifier {
     final res = await api.register(firstName, lastName, hotelName, email, password);
     if (!res.ok) return res.error;
     final data = res.data!;
+    // pending response — no token issued
+    if (data.containsKey('pending')) {
+      _view = AppView.pending;
+      notifyListeners();
+      return null;
+    }
     await ApiService.saveToken(data['token'] as String);
     _user = User.fromJson(data['user'] as Map<String, dynamic>);
     _view = AppView.app;

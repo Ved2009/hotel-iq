@@ -5,6 +5,9 @@ class User {
   final String hotelName;
   final String email;
   final String? createdAt;
+  final bool isAdmin;
+  final bool isApproved;
+  final String status;
 
   const User({
     required this.id,
@@ -13,6 +16,9 @@ class User {
     required this.hotelName,
     required this.email,
     this.createdAt,
+    this.isAdmin = false,
+    this.isApproved = true,
+    this.status = 'active',
   });
 
   factory User.fromJson(Map<String, dynamic> j) => User(
@@ -22,6 +28,9 @@ class User {
     hotelName: j['hotelName'] ?? '',
     email: j['email'] ?? '',
     createdAt: j['createdAt'],
+    isAdmin: j['isAdmin'] == true,
+    isApproved: j['isApproved'] != false, // default true for backward compat
+    status: j['status'] ?? 'active',
   );
 
   String get initials => (firstName.isNotEmpty ? firstName[0] : 'H').toUpperCase();

@@ -9,6 +9,7 @@ const authRoutes     = require('./routes/auth');
 const aiRoutes       = require('./routes/ai');
 const compsetRoutes  = require('./routes/compset');
 const propertyRoutes = require('./routes/property');
+const adminRoutes    = require('./routes/admin');
 
 // Fail fast if JWT_SECRET is not set in production
 if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
@@ -76,6 +77,7 @@ app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/ai',   aiLimiter,   aiRoutes);
 app.use('/api/compset',  compsetRoutes);
 app.use('/api/property', propertyRoutes);
+app.use('/api/admin',    adminRoutes);
 
 // Health check (not rate-limited)
 app.get('/api/health', (_req, res) => res.json({ status: 'ok', ts: new Date().toISOString() }));

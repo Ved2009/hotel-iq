@@ -4,6 +4,7 @@ import 'providers/app_provider.dart';
 import 'theme/app_theme.dart';
 import 'screens/splash_screen.dart';
 import 'screens/landing_screen.dart';
+import 'screens/pending_screen.dart';
 import 'screens/dashboard/dashboard_screen.dart';
 
 void main() {
@@ -36,9 +37,10 @@ class _AppRouter extends StatelessWidget {
   Widget build(BuildContext context) {
     final view = context.watch<AppProvider>().view;
     return switch (view) {
-      AppView.loading => const SplashScreen(),
-      AppView.landing => const LandingScreen(),
-      AppView.app     => const DashboardScreen(),
+      AppView.loading  => const SplashScreen(),
+      AppView.landing  => const LandingScreen(),
+      AppView.pending  => const PendingScreen(),
+      AppView.app      => const DashboardScreen(),
     };
   }
 }

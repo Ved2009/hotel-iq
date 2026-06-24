@@ -167,6 +167,31 @@ class ApiService {
     }
   }
 
+  // ── Admin ─────────────────────────────────────────────────────────────────
+  Future<ApiResult<List<dynamic>>> listUsers() async {
+    try {
+      final r = await http.get(Uri.parse('$base/api/admin/users'), headers: await _headers());
+      if (!_ok(r)) return const ApiResult.err('Failed to load users');
+      return ApiResult.ok((_body(r)['users'] as List<dynamic>));
+    } catch (e) { return const ApiResult.err('Network error'); }
+  }
+
+  Future<ApiResult<void>> approveUser(String userId) async {
+    try {
+      final r = await http.post(Uri.parse('$base/api/admin/users/$userId/approve'), headers: await _headers());
+      if (!_ok(r)) return ApiResult.err(_body(r)['error'] ?? 'Failed');
+      return const ApiResult.ok(null);
+    } catch (e) { return const ApiResult.err('Network error'); }
+  }
+
+  Future<ApiResult<void>> deactivateUser(String userId) async {
+    try {
+      final r = await http.post(Uri.parse('$base/api/admin/users/$userId/deactivate'), headers: await _headers());
+      if (!_ok(r)) return ApiResult.err(_body(r)['error'] ?? 'Failed');
+      return const ApiResult.ok(null);
+    } catch (e) { return const ApiResult.err('Network error'); }
+  }
+
   // ── Comp Set ───────────────────────────────────────────────────────────────
   Future<ApiResult<Map<String, dynamic>>> getCompSetRates(double yourRate) async {
     try {

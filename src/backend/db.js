@@ -156,6 +156,31 @@ module.exports = {
     return hotels[userId];
   },
 
+  // ── User management (admin) ──
+  async listUsers() {
+    if (MONGO_URI) {
+      const db = await mongo();
+      return db.collection('users').find({}, { projection: { _id: 0, password: 0 } }).toArray();
+    }
+    const data = fileLoad(DB_FILE);
+    return Object.values(data).map(({ password, ...u }) => u);
+  },
+
+  async updateUser(userId, fields) {
+    if (MONGO_URI) {
+      const db = await mongo();
+      await db.collection('users').updateOne({ id: userId }, { $set: fields });
+      return db.collection('users').findOne({ id: userId }, { projection: { _id: 0, password: 0 } });
+    }
+    const data = fileLoad(DB_FILE);
+    const key = Object.keys(data).find(k => data[k].id === userId);
+    if (!key) return null;
+    data[key] = { ...data[key], ...fields };
+    fileSave(DB_FILE, data);
+    const { password, ...user } = data[key];
+    return user;
+  },
+
   async applyRate(userId, { roomId, oldRate, newRate, reason }) {
     if (MONGO_URI) {
       const db = await mongo();

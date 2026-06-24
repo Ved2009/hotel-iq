@@ -13,6 +13,7 @@ import 'tabs/calendar_tab.dart';
 import 'tabs/reports_tab.dart';
 import 'tabs/settings_tab.dart';
 import 'tabs/ai_analyst_tab.dart';
+import 'tabs/admin_tab.dart';
 
 // Navigation structure
 const _navGroups = [
@@ -29,6 +30,7 @@ const _navGroups = [
     ('calendar',  'Calendar',     '▦', 'Monthly revenue view'),
     ('reports',   'Reports',      '≡', 'Download reports'),
     ('settings',  'Settings',     '◎', 'Property & account'),
+    ('admin',     'Admin',        '⊛', 'User management'),
   ]),
 ];
 
@@ -276,12 +278,13 @@ class _Sidebar extends StatelessWidget {
                     style: GoogleFonts.spaceMono(fontSize: 8, color: C.text4, letterSpacing: 2.5)),
                 ),
                 for (final n in _navGroups[gi].$2)
-                  _NavItem(
-                    id: n.$1, label: n.$2, icon: n.$3,
-                    isActive: active == n.$1,
-                    badge: n.$1 == 'pricing' && urgentCount > 0 ? urgentCount : null,
-                    onTap: () => setTab(n.$1),
-                  ),
+                  if (n.$1 != 'admin' || (prov.user?.isAdmin == true))
+                    _NavItem(
+                      id: n.$1, label: n.$2, icon: n.$3,
+                      isActive: active == n.$1,
+                      badge: n.$1 == 'pricing' && urgentCount > 0 ? urgentCount : null,
+                      onTap: () => setTab(n.$1),
+                    ),
               ],
             ]),
           ),
@@ -447,6 +450,7 @@ class _Body extends StatelessWidget {
       case 'forecast':  return ForecastTab(setTab: setTab);
       case 'compset':   return const CompSetTab();
       case 'ai':        return const AiAnalystTab();
+      case 'admin':     return const AdminTab();
       case 'calendar':  return const CalendarTab();
       case 'reports':   return const ReportsTab();
       case 'settings':  return const SettingsTab();
