@@ -121,11 +121,18 @@ function analyzeRates(hotels, yourRate, { targetDate, recentOccupancy } = {}) {
 // ── Route: GET /api/compset/rates ─────────────────────────────────────────────
 router.get("/rates", requireAuth, async (req, res) => {
   const {
-    location = "beachfront hotels",
     checkIn,
     checkOut,
     yourRate = 189,
   } = req.query;
+
+  // Fall back to the property's own saved location when the caller
+  // doesn't pass one explicitly, instead of a generic placeholder search.
+  let location = req.query.location;
+  if (!location) {
+    const hotel = await db.getOrCreateHotel(req.user.userId, null);
+    location = hotel?.profile?.location || "beachfront hotels";
+  }
 
   const cacheKey = `${req.user.userId}-${location}-${checkIn}-${checkOut}`;
   const now = Date.now();
