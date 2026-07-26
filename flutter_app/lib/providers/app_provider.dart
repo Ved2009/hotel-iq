@@ -202,6 +202,7 @@ class AppProvider extends ChangeNotifier {
   }
 
   Map<String, dynamic>? _compsetAnalysis;
+  Map<String, dynamic>? get compsetAnalysis => _compsetAnalysis;
 
   Future<void> _loadCompsetAnalysis() async {
     final rooms = _property?.rooms ?? [];

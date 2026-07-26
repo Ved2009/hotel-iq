@@ -1,8 +1,99 @@
+import 'dart:convert';
+import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../data/mock_data.dart';
+import 'package:provider/provider.dart';
+import '../../../providers/app_provider.dart';
 import '../../../theme/app_theme.dart';
 import '../../../widgets/section_header.dart';
+
+void _downloadCsv(String filename, String csv) {
+  final bytes = utf8.encode(csv);
+  final blob = html.Blob([bytes], 'text/csv');
+  final url = html.Url.createObjectUrlFromBlob(blob);
+  html.AnchorElement(href: url)
+    ..setAttribute('download', filename)
+    ..click();
+  html.Url.revokeObjectUrl(url);
+}
+
+String _csvRow(List<Object?> cells) =>
+    cells.map((c) => c == null ? '' : c.toString()).join(',');
+
+class _ReportDef {
+  final String name;
+  final String desc;
+  final String freq;
+  final bool Function(AppProvider) available;
+  final String Function(AppProvider) buildCsv;
+  const _ReportDef({
+    required this.name, required this.desc, required this.freq,
+    required this.available, required this.buildCsv,
+  });
+}
+
+final List<_ReportDef> _reportDefs = [
+  _ReportDef(
+    name: 'Daily Metrics Export',
+    desc: 'Every day of imported history — date, occupancy, ADR, RevPAR, room revenue, rooms sold',
+    freq: 'On demand',
+    available: (p) => p.hasRealHistory,
+    buildCsv: (p) {
+      final rows = [_csvRow(['date', 'occupancy', 'adr', 'revpar', 'roomRevenue', 'fbRevenue', 'roomsSold'])];
+      for (final r in p.dailyHistory) {
+        rows.add(_csvRow([r['date'], r['occupancy'], r['adr'], r['revpar'], r['roomRevenue'], r['fbRevenue'], r['roomsSold']]));
+      }
+      return rows.join('\n');
+    },
+  ),
+  _ReportDef(
+    name: 'Year-over-Year Comparison',
+    desc: 'Monthly occupancy, ADR & RevPAR — this year vs last year',
+    freq: 'On demand',
+    available: (p) => p.monthlyHistory.length > 1,
+    buildCsv: (p) {
+      final rows = [_csvRow(['month', 'occupancy', 'adr', 'revpar', 'roomRevenue', 'fbRevenue'])];
+      for (final m in p.monthlyHistory) {
+        rows.add(_csvRow([m['month'], m['occupancy'], m['adr'], m['revpar'], m['roomRevenue'], m['fbRevenue']]));
+      }
+      return rows.join('\n');
+    },
+  ),
+  _ReportDef(
+    name: '14-Day Demand Forecast',
+    desc: 'Day-of-week seasonal forecast, next 14 days',
+    freq: 'On demand',
+    available: (p) => p.hasRealHistory,
+    buildCsv: (p) {
+      final rows = [_csvRow(['date', 'weekday', 'forecastDemandPct', 'historicalSamples'])];
+      for (final d in p.forecastNext14Days) {
+        final date = d['date'] as DateTime;
+        rows.add(_csvRow([
+          '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}',
+          d['weekday'], d['demand'], d['sampleCount'],
+        ]));
+      }
+      return rows.join('\n');
+    },
+  ),
+  _ReportDef(
+    name: 'Comp Set Snapshot',
+    desc: 'Live competitor rates & position — open the Comp Set tab first to fetch this',
+    freq: 'On demand',
+    available: (p) => p.compsetAnalysis != null,
+    buildCsv: (p) {
+      final a = p.compsetAnalysis!;
+      final rows = [_csvRow(['metric', 'value'])];
+      rows.add(_csvRow(['avgComp', a['avgComp']]));
+      rows.add(_csvRow(['maxRate', a['maxRate']]));
+      rows.add(_csvRow(['minRate', a['minRate']]));
+      rows.add(_csvRow(['position', a['position']]));
+      rows.add(_csvRow(['parity%', a['parity']]));
+      rows.add(_csvRow(['suggestion', a['suggestion']]));
+      return rows.join('\n');
+    },
+  ),
+];
 
 class ReportsTab extends StatefulWidget {
   const ReportsTab({super.key});
@@ -16,10 +107,13 @@ class _ReportsTabState extends State<ReportsTab> {
 
   @override
   Widget build(BuildContext context) {
+    final prov = context.watch<AppProvider>();
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      const SectionHeader(
+      SectionHeader(
         title: 'Reports',
-        sub: 'Download, schedule and manage performance reports',
+        sub: prov.hasRealHistory
+            ? 'Real CSV exports from your imported history'
+            : 'Import data (Settings) to unlock real exports',
         live: false,
       ),
       const SizedBox(height: 20),
@@ -32,16 +126,23 @@ class _ReportsTabState extends State<ReportsTab> {
           crossAxisSpacing: 14,
           mainAxisSpacing: 14,
           childAspectRatio: cols == 2 ? 3 : 2.5,
-          children: reports.map((r) => _ReportCard(
-            report: r,
-            downloading: _downloading == r.name,
-            onDownload: () async {
-              if (r.status != 'Ready') return;
-              setState(() => _downloading = r.name);
-              await Future.delayed(const Duration(milliseconds: 1200));
-              if (mounted) setState(() => _downloading = null);
-            },
-          )).toList(),
+          children: _reportDefs.map((r) {
+            final isReady = r.available(prov);
+            return _ReportCard(
+              report: r,
+              isReady: isReady,
+              downloading: _downloading == r.name,
+              onDownload: () async {
+                if (!isReady) return;
+                setState(() => _downloading = r.name);
+                final csv = r.buildCsv(prov);
+                final slug = r.name.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '-');
+                _downloadCsv('$slug.csv', csv);
+                await Future.delayed(const Duration(milliseconds: 600));
+                if (mounted) setState(() => _downloading = null);
+              },
+            );
+          }).toList(),
         );
       }),
     ]);
@@ -49,16 +150,15 @@ class _ReportsTabState extends State<ReportsTab> {
 }
 
 class _ReportCard extends StatelessWidget {
-  final ReportItem report;
+  final _ReportDef report;
+  final bool isReady;
   final bool downloading;
   final VoidCallback onDownload;
 
-  const _ReportCard({required this.report, required this.downloading, required this.onDownload});
+  const _ReportCard({required this.report, required this.isReady, required this.downloading, required this.onDownload});
 
   @override
   Widget build(BuildContext context) {
-    final isReady = report.status == 'Ready';
-
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
       decoration: BoxDecoration(
@@ -88,7 +188,7 @@ class _ReportCard extends StatelessWidget {
           Row(children: [
             _Badge(text: report.freq, color: C.blue),
             const SizedBox(width: 8),
-            _Badge(text: report.status, color: isReady ? C.green : const Color(0xFF818CF8)),
+            _Badge(text: isReady ? 'Ready' : 'No data yet', color: isReady ? C.green : const Color(0xFF818CF8)),
           ]),
         ])),
         const SizedBox(width: 16),
