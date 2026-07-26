@@ -269,11 +269,15 @@ class _CompSetTabState extends State<CompSetTab> {
               // Name
               Expanded(flex: 2, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Row(children: [
-                  Text(c.name,
-                    style: GoogleFonts.inter(
-                      fontSize: 14, fontWeight: FontWeight.w600,
-                      color: isYou ? const Color(0xFFC7D2FE) : C.text1,
-                    )),
+                  Flexible(
+                    child: Text(c.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(
+                        fontSize: 14, fontWeight: FontWeight.w600,
+                        color: isYou ? const Color(0xFFC7D2FE) : C.text1,
+                      )),
+                  ),
                   if (isYou) ...[
                     const SizedBox(width: 8),
                     Container(
@@ -291,11 +295,15 @@ class _CompSetTabState extends State<CompSetTab> {
               ])),
               // Rate
               SizedBox(width: 90, child: Column(children: [
-                Text('\$${c.rate.toInt()}',
-                  style: GoogleFonts.syne(
-                    fontSize: 28, fontWeight: FontWeight.w800,
-                    color: isYou ? const Color(0xFF818CF8) : Colors.white, letterSpacing: -1,
-                  )),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text('\$${c.rate.toInt()}',
+                    maxLines: 1,
+                    style: GoogleFonts.syne(
+                      fontSize: 28, fontWeight: FontWeight.w800,
+                      color: isYou ? const Color(0xFF818CF8) : Colors.white, letterSpacing: -1,
+                    )),
+                ),
                 Text(c.change > 0 ? '▲ ${c.change}%' : c.change < 0 ? '▼ ${c.change.abs()}%' : '— steady',
                   style: GoogleFonts.spaceMono(fontSize: 10,
                     color: c.change > 0 ? C.green : c.change < 0 ? C.red : C.text3)),
