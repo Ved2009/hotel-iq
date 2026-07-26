@@ -16,6 +16,8 @@ class AppProvider extends ChangeNotifier {
   String? _propertyError;
   final Set<int> _applied = {};
   final Set<int> _skipped = {};
+  List<Map<String, dynamic>> _dailyHistory = [];
+  List<Map<String, dynamic>> _monthlyHistory = [];
 
   AppView get view             => _view;
   User?   get user             => _user;
@@ -24,8 +26,57 @@ class AppProvider extends ChangeNotifier {
   String? get propertyError    => _propertyError;
   Set<int> get applied         => _applied;
   Set<int> get skipped         => _skipped;
+  List<Map<String, dynamic>> get dailyHistory   => _dailyHistory;
+  List<Map<String, dynamic>> get monthlyHistory => _monthlyHistory;
+  bool get hasRealHistory => _dailyHistory.isNotEmpty;
 
-  bool get isNewUser => _user != null && _property != null && !(_property!.metrics.hasData);
+  bool get isNewUser => _user != null && _property != null && !(_property!.metrics.hasData) && !hasRealHistory;
+
+  // ── Derived "live" metrics from real daily history ───────────────────────
+  // Falls back to null (caller uses manual metrics/mock) when no history exists.
+  Map<String, dynamic>? get _latestDay => _dailyHistory.isEmpty ? null : _dailyHistory.last;
+
+  double? get liveOccupancy => _latestDay?['occupancy']?.toDouble();
+  double? get liveAdr       => _latestDay?['adr']?.toDouble();
+  double? get liveRevpar    => _latestDay?['revpar']?.toDouble();
+  String?  get latestHistoryDate => _latestDay?['date'] as String?;
+
+  double? get liveRevenueMtd {
+    if (_dailyHistory.isEmpty) return null;
+    final lastDate = _latestDay!['date'] as String;
+    final month = lastDate.substring(0, 7); // YYYY-MM
+    double sum = 0;
+    for (final r in _dailyHistory) {
+      if ((r['date'] as String).startsWith(month)) {
+        sum += (r['roomRevenue'] as num?)?.toDouble() ?? 0;
+        sum += (r['fbRevenue'] as num?)?.toDouble() ?? 0;
+      }
+    }
+    return sum;
+  }
+
+  /// Last 7 days of history, oldest first — for the weekly revenue chart.
+  List<Map<String, dynamic>> get last7Days =>
+      _dailyHistory.length <= 7 ? _dailyHistory : _dailyHistory.sublist(_dailyHistory.length - 7);
+
+  /// Monthly occupancy split into this-year vs last-year series (by calendar
+  /// month, Jan=0..Dec=11), for year-over-year comparison charts.
+  (List<double?> thisYear, List<double?> lastYear) get yearOverYearOccupancy {
+    if (_monthlyHistory.isEmpty) return (List.filled(12, null), List.filled(12, null));
+    final years = _monthlyHistory.map((m) => (m['month'] as String).substring(0, 4)).toSet().toList()..sort();
+    final currentYear = years.last;
+    final priorYear = years.length > 1 ? years[years.length - 2] : null;
+    final thisYear = List<double?>.filled(12, null);
+    final lastYear = List<double?>.filled(12, null);
+    for (final m in _monthlyHistory) {
+      final year  = (m['month'] as String).substring(0, 4);
+      final month = int.parse((m['month'] as String).substring(5, 7)) - 1;
+      final occ = (m['occupancy'] as num?)?.toDouble();
+      if (year == currentYear) thisYear[month] = occ;
+      if (year == priorYear)   lastYear[month] = occ;
+    }
+    return (thisYear, lastYear);
+  }
 
   int get urgentCount {
     if (_property == null) return 0;
@@ -69,6 +120,18 @@ class AppProvider extends ChangeNotifier {
       _propertyError = 'Could not load property data.';
     }
     notifyListeners();
+
+    if (res.ok) await _loadMetricsHistory();
+  }
+
+  Future<void> _loadMetricsHistory() async {
+    final res = await api.getMetricsHistory();
+    if (res.ok) {
+      final data = res.data!;
+      _dailyHistory   = (data['daily'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
+      _monthlyHistory = (data['monthly'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
+      notifyListeners();
+    }
   }
 
   // ── Auth ──────────────────────────────────────────────────────────────────

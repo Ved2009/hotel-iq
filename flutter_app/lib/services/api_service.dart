@@ -236,6 +236,21 @@ class ApiService {
     } catch (e) { return const ApiResult.err('Network error'); }
   }
 
+  // ── Metrics history ────────────────────────────────────────────────────────
+  Future<ApiResult<Map<String, dynamic>>> getMetricsHistory({String? from, String? to}) async {
+    try {
+      final params = <String, String>{};
+      if (from != null) params['from'] = from;
+      if (to != null) params['to'] = to;
+      final uri = Uri.parse('$base/api/property/metrics/history').replace(queryParameters: params.isEmpty ? null : params);
+      final r = await http.get(uri, headers: await _headers());
+      if (!_ok(r)) return const ApiResult.err('Failed to load history');
+      return ApiResult.ok(_body(r));
+    } catch (e) {
+      return const ApiResult.err('Network error');
+    }
+  }
+
   // ── Comp Set ───────────────────────────────────────────────────────────────
   Future<ApiResult<Map<String, dynamic>>> getCompSetRates(double yourRate) async {
     try {

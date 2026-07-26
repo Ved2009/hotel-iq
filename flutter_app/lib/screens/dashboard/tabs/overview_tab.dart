@@ -43,14 +43,14 @@ class OverviewTab extends StatelessWidget {
       ));
     }
 
-    final occ    = m?.occupancy   ?? 73.0;
-    final adr    = m?.adr         ?? 195.0;
-    final revpar = m?.revpar      ?? 142.0;
-    final trevpar= m?.trevpar     ?? 168.0;
-    final revMtd = m?.revenueMtd  ?? 89400.0;
-    final goppar = m?.goppar      ?? 89.0;
+    final occ    = prov.liveOccupancy   ?? m?.occupancy   ?? 73.0;
+    final adr    = prov.liveAdr         ?? m?.adr         ?? 195.0;
+    final revpar = prov.liveRevpar      ?? m?.revpar      ?? 142.0;
+    final trevpar= m?.trevpar     ?? 168.0; // no ancillary/F&B revenue in imported history yet
+    final revMtd = prov.liveRevenueMtd  ?? m?.revenueMtd  ?? 89400.0;
+    final goppar = m?.goppar      ?? 89.0; // no cost data available to derive this from history
     final rooms  = p?.totalRooms  ?? 292;
-    final hasReal = m?.hasData == true;
+    final hasReal = prov.hasRealHistory || m?.hasData == true;
 
     final urgent = pricingRecs.where((r) =>
       r.urgency == 'high' &&
@@ -68,7 +68,9 @@ class OverviewTab extends StatelessWidget {
       SectionHeader(
         title: user?.hotelName ?? p?.hotelName ?? 'Hotel IQ Dashboard',
         sub: hasReal
-            ? 'Live data · Updated ${_timeAgo(m!.updatedAt!)}'
+            ? (prov.hasRealHistory
+                ? 'Live data · Through ${prov.latestHistoryDate}'
+                : 'Live data · Updated ${_timeAgo(m!.updatedAt!)}')
             : user != null
                 ? 'Demo data shown — enter real metrics in Settings'
                 : 'Demo data — sign in to connect your property',
@@ -172,36 +174,50 @@ String _timeAgo(String iso) {
 
 class _OccupancyChart extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => CardContainer(
-    title: '12-Month Occupancy',
-    subtitle: 'This year vs last year',
-    accent: C.violet,
-    child: SizedBox(height: 210, child: LineChart(LineChartData(
-      gridData: FlGridData(show: true, drawVerticalLine: false,
-        getDrawingHorizontalLine: (_) => const FlLine(color: Color(0x0FFFFFFF), strokeWidth: 1)),
-      titlesData: FlTitlesData(
-        leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 36,
-          getTitlesWidget: (v, _) => Text('${v.toInt()}%',
-            style: GoogleFonts.inter(fontSize: 9, color: C.text3)))),
-        bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 20, interval: 1,
-          getTitlesWidget: (v, _) {
-            final i = v.toInt();
-            if (i < 0 || i >= months.length) return const SizedBox();
-            return Text(months[i], style: GoogleFonts.inter(fontSize: 9, color: C.text3));
-          })),
-        rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-      ),
-      borderData: FlBorderData(show: false),
-      minX: 0, maxX: 11, minY: 30, maxY: 100,
-      lineBarsData: [
-        _line(monthlyData.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.occupancy)).toList(),
-          C.violet, 2.5, null, true),
-        _line(monthlyData.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.lastYear)).toList(),
-          C.text3, 1.5, [4, 4], false),
-      ],
-    ))),
-  );
+  Widget build(BuildContext context) {
+    final prov = context.watch<AppProvider>();
+    final hasReal = prov.hasRealHistory;
+
+    final List<FlSpot> thisYearSpots;
+    final List<FlSpot> lastYearSpots;
+    if (hasReal) {
+      final (thisYear, lastYear) = prov.yearOverYearOccupancy;
+      thisYearSpots = [for (var i = 0; i < 12; i++) if (thisYear[i] != null) FlSpot(i.toDouble(), thisYear[i]!)];
+      lastYearSpots = [for (var i = 0; i < 12; i++) if (lastYear[i] != null) FlSpot(i.toDouble(), lastYear[i]!)];
+    } else {
+      thisYearSpots = monthlyData.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.occupancy)).toList();
+      lastYearSpots = monthlyData.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.lastYear)).toList();
+    }
+
+    return CardContainer(
+      title: '12-Month Occupancy',
+      subtitle: 'This year vs last year',
+      accent: C.violet,
+      child: SizedBox(height: 210, child: LineChart(LineChartData(
+        gridData: FlGridData(show: true, drawVerticalLine: false,
+          getDrawingHorizontalLine: (_) => const FlLine(color: Color(0x0FFFFFFF), strokeWidth: 1)),
+        titlesData: FlTitlesData(
+          leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 36,
+            getTitlesWidget: (v, _) => Text('${v.toInt()}%',
+              style: GoogleFonts.inter(fontSize: 9, color: C.text3)))),
+          bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 20, interval: 1,
+            getTitlesWidget: (v, _) {
+              final i = v.toInt();
+              if (i < 0 || i >= months.length) return const SizedBox();
+              return Text(months[i], style: GoogleFonts.inter(fontSize: 9, color: C.text3));
+            })),
+          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        ),
+        borderData: FlBorderData(show: false),
+        minX: 0, maxX: 11, minY: 0, maxY: 100,
+        lineBarsData: [
+          _line(thisYearSpots, C.violet, 2.5, null, true),
+          _line(lastYearSpots, C.text3, 1.5, [4, 4], false),
+        ],
+      ))),
+    );
+  }
 
   LineChartBarData _line(List<FlSpot> spots, Color color, double width, List<int>? dash, bool fill) =>
     LineChartBarData(
@@ -214,43 +230,64 @@ class _OccupancyChart extends StatelessWidget {
 }
 
 class _RevenueBarChart extends StatelessWidget {
+  static const _dayAbbr = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
   @override
-  Widget build(BuildContext context) => CardContainer(
-    title: 'Weekly Revenue',
-    subtitle: 'Mon–Sun · weekend highlighted',
-    accent: C.gold,
-    child: SizedBox(height: 210, child: BarChart(BarChartData(
-      gridData: FlGridData(show: true, drawVerticalLine: false,
-        getDrawingHorizontalLine: (_) => const FlLine(color: Color(0x0FFFFFFF), strokeWidth: 1)),
-      titlesData: FlTitlesData(
-        bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 22,
-          getTitlesWidget: (v, _) {
-            final i = v.toInt();
-            if (i < 0 || i >= weeklyRevenue.length) return const SizedBox();
-            return Text(weeklyRevenue[i].day, style: GoogleFonts.inter(fontSize: 10, color: C.text3));
-          })),
-        leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 42,
-          getTitlesWidget: (v, _) => Text('\$${(v/1000).toStringAsFixed(0)}k',
-            style: GoogleFonts.inter(fontSize: 9, color: C.text3)))),
-        rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-      ),
-      borderData: FlBorderData(show: false),
-      barGroups: weeklyRevenue.asMap().entries.map((e) => BarChartGroupData(
-        x: e.key,
-        barRods: [BarChartRodData(
-          toY: e.value.revenue,
-          gradient: e.key >= 4
-              ? const LinearGradient(begin: Alignment.bottomCenter, end: Alignment.topCenter,
-                  colors: [C.gold, Color(0xFFFBBF24)])
-              : LinearGradient(begin: Alignment.bottomCenter, end: Alignment.topCenter,
-                  colors: [C.violet.withValues(alpha: 0.4), C.violet.withValues(alpha: 0.6)]),
-          width: 28,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
-        )],
-      )).toList(),
-    ))),
-  );
+  Widget build(BuildContext context) {
+    final prov = context.watch<AppProvider>();
+    final hasReal = prov.hasRealHistory;
+
+    final List<String> labels;
+    final List<double> values;
+    final List<bool> isWeekend;
+    if (hasReal) {
+      final days = prov.last7Days;
+      labels = [for (final d in days) _dayAbbr[DateTime.parse(d['date'] as String).weekday - 1]];
+      values = [for (final d in days) ((d['roomRevenue'] as num?)?.toDouble() ?? 0) + ((d['fbRevenue'] as num?)?.toDouble() ?? 0)];
+      isWeekend = [for (final d in days) DateTime.parse(d['date'] as String).weekday >= 6];
+    } else {
+      labels = weeklyRevenue.map((d) => d.day).toList();
+      values = weeklyRevenue.map((d) => d.revenue).toList();
+      isWeekend = List.generate(weeklyRevenue.length, (i) => i >= 4);
+    }
+
+    return CardContainer(
+      title: 'Weekly Revenue',
+      subtitle: hasReal ? 'Last 7 days · weekend highlighted' : 'Mon–Sun · weekend highlighted',
+      accent: C.gold,
+      child: SizedBox(height: 210, child: BarChart(BarChartData(
+        gridData: FlGridData(show: true, drawVerticalLine: false,
+          getDrawingHorizontalLine: (_) => const FlLine(color: Color(0x0FFFFFFF), strokeWidth: 1)),
+        titlesData: FlTitlesData(
+          bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 22,
+            getTitlesWidget: (v, _) {
+              final i = v.toInt();
+              if (i < 0 || i >= labels.length) return const SizedBox();
+              return Text(labels[i], style: GoogleFonts.inter(fontSize: 10, color: C.text3));
+            })),
+          leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 42,
+            getTitlesWidget: (v, _) => Text('\$${(v/1000).toStringAsFixed(0)}k',
+              style: GoogleFonts.inter(fontSize: 9, color: C.text3)))),
+          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        ),
+        borderData: FlBorderData(show: false),
+        barGroups: values.asMap().entries.map((e) => BarChartGroupData(
+          x: e.key,
+          barRods: [BarChartRodData(
+            toY: e.value,
+            gradient: isWeekend[e.key]
+                ? const LinearGradient(begin: Alignment.bottomCenter, end: Alignment.topCenter,
+                    colors: [C.gold, Color(0xFFFBBF24)])
+                : LinearGradient(begin: Alignment.bottomCenter, end: Alignment.topCenter,
+                    colors: [C.violet.withValues(alpha: 0.4), C.violet.withValues(alpha: 0.6)]),
+            width: 28,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
+          )],
+        )).toList(),
+      ))),
+    );
+  }
 }
 
 // ── AI Insight ────────────────────────────────────────────────────────────────
