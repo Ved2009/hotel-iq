@@ -55,6 +55,19 @@ class AppProvider extends ChangeNotifier {
     return sum;
   }
 
+  double? get liveRoomRevenueMtd {
+    if (_dailyHistory.isEmpty) return null;
+    final lastDate = _latestDay!['date'] as String;
+    final month = lastDate.substring(0, 7);
+    double sum = 0;
+    for (final r in _dailyHistory) {
+      if ((r['date'] as String).startsWith(month)) {
+        sum += (r['roomRevenue'] as num?)?.toDouble() ?? 0;
+      }
+    }
+    return sum;
+  }
+
   /// Last 7 days of history, oldest first — for the weekly revenue chart.
   List<Map<String, dynamic>> get last7Days =>
       _dailyHistory.length <= 7 ? _dailyHistory : _dailyHistory.sublist(_dailyHistory.length - 7);
