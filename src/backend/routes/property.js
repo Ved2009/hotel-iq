@@ -208,9 +208,15 @@ function parseFlexibleDate(raw) {
 }
 
 // Strips %, $, and thousands-separator commas: "2,292.41" / "69.39%" → number.
+// Also handles accounting-style negatives: "(2,607.97)" → -2607.97.
 function cleanNumber(raw) {
   if (raw === undefined || raw === null || raw === '') return NaN;
-  return parseFloat(String(raw).replace(/[,%$\s]/g, ''));
+  const s = String(raw).trim();
+  const negative = /^\(.*\)$/.test(s);
+  const cleaned = s.replace(/[,%$\s()]/g, '');
+  const n = parseFloat(cleaned);
+  if (isNaN(n)) return NaN;
+  return negative ? -n : n;
 }
 
 // POST /api/property/metrics/import — CSV upload { csv: "..." }
