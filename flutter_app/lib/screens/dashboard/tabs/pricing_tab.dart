@@ -32,9 +32,11 @@ class _PricingTabState extends State<PricingTab> {
 
   List<PricingRec> get _recs {
     final mult = _strategies[_strategy]!.$3;
-    final rooms = context.read<AppProvider>().property?.roomRateMap ?? {};
-    return pricingRecs.map((r) {
-      final cur = rooms[r.roomId] ?? r.current;
+    final prov = context.read<AppProvider>();
+    final real = prov.pricingRecommendations;
+    final base = real.isNotEmpty ? real : pricingRecs;
+    return base.map((r) {
+      final cur = r.current;
       return PricingRec(
         id: r.id, roomId: r.roomId, room: r.room,
         current: cur,

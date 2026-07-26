@@ -78,9 +78,66 @@ class AppProvider extends ChangeNotifier {
     return (thisYear, lastYear);
   }
 
+  Map<String, dynamic>? _compsetAnalysis;
+
+  Future<void> _loadCompsetAnalysis() async {
+    final rooms = _property?.rooms ?? [];
+    if (rooms.isEmpty) return;
+    final totalCount = rooms.fold<int>(0, (s, r) => s + r.count);
+    final refRate = totalCount == 0
+        ? rooms.map((r) => r.rate).reduce((a, b) => a + b) / rooms.length
+        : rooms.fold<double>(0, (s, r) => s + r.rate * r.count) / totalCount;
+    final res = await api.getCompSetRates(refRate);
+    if (res.ok) {
+      _compsetAnalysis = res.data!['analysis'] as Map<String, dynamic>?;
+      notifyListeners();
+    }
+  }
+
+  /// Real per-room-type pricing recommendations, derived by applying the
+  /// same compset+demand adjustment ratio (backend's /api/compset/rates)
+  /// to each room's own current rate. Empty until property + analysis load.
+  List<PricingRec> get pricingRecommendations {
+    final rooms = _property?.rooms ?? [];
+    final analysis = _compsetAnalysis;
+    if (rooms.isEmpty || analysis == null) return [];
+
+    final totalCount = rooms.fold<int>(0, (s, r) => s + r.count);
+    final refRate = totalCount == 0
+        ? rooms.map((r) => r.rate).reduce((a, b) => a + b) / rooms.length
+        : rooms.fold<double>(0, (s, r) => s + r.rate * r.count) / totalCount;
+    final suggestion = (analysis['suggestion'] as num?)?.toDouble();
+    if (suggestion == null || refRate <= 0) return [];
+    final ratio = suggestion / refRate;
+    final reasoning = (analysis['reasoning'] as List<dynamic>?)?.cast<String>().join(' · ') ?? 'Based on comp set & recent demand';
+
+    return rooms.asMap().entries.map((e) {
+      final i = e.key;
+      final r = e.value;
+      final suggested = (r.rate * ratio).roundToDouble();
+      final pctChange = r.rate == 0 ? 0.0 : ((suggested - r.rate).abs() / r.rate * 100);
+      final urgency = pctChange >= 8 ? 'high' : pctChange >= 3 ? 'medium' : 'low';
+      return PricingRec(
+        id: i,
+        roomId: r.id,
+        room: r.type,
+        current: r.rate,
+        suggested: suggested,
+        reason: reasoning,
+        impact: ((suggested - r.rate) * r.count).round(),
+        urgency: urgency,
+      );
+    }).toList();
+  }
+
   int get urgentCount {
     if (_property == null) return 0;
-    const highIds = [1, 3, 5]; // Standard King, Double Queen, Junior Suite
+    final real = pricingRecommendations;
+    if (real.isNotEmpty) {
+      return real.where((r) =>
+        r.urgency == 'high' && !_applied.contains(r.id) && !_skipped.contains(r.id)).length;
+    }
+    const highIds = [1, 3, 5]; // demo fallback ids (Standard King, Double Queen, Junior Suite)
     return highIds.where((id) => !_applied.contains(id) && !_skipped.contains(id)).length;
   }
 
@@ -121,7 +178,10 @@ class AppProvider extends ChangeNotifier {
     }
     notifyListeners();
 
-    if (res.ok) await _loadMetricsHistory();
+    if (res.ok) {
+      await _loadMetricsHistory();
+      await _loadCompsetAnalysis();
+    }
   }
 
   Future<void> _loadMetricsHistory() async {
