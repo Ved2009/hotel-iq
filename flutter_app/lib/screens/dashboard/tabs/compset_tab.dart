@@ -90,6 +90,7 @@ class _CompSetTabState extends State<CompSetTab> {
       SectionHeader(
         title: 'Comp Set Intelligence',
         sub: 'Competitor rate tracking & positioning',
+        live: false,
         right: GestureDetector(
           onTap: _loadRates,
           child: Container(
