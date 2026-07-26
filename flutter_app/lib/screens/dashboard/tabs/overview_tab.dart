@@ -52,7 +52,9 @@ class OverviewTab extends StatelessWidget {
     final rooms  = p?.totalRooms  ?? 292;
     final hasReal = prov.hasRealHistory || m?.hasData == true;
 
-    final urgent = pricingRecs.where((r) =>
+    final realRecs = prov.pricingRecommendations;
+    final urgentSource = realRecs.isNotEmpty ? realRecs : pricingRecs;
+    final urgent = urgentSource.where((r) =>
       r.urgency == 'high' &&
       !prov.applied.contains(r.id) &&
       !prov.skipped.contains(r.id)).toList();
