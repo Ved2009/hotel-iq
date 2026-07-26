@@ -2,24 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 abstract class C {
-  // Backgrounds
-  static const Color bg    = Color(0xFF05050A);
-  static const Color surf1 = Color(0xFF0C0C18);
-  static const Color surf2 = Color(0xFF111120);
-  static const Color surf3 = Color(0xFF16162A);
+  // Backgrounds — soft charcoal-navy instead of near-black, same dark aesthetic
+  static const Color bg    = Color(0xFF12141C);
+  static const Color surf1 = Color(0xFF1A1D29);
+  static const Color surf2 = Color(0xFF20232F);
+  static const Color surf3 = Color(0xFF272B3A);
   static const Color glass = Color(0x0DFFFFFF);
   static const Color glassStrong = Color(0x1AFFFFFF);
 
-  // Borders
-  static const Color border      = Color(0x0FFFFFFF);
-  static const Color borderMid   = Color(0x1AFFFFFF);
-  static const Color borderHover = Color(0x2EFFFFFF);
+  // Borders — slightly more visible against the lighter background
+  static const Color border      = Color(0x14FFFFFF);
+  static const Color borderMid   = Color(0x22FFFFFF);
+  static const Color borderHover = Color(0x36FFFFFF);
 
-  // Text
+  // Text — brightened for better contrast against the lighter background
   static const Color text1 = Color(0xFFF8F8FF);
-  static const Color text2 = Color(0xFFA0A0C0);
-  static const Color text3 = Color(0xFF606080);
-  static const Color text4 = Color(0xFF303050);
+  static const Color text2 = Color(0xFFACACC8);
+  static const Color text3 = Color(0xFF7B7B9E);
+  static const Color text4 = Color(0xFF4A4A68);
 
   // Brand
   static const Color violet = Color(0xFF7C3AED);
