@@ -78,6 +78,116 @@ class AppProvider extends ChangeNotifier {
     return (thisYear, lastYear);
   }
 
+  // ── Demand forecast (day-of-week seasonality from real history) ──────────
+  // No booking-pace/events data exists in the imported PMS export, so this
+  // is intentionally a simple, explainable model: each future day's forecast
+  // is the historical average occupancy for that weekday. Real, not fabricated,
+  // but not a sophisticated pickup/pace model either.
+
+  Map<int, List<double>> get _occupancyByWeekday {
+    final byDow = <int, List<double>>{for (var i = 1; i <= 7; i++) i: []};
+    for (final r in _dailyHistory) {
+      final occ = (r['occupancy'] as num?)?.toDouble();
+      if (occ == null) continue;
+      final dow = DateTime.parse(r['date'] as String).weekday;
+      byDow[dow]!.add(occ);
+    }
+    return byDow;
+  }
+
+  double? _weekdayAvg(Map<int, List<double>> byDow, int weekday) {
+    final vals = byDow[weekday]!;
+    if (vals.isEmpty) return null;
+    return vals.reduce((a, b) => a + b) / vals.length;
+  }
+
+  /// Next 14 days: {date, weekday(1-7), demand, sampleCount}. Empty if no history.
+  List<Map<String, dynamic>> get forecastNext14Days {
+    if (_dailyHistory.isEmpty) return [];
+    final byDow = _occupancyByWeekday;
+    final today = DateTime.now();
+    return List.generate(14, (i) {
+      final date = DateTime(today.year, today.month, today.day).add(Duration(days: i));
+      final demand = _weekdayAvg(byDow, date.weekday);
+      return {
+        'date': date,
+        'weekday': date.weekday,
+        'demand': demand,
+        'sampleCount': byDow[date.weekday]!.length,
+      };
+    });
+  }
+
+  /// Backtest over the last 30 real days: how close was the same-weekday
+  /// historical average to what actually happened. Null if not enough data.
+  double? get forecastAccuracyPct {
+    if (_dailyHistory.length < 14) return null;
+    final byDow = _occupancyByWeekday;
+    final testDays = _dailyHistory.length <= 30 ? _dailyHistory : _dailyHistory.sublist(_dailyHistory.length - 30);
+    final errors = <double>[];
+    for (final r in testDays) {
+      final actual = (r['occupancy'] as num?)?.toDouble();
+      if (actual == null || actual == 0) continue;
+      final dow = DateTime.parse(r['date'] as String).weekday;
+      final predicted = _weekdayAvg(byDow, dow);
+      if (predicted == null) continue;
+      errors.add((actual - predicted).abs() / actual);
+    }
+    if (errors.isEmpty) return null;
+    final mape = errors.reduce((a, b) => a + b) / errors.length * 100;
+    return (100 - mape).clamp(0, 100);
+  }
+
+  double? get _recentAvgAdr {
+    final withAdr = _dailyHistory.where((r) => r['adr'] != null).toList();
+    if (withAdr.isEmpty) return null;
+    final recent = withAdr.length <= 30 ? withAdr : withAdr.sublist(withAdr.length - 30);
+    return recent.map((r) => (r['adr'] as num).toDouble()).reduce((a, b) => a + b) / recent.length;
+  }
+
+  double? projectedRevenueNext7(int totalRooms) {
+    final forecast = forecastNext14Days.take(7).toList();
+    final adr = _recentAvgAdr;
+    if (forecast.isEmpty || adr == null) return null;
+    double sum = 0;
+    for (final d in forecast) {
+      final demand = d['demand'] as double?;
+      if (demand == null) continue;
+      sum += (demand / 100) * totalRooms * adr;
+    }
+    return sum;
+  }
+
+  /// Average weekend forecast vs average weekday forecast, next 14 days.
+  double? get weekendUpliftPct {
+    final forecast = forecastNext14Days;
+    if (forecast.isEmpty) return null;
+    final weekend = forecast.where((d) => (d['weekday'] as int) >= 6 && d['demand'] != null);
+    final weekday = forecast.where((d) => (d['weekday'] as int) < 6 && d['demand'] != null);
+    if (weekend.isEmpty || weekday.isEmpty) return null;
+    final weekendAvg = weekend.map((d) => d['demand'] as double).reduce((a, b) => a + b) / weekend.length;
+    final weekdayAvg = weekday.map((d) => d['demand'] as double).reduce((a, b) => a + b) / weekday.length;
+    if (weekdayAvg == 0) return null;
+    return (weekendAvg - weekdayAvg) / weekdayAvg * 100;
+  }
+
+  /// Day-over-day change in rooms sold, last 7 real transitions. This is a
+  /// real "net occupancy movement" proxy, NOT booking/cancellation counts —
+  /// the PMS export has no booking-transaction data to derive those from.
+  List<Map<String, dynamic>> get roomsSoldDelta7 {
+    if (_dailyHistory.length < 2) return [];
+    final withSold = _dailyHistory.where((r) => r['roomsSold'] != null).toList();
+    if (withSold.length < 2) return [];
+    final tail = withSold.length <= 8 ? withSold : withSold.sublist(withSold.length - 8);
+    final out = <Map<String, dynamic>>[];
+    for (var i = 1; i < tail.length; i++) {
+      final prev = (tail[i - 1]['roomsSold'] as num).toInt();
+      final cur  = (tail[i]['roomsSold'] as num).toInt();
+      out.add({'date': tail[i]['date'], 'delta': cur - prev});
+    }
+    return out.length <= 7 ? out : out.sublist(out.length - 7);
+  }
+
   Map<String, dynamic>? _compsetAnalysis;
 
   Future<void> _loadCompsetAnalysis() async {
