@@ -271,6 +271,48 @@ module.exports = {
     return user;
   },
 
+  // ── Daily metrics history (occupancy/ADR/revenue time series) ────────────────
+  // One row per {userId, date}. Foundation for forecasting/trend charts.
+  async upsertDailyMetrics(userId, records) {
+    if (MONGO_URI) {
+      const db = await mongo();
+      const col = db.collection('dailyMetrics');
+      for (const r of records) {
+        await col.updateOne(
+          { userId, date: r.date },
+          { $set: { ...r, userId, updatedAt: new Date().toISOString() } },
+          { upsert: true }
+        );
+      }
+      return;
+    }
+    const file = path.join(DATA_DIR, 'daily_metrics.json');
+    const data = fileLoad(file);
+    if (!data[userId]) data[userId] = {};
+    for (const r of records) {
+      data[userId][r.date] = { ...r, updatedAt: new Date().toISOString() };
+    }
+    fileSave(file, data);
+  },
+
+  async getDailyMetrics(userId, from, to) {
+    if (MONGO_URI) {
+      const db = await mongo();
+      const filter = { userId };
+      if (from || to) {
+        filter.date = {};
+        if (from) filter.date.$gte = from;
+        if (to)   filter.date.$lte = to;
+      }
+      return db.collection('dailyMetrics').find(filter, { projection: { _id: 0 } }).sort({ date: 1 }).toArray();
+    }
+    const file = path.join(DATA_DIR, 'daily_metrics.json');
+    const rows = Object.values(fileLoad(file)[userId] || {});
+    return rows
+      .filter(r => (!from || r.date >= from) && (!to || r.date <= to))
+      .sort((a, b) => a.date.localeCompare(b.date));
+  },
+
   async applyRate(userId, { roomId, oldRate, newRate, reason }) {
     if (MONGO_URI) {
       const db = await mongo();

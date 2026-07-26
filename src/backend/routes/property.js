@@ -107,4 +107,198 @@ router.post('/rates/apply', requireAuth, async (req, res) => {
   }
 });
 
+// ── Daily metrics history ──────────────────────────────────────────────────────
+
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const NUMERIC_FIELDS = ['occupancy', 'adr', 'revpar', 'roomsSold', 'roomsAvail', 'roomRevenue', 'fbRevenue'];
+
+function normalizeRecord(raw) {
+  if (!raw || !DATE_RE.test(raw.date)) return null;
+  const rec = { date: raw.date };
+  for (const key of NUMERIC_FIELDS) {
+    const val = parseFloat(raw[key]);
+    if (!isNaN(val)) rec[key] = val;
+  }
+  if (rec.revpar === undefined && rec.adr !== undefined && rec.occupancy !== undefined) {
+    rec.revpar = +(rec.adr * (rec.occupancy / 100)).toFixed(2);
+  }
+  // needs at least one metric beyond the date to be worth storing
+  return Object.keys(rec).length > 1 ? rec : null;
+}
+
+// POST /api/property/metrics/daily — bulk upsert { records: [{date, occupancy, adr, ...}] }
+router.post('/metrics/daily', requireAuth, async (req, res) => {
+  try {
+    const { records } = req.body;
+    if (!Array.isArray(records) || records.length === 0)
+      return res.status(400).json({ error: 'records array is required' });
+
+    const normalized = records.map(normalizeRecord).filter(Boolean);
+    if (normalized.length === 0)
+      return res.status(400).json({ error: 'No valid records — each needs a YYYY-MM-DD date plus at least one metric' });
+
+    await db.upsertDailyMetrics(req.user.userId, normalized);
+    res.json({ success: true, saved: normalized.length, skipped: records.length - normalized.length });
+  } catch (err) {
+    console.error('metrics/daily error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ── CSV import — tolerant of real PMS exports (quoted fields, "M/D/YY" dates,
+// "69.39%" occupancy, "2,292.41" thousands separators, trailing TOTAL/AVG rows) ──
+
+// RFC4180-ish: respects quotes so a quoted field containing a comma
+// (e.g. "2,292.41") isn't split into two cells.
+function parseCsvLine(line) {
+  const cells = [];
+  let cur = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (inQuotes) {
+      if (ch === '"') {
+        if (line[i + 1] === '"') { cur += '"'; i++; }
+        else inQuotes = false;
+      } else cur += ch;
+    } else if (ch === '"') inQuotes = true;
+    else if (ch === ',') { cells.push(cur); cur = ''; }
+    else cur += ch;
+  }
+  cells.push(cur);
+  return cells.map(c => c.trim());
+}
+
+// Column header → canonical field, matched case-insensitively after trimming.
+const HEADER_ALIASES = {
+  date: ['date'],
+  occupancy: ['occ %', 'occupancy', 'occupancy %', 'occ'],
+  adr: ['adr'],
+  revpar: ['revpar', 'rev par'],
+  roomsSold: ['total occupied rooms', 'rooms sold', 'occupied rooms'],
+  roomsAvail: ['rooms available', 'total rooms', 'available rooms'],
+  roomRevenue: ['room rev', 'room revenue'],
+  fbRevenue: ['fb rev', 'f&b rev', 'f&b revenue', 'fb revenue'],
+};
+
+// Strips a UTF-8 BOM whether it survived as the real U+FEFF codepoint or was
+// mangled into the 3-char "ï»¿" sequence by an intermediate re-encoding.
+function stripBom(s) {
+  return s.replace(/^﻿/, '').replace(/^ï»¿/, '');
+}
+
+function canonicalField(header) {
+  const norm = stripBom(header).trim().toLowerCase();
+  for (const [field, aliases] of Object.entries(HEADER_ALIASES)) {
+    if (aliases.includes(norm)) return field;
+  }
+  return null;
+}
+
+// Accepts YYYY-MM-DD as-is, or M/D/YY(YY) as commonly exported by PMS reports.
+function parseFlexibleDate(raw) {
+  if (!raw) return null;
+  const s = raw.trim();
+  if (DATE_RE.test(s)) return s;
+  const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})$/);
+  if (!m) return null;
+  let [, mo, d, y] = m;
+  if (y.length === 2) y = (parseInt(y, 10) < 70 ? '20' : '19') + y;
+  return `${y}-${mo.padStart(2, '0')}-${d.padStart(2, '0')}`;
+}
+
+// Strips %, $, and thousands-separator commas: "2,292.41" / "69.39%" → number.
+function cleanNumber(raw) {
+  if (raw === undefined || raw === null || raw === '') return NaN;
+  return parseFloat(String(raw).replace(/[,%$\s]/g, ''));
+}
+
+// POST /api/property/metrics/import — CSV upload { csv: "..." }
+router.post('/metrics/import', requireAuth, async (req, res) => {
+  try {
+    const { csv } = req.body;
+    if (typeof csv !== 'string' || !csv.trim())
+      return res.status(400).json({ error: 'csv string is required' });
+
+    const lines = stripBom(csv).trim().split(/\r?\n/);
+    const headerFields = parseCsvLine(lines[0]).map(canonicalField);
+
+    if (!headerFields.includes('date'))
+      return res.status(400).json({ error: 'CSV must have a Date column' });
+
+    let skipped = 0;
+    const normalized = [];
+    for (const line of lines.slice(1)) {
+      if (!line.trim()) continue;
+      const cells = parseCsvLine(line);
+
+      const rec = {};
+      headerFields.forEach((field, i) => {
+        if (!field) return;
+        if (field === 'date') {
+          const d = parseFlexibleDate(cells[i]);
+          if (d) rec.date = d;
+        } else {
+          const n = cleanNumber(cells[i]);
+          if (!isNaN(n)) rec[field] = n;
+        }
+      });
+
+      // rows like the PMS "TOTAL/AVG" summary line have no parseable date — skip
+      if (!rec.date || Object.keys(rec).length < 2) { skipped++; continue; }
+
+      if (rec.revpar === undefined && rec.adr !== undefined && rec.occupancy !== undefined) {
+        rec.revpar = +(rec.adr * (rec.occupancy / 100)).toFixed(2);
+      }
+      normalized.push(rec);
+    }
+
+    if (normalized.length === 0)
+      return res.status(400).json({ error: 'No valid rows found — check the Date column and that at least one metric column matched.' });
+
+    await db.upsertDailyMetrics(req.user.userId, normalized);
+    res.json({ success: true, saved: normalized.length, skipped });
+  } catch (err) {
+    console.error('metrics/import error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+function aggregateMonthly(daily) {
+  const byMonth = {};
+  for (const r of daily) {
+    const month = r.date.slice(0, 7);
+    if (!byMonth[month]) byMonth[month] = { month, adrSum: 0, revparSum: 0, occSum: 0, roomRevenue: 0, fbRevenue: 0, count: 0 };
+    const b = byMonth[month];
+    if (r.adr      !== undefined) { b.adrSum    += r.adr;      }
+    if (r.revpar   !== undefined) { b.revparSum += r.revpar;   }
+    if (r.occupancy!== undefined) { b.occSum    += r.occupancy;}
+    if (r.roomRevenue !== undefined) b.roomRevenue += r.roomRevenue;
+    if (r.fbRevenue   !== undefined) b.fbRevenue   += r.fbRevenue;
+    b.count++;
+  }
+  return Object.values(byMonth)
+    .map(b => ({
+      month: b.month,
+      adr: b.count ? +(b.adrSum / b.count).toFixed(2) : 0,
+      revpar: b.count ? +(b.revparSum / b.count).toFixed(2) : 0,
+      occupancy: b.count ? +(b.occSum / b.count).toFixed(1) : 0,
+      roomRevenue: +b.roomRevenue.toFixed(2),
+      fbRevenue: +b.fbRevenue.toFixed(2),
+    }))
+    .sort((a, b) => a.month.localeCompare(b.month));
+}
+
+// GET /api/property/metrics/history?from=YYYY-MM-DD&to=YYYY-MM-DD
+router.get('/metrics/history', requireAuth, async (req, res) => {
+  try {
+    const { from, to } = req.query;
+    const daily = await db.getDailyMetrics(req.user.userId, from, to);
+    res.json({ daily, monthly: aggregateMonthly(daily) });
+  } catch (err) {
+    console.error('metrics/history error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 module.exports = router;

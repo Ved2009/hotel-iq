@@ -17,10 +17,19 @@ class CompSetTab extends StatefulWidget {
 }
 
 class _CompSetTabState extends State<CompSetTab> {
-  bool _loading = false;
+  bool _loading = true;
+  bool _isLive = false;
   List<CompHotel> _customComps = [];
+  List<CompHotel> _liveComps = [];
+  Map<String, dynamic>? _analysis;
   final _newCompCtrl = TextEditingController();
   bool _showAddComp = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadRates());
+  }
 
   @override
   void dispose() { _newCompCtrl.dispose(); super.dispose(); }
@@ -31,17 +40,49 @@ class _CompSetTabState extends State<CompSetTab> {
           context.read<AppProvider>().property!.rooms.length
       : 189;
 
+  Future<void> _loadRates() async {
+    setState(() => _loading = true);
+    final res = await context.read<AppProvider>().api.getCompSetRates(_yourRate);
+    if (!mounted) return;
+    if (res.ok) {
+      final data = res.data!;
+      final hotels = (data['hotels'] as List<dynamic>? ?? []).map((h) => CompHotel(
+        h['name'] ?? '?',
+        (h['rate'] as num?)?.toDouble() ?? 0,
+        (h['change'] as num?)?.toDouble() ?? 0,
+        (h['stars'] as num?)?.toInt() ?? 3,
+        (h['score'] as num?)?.toDouble() ?? 4.0,
+      )).toList();
+      setState(() {
+        _liveComps = hotels;
+        _analysis = data['analysis'] as Map<String, dynamic>?;
+        _isLive = data['isLive'] == true;
+        _loading = false;
+      });
+    } else {
+      // fall back to local demo competitors if the API call fails
+      setState(() {
+        _liveComps = competitors.where((c) => c.name != 'Your Hotel').toList();
+        _analysis = null;
+        _isLive = false;
+        _loading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final yourName = _yourName;
     final yourRate = _yourRate;
     final yourEntry = CompHotel(yourName, yourRate, 3.2, 4, 4.4);
-    final allHotels = [yourEntry, ...competitors.where((c) => c.name != yourName), ..._customComps];
+    final comps = _liveComps.isNotEmpty ? _liveComps : competitors.where((c) => c.name != 'Your Hotel').toList();
+    final allHotels = [yourEntry, ...comps, ..._customComps];
     final sorted = [...allHotels]..sort((a, b) => b.rate.compareTo(a.rate));
-    final avgComp = competitors.where((c) => c.name != yourName).map((c) => c.rate).reduce((a, b) => a + b) /
-        competitors.where((c) => c.name != yourName).length;
-    final suggestion = (avgComp * 1.02).roundToDouble();
-    final position = sorted.indexWhere((h) => h.name == yourName) + 1;
+    final avgComp = (_analysis?['avgComp'] as num?)?.toDouble() ??
+        (comps.map((c) => c.rate).reduce((a, b) => a + b) / comps.length);
+    final suggestion = (_analysis?['suggestion'] as num?)?.toDouble() ?? (avgComp * 1.02).roundToDouble();
+    final position = (_analysis?['position'] as num?)?.toInt() ?? (sorted.indexWhere((h) => h.name == yourName) + 1);
+    final reasoning = (_analysis?['reasoning'] as List<dynamic>?)?.cast<String>() ?? const <String>[];
     final rateMin = sorted.map((h) => h.rate).reduce((a, b) => a < b ? a : b) - 20;
     final rateMax = sorted.map((h) => h.rate).reduce((a, b) => a > b ? a : b) + 20;
 
@@ -49,46 +90,71 @@ class _CompSetTabState extends State<CompSetTab> {
       SectionHeader(
         title: 'Comp Set Intelligence',
         sub: 'Competitor rate tracking & positioning',
-        right: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          decoration: BoxDecoration(
-            color: C.orange.withValues(alpha: 0.1),
-            border: Border.all(color: C.orange.withValues(alpha: 0.3)),
-            borderRadius: BorderRadius.circular(100),
+        right: GestureDetector(
+          onTap: _loadRates,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(
+              color: (_isLive ? C.green : C.orange).withValues(alpha: 0.1),
+              border: Border.all(color: (_isLive ? C.green : C.orange).withValues(alpha: 0.3)),
+              borderRadius: BorderRadius.circular(100),
+            ),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              Container(width: 5, height: 5,
+                decoration: BoxDecoration(shape: BoxShape.circle, color: _isLive ? C.green : C.orange,
+                  boxShadow: [BoxShadow(color: (_isLive ? C.green : C.orange).withValues(alpha: 0.8), blurRadius: 6)])),
+              const SizedBox(width: 6),
+              Text(_isLive ? 'LIVE RATES' : 'DEMO RATES',
+                style: GoogleFonts.spaceMono(fontSize: 9, color: _isLive ? C.green : C.orange, letterSpacing: 1)),
+            ]),
           ),
-          child: Row(mainAxisSize: MainAxisSize.min, children: [
-            Container(width: 5, height: 5,
-              decoration: BoxDecoration(shape: BoxShape.circle, color: C.orange,
-                boxShadow: [BoxShadow(color: C.orange.withValues(alpha: 0.8), blurRadius: 6)])),
-            const SizedBox(width: 6),
-            Text('DEMO RATES', style: GoogleFonts.spaceMono(fontSize: 9, color: C.orange, letterSpacing: 1)),
-          ]),
         ),
       ),
       const SizedBox(height: 16),
 
-      // Demo data notice with SerpAPI instructions
-      Container(
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          color: C.orange.withValues(alpha: 0.06),
-          border: Border.all(color: C.orange.withValues(alpha: 0.2)),
-          borderRadius: BorderRadius.circular(16),
+      if (!_isLive)
+        // Demo data notice with SerpAPI instructions
+        Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: C.orange.withValues(alpha: 0.06),
+            border: Border.all(color: C.orange.withValues(alpha: 0.2)),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(children: [
+            const Text('📡', style: TextStyle(fontSize: 22)),
+            const SizedBox(width: 14),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('Competitor rates shown are demo data',
+                style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: C.orange)),
+              const SizedBox(height: 4),
+              Text(
+                'To get live Google Hotels rates, add a free SerpAPI key to your backend .env file: SERPAPI_KEY=your_key. Get one free at serpapi.com (100 searches/month).',
+                style: GoogleFonts.inter(fontSize: 12, color: C.text2, height: 1.5),
+              ),
+            ])),
+          ]),
         ),
-        child: Row(children: [
-          const Text('📡', style: TextStyle(fontSize: 22)),
-          const SizedBox(width: 14),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Competitor rates shown are demo data',
-              style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: C.orange)),
-            const SizedBox(height: 4),
-            Text(
-              'To get live Google Hotels rates, add a free SerpAPI key to your backend .env file: SERPAPI_KEY=your_key. Get one free at serpapi.com (100 searches/month).',
-              style: GoogleFonts.inter(fontSize: 12, color: C.text2, height: 1.5),
-            ),
-          ])),
-        ]),
-      ),
+      if (reasoning.isNotEmpty) ...[
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0x146366F1),
+            border: Border.all(color: const Color(0x386366F1)),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('Why this rate', style: GoogleFonts.spaceMono(fontSize: 10, color: const Color(0xFF818CF8), letterSpacing: 1)),
+            const SizedBox(height: 8),
+            for (final r in reasoning)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text('· $r', style: GoogleFonts.inter(fontSize: 12, color: C.text2, height: 1.4)),
+              ),
+          ]),
+        ),
+      ],
       const SizedBox(height: 20),
       LayoutBuilder(builder: (_, c) {
         final cols = c.maxWidth > 900 ? 4 : 2;
