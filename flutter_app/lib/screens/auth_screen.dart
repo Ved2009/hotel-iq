@@ -56,18 +56,31 @@ class _AuthScreenState extends State<AuthScreen> {
     }
 
     String? err;
-    if (_tab == 'login') {
-      err = await prov.login(_loginEmail.text.trim(), _loginPwd.text);
-    } else {
-      err = await prov.register(
-        _regFirst.text.trim(), _regLast.text.trim(),
-        _regHotel.text.trim(), _regEmail.text.trim(), _regPwd.text,
-        inviteToken: widget.inviteToken,
-      );
+    try {
+      if (_tab == 'login') {
+        err = await prov.login(_loginEmail.text.trim(), _loginPwd.text);
+      } else {
+        err = await prov.register(
+          _regFirst.text.trim(), _regLast.text.trim(),
+          _regHotel.text.trim(), _regEmail.text.trim(), _regPwd.text,
+          inviteToken: widget.inviteToken,
+        );
+      }
+    } catch (e) {
+      // Guarantees the dialog can't get stuck open on an unexpected
+      // exception — surfaces it instead of silently hanging forever.
+      debugPrint('Auth submit failed: $e');
+      err = 'Something went wrong — please try again.';
     }
+
+    // widget.onClose pops using LandingScreen's own (stable) context, not
+    // this widget's — call it regardless of whether AuthScreen itself still
+    // thinks it's mounted, so a stale mounted-flag can't leave the dialog
+    // stuck open with no visible error.
+    if (err == null) { widget.onClose?.call(); return; }
+
     if (!mounted) return;
     setState(() { _loading = false; _error = err; });
-    if (err == null) widget.onClose?.call();
   }
 
   @override
