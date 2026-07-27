@@ -1,4 +1,5 @@
 const express = require('express');
+const Anthropic = require('@anthropic-ai/sdk');
 const jwt = require('jsonwebtoken');
 
 const router = express.Router();
@@ -17,6 +18,12 @@ function requireAuth(req, res, next) {
   }
 }
 
+let _client = null;
+function client() {
+  if (!_client) _client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  return _client;
+}
+
 // POST /api/ai/chat
 router.post('/chat', requireAuth, async (req, res) => {
   const { messages, context } = req.body;
@@ -25,40 +32,33 @@ router.post('/chat', requireAuth, async (req, res) => {
     return res.status(400).json({ error: 'messages array is required' });
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    return res.status(503).json({ error: 'AI service not configured — add GEMINI_API_KEY to .env' });
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return res.status(503).json({ error: 'AI service not configured — add ANTHROPIC_API_KEY to .env' });
   }
 
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-
-    // Gemini uses "model" instead of "assistant"
-    const contents = messages.map(m => ({
-      role: m.role === 'assistant' ? 'model' : m.role,
-      parts: [{ text: m.content }],
-    }));
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        system_instruction: {
-          parts: [{ text: context || 'You are Hotel IQ, an expert hotel revenue management AI analyst. Be concise and data-driven.' }],
-        },
-        contents,
-      }),
+    const response = await client().messages.create({
+      model: 'claude-opus-4-8',
+      max_tokens: 1024,
+      system: context || 'You are Hotel IQ, an expert hotel revenue management AI analyst. Be concise and data-driven.',
+      messages: messages.map(m => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content })),
     });
 
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      return res.status(response.status).json({ error: err.error?.message || 'AI API error' });
+    if (response.stop_reason === 'refusal') {
+      return res.status(422).json({ error: 'The AI declined to respond to this request.' });
     }
 
-    const data = await response.json();
-    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    res.json({ reply });
+    const textBlock = response.content.find(b => b.type === 'text');
+    res.json({ reply: textBlock ? textBlock.text : '' });
   } catch (err) {
+    if (err instanceof Anthropic.AuthenticationError) {
+      console.error('[ai] Anthropic auth error — check ANTHROPIC_API_KEY');
+      return res.status(503).json({ error: 'AI service misconfigured' });
+    }
+    if (err instanceof Anthropic.RateLimitError) {
+      return res.status(429).json({ error: 'AI service is rate limited — try again shortly' });
+    }
+    console.error('[ai] chat error:', err.message || err);
     res.status(500).json({ error: 'Failed to reach AI service' });
   }
 });
