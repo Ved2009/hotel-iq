@@ -83,6 +83,20 @@ catch layout/async-timing bugs like these):
   (wordmark, hotel name, clock, full name) below 640px width, and shrinks
   Sign Out/Get Started to compact versions. Body padding also reduced on
   narrow screens.
+- **Chart tooltips** on Overview/Revenue/Forecast's real-data charts were
+  fl_chart's tiny low-contrast default (no `lineTouchData`/`barTouchData`
+  configured) — added explicit styled, labeled tooltips to all of them.
+- **AI chat was calling the wrong provider**: `ai.js` called Google's Gemini
+  API with `GEMINI_API_KEY`, despite the UI saying "Powered by Claude" and
+  both environments having `ANTHROPIC_API_KEY` configured (not
+  `GEMINI_API_KEY`) — the feature was broken in both environments for a
+  reason unrelated to anything else this session touched. Rewrote to use
+  the official `@anthropic-ai/sdk` against `claude-opus-4-8`. Verified
+  end-to-end against preview: got a real response *from Anthropic's API*
+  confirming the integration works — but the account currently has
+  **insufficient credit balance** ("credit balance too low"), a billing
+  step at console.anthropic.com, not a code issue. That specific error now
+  surfaces clearly in the app instead of a generic failure.
 
 ## Deployed / connected services
 - **Preview**: `hotel-iq-preview` on Render (separate from production) — has
@@ -106,10 +120,10 @@ catch layout/async-timing bugs like these):
   again.
 
 ## Known gaps / next-session candidates
-1. **AI chat is broken in production** (pre-existing bug, not caused this
-   session): `ai.js` reads `process.env.GEMINI_API_KEY`, but production has
-   `ANTHROPIC_API_KEY` set instead — wrong var name. Preview has neither set,
-   same issue. User was asked if they want this fixed — no answer yet.
+1. **AI chat needs Anthropic billing set up** — code is fixed and verified
+   working (real API round-trip confirmed against preview), but the
+   Anthropic account has no credit balance. User needs to add billing at
+   console.anthropic.com; nothing left to do in code.
 2. **No automated tests** anywhere in the backend, especially the CSV import
    parser (`property.js`) which has the most edge-case logic (BOM handling,
    quoted-CSV parsing, date/negative-number formats). Recommended as cheap
