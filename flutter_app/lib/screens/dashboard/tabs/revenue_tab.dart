@@ -260,6 +260,24 @@ class _AdrRevparChart extends StatelessWidget {
                 dotData: const FlDotData(show: false),
               ),
             ],
+            lineTouchData: LineTouchData(
+              touchTooltipData: LineTouchTooltipData(
+                getTooltipColor: (_) => C.surf3,
+                tooltipRoundedRadius: 10,
+                tooltipBorder: BorderSide(color: C.gold.withValues(alpha: 0.35)),
+                tooltipPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                getTooltipItems: (spots) => spots.map((spot) {
+                  final isAdr = spot.barIndex == 0;
+                  return LineTooltipItem(
+                    '${isAdr ? "ADR" : "RevPAR"}: \$${spot.y.toStringAsFixed(0)}',
+                    GoogleFonts.inter(
+                      fontSize: 13, fontWeight: FontWeight.w700,
+                      color: isAdr ? C.goldLight : const Color(0xFF7FB4FF),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
           )),
         ),
         const SizedBox(height: 10),
