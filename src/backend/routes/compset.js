@@ -1,4 +1,6 @@
 const express = require("express");
+const db = require("../db");
+const requireAuth = require("../middleware/auth");
 const router = express.Router();
 
 // ── In-memory cache (15 minutes) ──────────────────────────────────────────────
@@ -70,7 +72,11 @@ function buildMockRates() {
 }
 
 // ── Rate analysis helpers ─────────────────────────────────────────────────────
-function analyzeRates(hotels, yourRate) {
+// Demand-aware pricing: starts from compset position, then adjusts for
+// day-of-week seasonality and the property's own recent occupancy trend
+// (when available). Movement is capped at ±15% of current rate per call
+// so suggestions stay explainable and don't whipsaw.
+function analyzeRates(hotels, yourRate, { targetDate, recentOccupancy } = {}) {
   const sorted   = [...hotels].sort((a, b) => b.rate - a.rate);
   const rates    = hotels.map((h) => h.rate);
   const avgComp  = Math.round(rates.reduce((s, r) => s + r, 0) / rates.length);
@@ -79,25 +85,56 @@ function analyzeRates(hotels, yourRate) {
   const position = sorted.findIndex((h) => yourRate >= h.rate) + 1;
   const parity   = (((yourRate - avgComp) / avgComp) * 100).toFixed(1);
 
-  // AI rate suggestion based on position and demand
-  const suggestion =
-    yourRate < avgComp - 10 ? Math.round(avgComp * 0.98)
-    : yourRate > avgComp + 30 ? Math.round(avgComp * 1.05)
-    : Math.round(yourRate * 1.03);
+  const positionMultiplier =
+    yourRate < avgComp - 10 ? 0.98
+    : yourRate > avgComp + 30 ? 1.05
+    : 1.03;
 
-  return { sorted, avgComp, maxRate, minRate, position, parity, suggestion };
+  const dow = (targetDate ? new Date(targetDate) : new Date()).getUTCDay();
+  const isWeekend = dow === 5 || dow === 6; // Friday/Saturday night stays
+  const demandFactor = isWeekend ? 1.08 : 1.0;
+
+  const occFactor =
+    recentOccupancy == null ? 1.0
+    : recentOccupancy >= 80 ? 1.06
+    : recentOccupancy <= 50 ? 0.95
+    : 1.0;
+
+  let suggestion = Math.round(yourRate * positionMultiplier * demandFactor * occFactor);
+  suggestion = Math.max(Math.round(yourRate * 0.85), Math.min(Math.round(yourRate * 1.15), suggestion));
+
+  const reasoning = [
+    `Compset average $${avgComp} — you're ${Math.abs(parity)}% ${parity >= 0 ? "above" : "below"} market`,
+  ];
+  if (isWeekend) reasoning.push("Weekend demand uplift applied (+8%)");
+  if (recentOccupancy != null) {
+    reasoning.push(
+      occFactor > 1 ? `Recent occupancy ${recentOccupancy}% — high demand, holding rate firm`
+      : occFactor < 1 ? `Recent occupancy ${recentOccupancy}% — soft demand, suggestion pulled back`
+      : `Recent occupancy ${recentOccupancy}% — steady demand`
+    );
+  }
+
+  return { sorted, avgComp, maxRate, minRate, position, parity, suggestion, reasoning };
 }
 
 // ── Route: GET /api/compset/rates ─────────────────────────────────────────────
-router.get("/rates", async (req, res) => {
+router.get("/rates", requireAuth, async (req, res) => {
   const {
-    location = "beachfront hotels",
     checkIn,
     checkOut,
     yourRate = 189,
   } = req.query;
 
-  const cacheKey = `${location}-${checkIn}-${checkOut}`;
+  // Fall back to the property's own saved location when the caller
+  // doesn't pass one explicitly, instead of a generic placeholder search.
+  let location = req.query.location;
+  if (!location) {
+    const hotel = await db.getOrCreateHotel(req.user.userId, null);
+    location = hotel?.profile?.location || "beachfront hotels";
+  }
+
+  const cacheKey = `${req.user.userId}-${location}-${checkIn}-${checkOut}`;
   const now = Date.now();
 
   // Return cached data if still fresh
@@ -118,7 +155,17 @@ router.get("/rates", async (req, res) => {
   const hotels     = liveHotels || buildMockRates();
   const isLive     = !!liveHotels;
 
-  const analysis = analyzeRates(hotels, parseInt(yourRate, 10));
+  // Pull the property's own recent occupancy (last 14 days) to make the
+  // suggestion demand-aware instead of purely compset-driven.
+  const fourteenDaysAgo = new Date(now - 14 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+  const today = new Date(now).toISOString().split("T")[0];
+  const recentHistory = await db.getDailyMetrics(req.user.userId, fourteenDaysAgo, today);
+  const occRows = recentHistory.filter((r) => r.occupancy !== undefined);
+  const recentOccupancy = occRows.length
+    ? +(occRows.reduce((s, r) => s + r.occupancy, 0) / occRows.length).toFixed(1)
+    : null;
+
+  const analysis = analyzeRates(hotels, parseInt(yourRate, 10), { targetDate: ci, recentOccupancy });
 
   const payload = {
     hotels,

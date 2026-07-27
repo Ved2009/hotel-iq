@@ -32,9 +32,11 @@ class _PricingTabState extends State<PricingTab> {
 
   List<PricingRec> get _recs {
     final mult = _strategies[_strategy]!.$3;
-    final rooms = context.read<AppProvider>().property?.roomRateMap ?? {};
-    return pricingRecs.map((r) {
-      final cur = rooms[r.roomId] ?? r.current;
+    final prov = context.read<AppProvider>();
+    final real = prov.pricingRecommendations;
+    final base = real.isNotEmpty ? real : pricingRecs;
+    return base.map((r) {
+      final cur = r.current;
       return PricingRec(
         id: r.id, roomId: r.roomId, room: r.room,
         current: cur,
@@ -423,17 +425,18 @@ class _RateCalendar extends StatelessWidget {
           ))).toList()),
         const SizedBox(height: 8),
         // Grid
-        Wrap(
+        LayoutBuilder(builder: (_, gridConstraints) {
+          final cellWidth = gridConstraints.maxWidth / 7;
+          return Wrap(
           children: [
-            ...List.generate((DateTime.now().weekday - 1) % 7, (_) => const SizedBox(width: 0)),
+            ...List.generate((DateTime.now().weekday - 1) % 7, (_) => SizedBox(width: cellWidth)),
             ...rateCalendar.map((d) {
               final isSelected = selectedDay?.day == d.day;
               final hasBigGap = d.gap > 20;
               return SizedBox(
-                width: 1 / 7,
-                child: LayoutBuilder(builder: (_, c) => SizedBox(
-                  width: c.maxWidth,
-                  child: GestureDetector(
+                width: cellWidth,
+                child: Builder(builder: (_) {
+                  return GestureDetector(
                     onTap: () => onSelect(d),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 150),
@@ -480,12 +483,13 @@ class _RateCalendar extends StatelessWidget {
                           Text('EVT', style: GoogleFonts.spaceMono(fontSize: 7, color: C.purple)),
                       ]),
                     ),
-                  ),
-                )),
+                  );
+                }),
               );
             }),
           ],
-        ),
+          );
+        }),
         if (selectedDay != null) ...[
           const SizedBox(height: 16),
           Container(

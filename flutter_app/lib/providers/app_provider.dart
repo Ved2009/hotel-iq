@@ -16,6 +16,8 @@ class AppProvider extends ChangeNotifier {
   String? _propertyError;
   final Set<int> _applied = {};
   final Set<int> _skipped = {};
+  List<Map<String, dynamic>> _dailyHistory = [];
+  List<Map<String, dynamic>> _monthlyHistory = [];
 
   AppView get view             => _view;
   User?   get user             => _user;
@@ -24,12 +26,242 @@ class AppProvider extends ChangeNotifier {
   String? get propertyError    => _propertyError;
   Set<int> get applied         => _applied;
   Set<int> get skipped         => _skipped;
+  List<Map<String, dynamic>> get dailyHistory   => _dailyHistory;
+  List<Map<String, dynamic>> get monthlyHistory => _monthlyHistory;
+  bool get hasRealHistory => _dailyHistory.isNotEmpty;
 
-  bool get isNewUser => _user != null && _property != null && !(_property!.metrics.hasData);
+  bool get isNewUser => _user != null && _property != null && !(_property!.metrics.hasData) && !hasRealHistory;
+
+  // ── Derived "live" metrics from real daily history ───────────────────────
+  // Falls back to null (caller uses manual metrics/mock) when no history exists.
+  Map<String, dynamic>? get _latestDay => _dailyHistory.isEmpty ? null : _dailyHistory.last;
+
+  double? get liveOccupancy => _latestDay?['occupancy']?.toDouble();
+  double? get liveAdr       => _latestDay?['adr']?.toDouble();
+  double? get liveRevpar    => _latestDay?['revpar']?.toDouble();
+  String?  get latestHistoryDate => _latestDay?['date'] as String?;
+
+  double? get liveRevenueMtd {
+    if (_dailyHistory.isEmpty) return null;
+    final lastDate = _latestDay!['date'] as String;
+    final month = lastDate.substring(0, 7); // YYYY-MM
+    double sum = 0;
+    for (final r in _dailyHistory) {
+      if ((r['date'] as String).startsWith(month)) {
+        sum += (r['roomRevenue'] as num?)?.toDouble() ?? 0;
+        sum += (r['fbRevenue'] as num?)?.toDouble() ?? 0;
+      }
+    }
+    return sum;
+  }
+
+  double? get liveRoomRevenueMtd {
+    if (_dailyHistory.isEmpty) return null;
+    final lastDate = _latestDay!['date'] as String;
+    final month = lastDate.substring(0, 7);
+    double sum = 0;
+    for (final r in _dailyHistory) {
+      if ((r['date'] as String).startsWith(month)) {
+        sum += (r['roomRevenue'] as num?)?.toDouble() ?? 0;
+      }
+    }
+    return sum;
+  }
+
+  /// Last 7 days of history, oldest first — for the weekly revenue chart.
+  List<Map<String, dynamic>> get last7Days =>
+      _dailyHistory.length <= 7 ? _dailyHistory : _dailyHistory.sublist(_dailyHistory.length - 7);
+
+  /// Monthly occupancy split into this-year vs last-year series (by calendar
+  /// month, Jan=0..Dec=11), for year-over-year comparison charts.
+  (List<double?> thisYear, List<double?> lastYear) get yearOverYearOccupancy {
+    if (_monthlyHistory.isEmpty) return (List.filled(12, null), List.filled(12, null));
+    final years = _monthlyHistory.map((m) => (m['month'] as String).substring(0, 4)).toSet().toList()..sort();
+    final currentYear = years.last;
+    final priorYear = years.length > 1 ? years[years.length - 2] : null;
+    final thisYear = List<double?>.filled(12, null);
+    final lastYear = List<double?>.filled(12, null);
+    for (final m in _monthlyHistory) {
+      final year  = (m['month'] as String).substring(0, 4);
+      final month = int.parse((m['month'] as String).substring(5, 7)) - 1;
+      final occ = (m['occupancy'] as num?)?.toDouble();
+      if (year == currentYear) thisYear[month] = occ;
+      if (year == priorYear)   lastYear[month] = occ;
+    }
+    return (thisYear, lastYear);
+  }
+
+  // ── Demand forecast (day-of-week seasonality from real history) ──────────
+  // No booking-pace/events data exists in the imported PMS export, so this
+  // is intentionally a simple, explainable model: each future day's forecast
+  // is the historical average occupancy for that weekday. Real, not fabricated,
+  // but not a sophisticated pickup/pace model either.
+
+  Map<int, List<double>> get _occupancyByWeekday {
+    final byDow = <int, List<double>>{for (var i = 1; i <= 7; i++) i: []};
+    for (final r in _dailyHistory) {
+      final occ = (r['occupancy'] as num?)?.toDouble();
+      if (occ == null) continue;
+      final dow = DateTime.parse(r['date'] as String).weekday;
+      byDow[dow]!.add(occ);
+    }
+    return byDow;
+  }
+
+  double? _weekdayAvg(Map<int, List<double>> byDow, int weekday) {
+    final vals = byDow[weekday]!;
+    if (vals.isEmpty) return null;
+    return vals.reduce((a, b) => a + b) / vals.length;
+  }
+
+  /// Next 14 days: {date, weekday(1-7), demand, sampleCount}. Empty if no history.
+  List<Map<String, dynamic>> get forecastNext14Days {
+    if (_dailyHistory.isEmpty) return [];
+    final byDow = _occupancyByWeekday;
+    final today = DateTime.now();
+    return List.generate(14, (i) {
+      final date = DateTime(today.year, today.month, today.day).add(Duration(days: i));
+      final demand = _weekdayAvg(byDow, date.weekday);
+      return {
+        'date': date,
+        'weekday': date.weekday,
+        'demand': demand,
+        'sampleCount': byDow[date.weekday]!.length,
+      };
+    });
+  }
+
+  /// Backtest over the last 30 real days: how close was the same-weekday
+  /// historical average to what actually happened. Null if not enough data.
+  double? get forecastAccuracyPct {
+    if (_dailyHistory.length < 14) return null;
+    final byDow = _occupancyByWeekday;
+    final testDays = _dailyHistory.length <= 30 ? _dailyHistory : _dailyHistory.sublist(_dailyHistory.length - 30);
+    final errors = <double>[];
+    for (final r in testDays) {
+      final actual = (r['occupancy'] as num?)?.toDouble();
+      if (actual == null || actual == 0) continue;
+      final dow = DateTime.parse(r['date'] as String).weekday;
+      final predicted = _weekdayAvg(byDow, dow);
+      if (predicted == null) continue;
+      errors.add((actual - predicted).abs() / actual);
+    }
+    if (errors.isEmpty) return null;
+    final mape = errors.reduce((a, b) => a + b) / errors.length * 100;
+    return (100 - mape).clamp(0, 100);
+  }
+
+  double? get _recentAvgAdr {
+    final withAdr = _dailyHistory.where((r) => r['adr'] != null).toList();
+    if (withAdr.isEmpty) return null;
+    final recent = withAdr.length <= 30 ? withAdr : withAdr.sublist(withAdr.length - 30);
+    return recent.map((r) => (r['adr'] as num).toDouble()).reduce((a, b) => a + b) / recent.length;
+  }
+
+  double? projectedRevenueNext7(int totalRooms) {
+    final forecast = forecastNext14Days.take(7).toList();
+    final adr = _recentAvgAdr;
+    if (forecast.isEmpty || adr == null) return null;
+    double sum = 0;
+    for (final d in forecast) {
+      final demand = d['demand'] as double?;
+      if (demand == null) continue;
+      sum += (demand / 100) * totalRooms * adr;
+    }
+    return sum;
+  }
+
+  /// Average weekend forecast vs average weekday forecast, next 14 days.
+  double? get weekendUpliftPct {
+    final forecast = forecastNext14Days;
+    if (forecast.isEmpty) return null;
+    final weekend = forecast.where((d) => (d['weekday'] as int) >= 6 && d['demand'] != null);
+    final weekday = forecast.where((d) => (d['weekday'] as int) < 6 && d['demand'] != null);
+    if (weekend.isEmpty || weekday.isEmpty) return null;
+    final weekendAvg = weekend.map((d) => d['demand'] as double).reduce((a, b) => a + b) / weekend.length;
+    final weekdayAvg = weekday.map((d) => d['demand'] as double).reduce((a, b) => a + b) / weekday.length;
+    if (weekdayAvg == 0) return null;
+    return (weekendAvg - weekdayAvg) / weekdayAvg * 100;
+  }
+
+  /// Day-over-day change in rooms sold, last 7 real transitions. This is a
+  /// real "net occupancy movement" proxy, NOT booking/cancellation counts —
+  /// the PMS export has no booking-transaction data to derive those from.
+  List<Map<String, dynamic>> get roomsSoldDelta7 {
+    if (_dailyHistory.length < 2) return [];
+    final withSold = _dailyHistory.where((r) => r['roomsSold'] != null).toList();
+    if (withSold.length < 2) return [];
+    final tail = withSold.length <= 8 ? withSold : withSold.sublist(withSold.length - 8);
+    final out = <Map<String, dynamic>>[];
+    for (var i = 1; i < tail.length; i++) {
+      final prev = (tail[i - 1]['roomsSold'] as num).toInt();
+      final cur  = (tail[i]['roomsSold'] as num).toInt();
+      out.add({'date': tail[i]['date'], 'delta': cur - prev});
+    }
+    return out.length <= 7 ? out : out.sublist(out.length - 7);
+  }
+
+  Map<String, dynamic>? _compsetAnalysis;
+  Map<String, dynamic>? get compsetAnalysis => _compsetAnalysis;
+
+  Future<void> _loadCompsetAnalysis() async {
+    final rooms = _property?.rooms ?? [];
+    if (rooms.isEmpty) return;
+    final totalCount = rooms.fold<int>(0, (s, r) => s + r.count);
+    final refRate = totalCount == 0
+        ? rooms.map((r) => r.rate).reduce((a, b) => a + b) / rooms.length
+        : rooms.fold<double>(0, (s, r) => s + r.rate * r.count) / totalCount;
+    final res = await api.getCompSetRates(refRate);
+    if (res.ok) {
+      _compsetAnalysis = res.data!['analysis'] as Map<String, dynamic>?;
+      notifyListeners();
+    }
+  }
+
+  /// Real per-room-type pricing recommendations, derived by applying the
+  /// same compset+demand adjustment ratio (backend's /api/compset/rates)
+  /// to each room's own current rate. Empty until property + analysis load.
+  List<PricingRec> get pricingRecommendations {
+    final rooms = _property?.rooms ?? [];
+    final analysis = _compsetAnalysis;
+    if (rooms.isEmpty || analysis == null) return [];
+
+    final totalCount = rooms.fold<int>(0, (s, r) => s + r.count);
+    final refRate = totalCount == 0
+        ? rooms.map((r) => r.rate).reduce((a, b) => a + b) / rooms.length
+        : rooms.fold<double>(0, (s, r) => s + r.rate * r.count) / totalCount;
+    final suggestion = (analysis['suggestion'] as num?)?.toDouble();
+    if (suggestion == null || refRate <= 0) return [];
+    final ratio = suggestion / refRate;
+    final reasoning = (analysis['reasoning'] as List<dynamic>?)?.cast<String>().join(' · ') ?? 'Based on comp set & recent demand';
+
+    return rooms.asMap().entries.map((e) {
+      final i = e.key;
+      final r = e.value;
+      final suggested = (r.rate * ratio).roundToDouble();
+      final pctChange = r.rate == 0 ? 0.0 : ((suggested - r.rate).abs() / r.rate * 100);
+      final urgency = pctChange >= 8 ? 'high' : pctChange >= 3 ? 'medium' : 'low';
+      return PricingRec(
+        id: i,
+        roomId: r.id,
+        room: r.type,
+        current: r.rate,
+        suggested: suggested,
+        reason: reasoning,
+        impact: ((suggested - r.rate) * r.count).round(),
+        urgency: urgency,
+      );
+    }).toList();
+  }
 
   int get urgentCount {
     if (_property == null) return 0;
-    const highIds = [1, 3, 5]; // Standard King, Double Queen, Junior Suite
+    final real = pricingRecommendations;
+    if (real.isNotEmpty) {
+      return real.where((r) =>
+        r.urgency == 'high' && !_applied.contains(r.id) && !_skipped.contains(r.id)).length;
+    }
+    const highIds = [1, 3, 5]; // demo fallback ids (Standard King, Double Queen, Junior Suite)
     return highIds.where((id) => !_applied.contains(id) && !_skipped.contains(id)).length;
   }
 
@@ -69,6 +301,21 @@ class AppProvider extends ChangeNotifier {
       _propertyError = 'Could not load property data.';
     }
     notifyListeners();
+
+    if (res.ok) {
+      await _loadMetricsHistory();
+      await _loadCompsetAnalysis();
+    }
+  }
+
+  Future<void> _loadMetricsHistory() async {
+    final res = await api.getMetricsHistory();
+    if (res.ok) {
+      final data = res.data!;
+      _dailyHistory   = (data['daily'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
+      _monthlyHistory = (data['monthly'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
+      notifyListeners();
+    }
   }
 
   // ── Auth ──────────────────────────────────────────────────────────────────
@@ -192,5 +439,97 @@ class AppProvider extends ChangeNotifier {
     _applied.remove(id);
     _skipped.remove(id);
     notifyListeners();
+  }
+
+  // ── AI chat context ────────────────────────────────────────────────────────
+  // Builds the system context sent to the AI from real app state wherever
+  // possible, instead of hardcoded demo numbers, and says so explicitly when
+  // it has to fall back so the AI doesn't present placeholders as real.
+  String buildAiContext() {
+    final p = _property?.profile;
+    final rooms = _property?.rooms ?? [];
+    final hasReal = hasRealHistory;
+
+    final occ    = liveOccupancy;
+    final adr    = liveAdr;
+    final revpar = liveRevpar;
+    final revMtd = liveRevenueMtd;
+    final m = _property?.metrics;
+
+    final buf = StringBuffer();
+    buf.writeln('You are Hotel IQ, an expert hotel revenue management AI analyst.');
+    buf.writeln('Property: ${_user?.hotelName ?? p?.hotelName ?? "Not set"} | '
+        'Location: ${p?.location ?? "Not set"} | Stars: ${p?.stars ?? "N/A"} | '
+        'Rooms: ${p?.totalRooms ?? "N/A"}');
+    buf.writeln();
+
+    if (occ != null || adr != null || revpar != null) {
+      buf.writeln('Current Metrics (real, from imported history through $latestHistoryDate):');
+      if (occ != null) buf.writeln('- Occupancy: ${occ.toStringAsFixed(1)}%');
+      if (adr != null) buf.writeln('- ADR: \$${adr.toStringAsFixed(2)}');
+      if (revpar != null) buf.writeln('- RevPAR: \$${revpar.toStringAsFixed(2)}');
+      if (revMtd != null) buf.writeln('- Revenue MTD: \$${revMtd.toStringAsFixed(0)}');
+    } else if (m?.hasData == true) {
+      buf.writeln('Current Metrics (manually entered by user):');
+      buf.writeln('- Occupancy: ${m!.occupancy}%, ADR: \$${m.adr}, RevPAR: \$${m.revpar}, Revenue MTD: \$${m.revenueMtd}');
+    } else {
+      buf.writeln('NOTE: No real metrics connected yet. User has not imported data or entered metrics — '
+          'do not invent specific numbers; ask them to connect data or give general guidance.');
+    }
+    buf.writeln();
+
+    if (rooms.isNotEmpty) {
+      buf.writeln('Room types (${rooms.length}):');
+      for (final r in rooms.take(20)) {
+        buf.writeln('- ${r.type}: ${r.count} rooms @ \$${r.rate.toStringAsFixed(0)}');
+      }
+      buf.writeln();
+    }
+
+    final analysis = _compsetAnalysis;
+    if (analysis != null) {
+      buf.writeln('Comp Set (${analysis['isLive'] == true ? 'live SerpAPI data' : 'demo data — no SerpAPI key configured'}):');
+      final hotels = (analysis['sorted'] as List<dynamic>?) ?? [];
+      for (final h in hotels.take(6)) {
+        buf.writeln('- ${h['name']}: \$${h['rate']} (${h['stars']}★, score ${h['score']})');
+      }
+      buf.writeln('Your position: #${analysis['position']} of ${hotels.length} | '
+          'Comp avg: \$${analysis['avgComp']} | Parity: ${analysis['parity']}% | '
+          'Suggested rate: \$${analysis['suggestion']}');
+      final reasoning = (analysis['reasoning'] as List<dynamic>?)?.cast<String>();
+      if (reasoning != null && reasoning.isNotEmpty) buf.writeln('Reasoning: ${reasoning.join(' · ')}');
+      buf.writeln();
+    }
+
+    final recs = pricingRecommendations;
+    if (recs.isNotEmpty) {
+      buf.writeln('Open Pricing Recommendations (real, per room type):');
+      final sorted = [...recs]..sort((a, b) => b.impact.abs().compareTo(a.impact.abs()));
+      for (final r in sorted.take(6)) {
+        buf.writeln('- ${r.room}: \$${r.current.toInt()} → \$${r.suggested.toInt()} '
+            '(${r.impact >= 0 ? "+" : ""}\$${r.impact} impact) | ${r.urgency.toUpperCase()} urgency');
+      }
+      buf.writeln();
+    }
+
+    if (hasReal) {
+      final avg7 = forecastNext14Days.take(7)
+          .map((d) => d['demand'] as double?).whereType<double>().toList();
+      final avgDemand = avg7.isEmpty ? null : avg7.reduce((a, b) => a + b) / avg7.length;
+      final accuracy = forecastAccuracyPct;
+      final uplift = weekendUpliftPct;
+      buf.writeln('Demand Forecast (day-of-week seasonal model from ${_dailyHistory.length} days of real history):');
+      if (avgDemand != null) buf.writeln('- 7-day avg forecast demand: ${avgDemand.toStringAsFixed(0)}%');
+      if (accuracy != null) buf.writeln('- Backtested forecast accuracy (last 30 days): ${accuracy.toStringAsFixed(1)}%');
+      if (uplift != null) buf.writeln('- Weekend vs weekday demand uplift: ${uplift >= 0 ? "+" : ""}${uplift.toStringAsFixed(0)}%');
+      buf.writeln('- NOTE: no booking-pace or events/calendar data exists — do not claim to know about '
+          'specific conferences or events, only the seasonal weekday pattern above.');
+      buf.writeln();
+    }
+
+    buf.writeln('Instructions: Be concise, data-driven, and specific — use real \$ and % figures from '
+        'above. Never state a specific number as fact unless it appears above; if data is missing, say so '
+        'and give general guidance instead of inventing figures.');
+    return buf.toString();
   }
 }
