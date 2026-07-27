@@ -1,0 +1,16 @@
+name: Keep Render services warm
+
+on:
+  schedule:
+    # Every 10 minutes. Render's free-tier services sleep after ~15 min idle.
+    - cron: '*/10 * * * *'
+  workflow_dispatch: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping hotel-iq-preview
+        run: curl -sf --max-time 20 https://hotel-iq-preview.onrender.com/api/health || echo "preview ping failed (may be cold-starting)"
+      - name: Ping hotel-iq-api
+        run: curl -sf --max-time 20 https://hotel-iq-api.onrender.com/api/health || echo "api ping failed (may be cold-starting)"
