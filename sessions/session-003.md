@@ -1,11 +1,13 @@
-# Session 003 — RMS Core Shipped, Merged to Production
+# Session 003 — RMS Core Shipped, Merged to Production, Live Bugs Fixed
 
-STATUS: HANDOFF → production is live on the new code; a few config gaps and cleanup items remain (see below)
+STATUS: HANDOFF → production is live and stable; a few config gaps and cleanup items remain (see below)
 
 ## What shipped this session
-Everything from session-002's roadmap got built, tested against real data, and
-merged to `main` (production). Session-002 is now historical — don't re-plan
-from it, just check the "Known gaps" section below for what's actually left.
+Everything from session-002's roadmap got built, tested against real data
+(via a live preview deploy), merged to `main` (production), and several bugs
+found during that live testing got fixed on both `main` and
+`preview/rms-core`. Session-002 is now historical — don't re-plan from it,
+check "Known gaps" below for what's actually left.
 
 **Backend** (`src/backend/`):
 - `db.js`: `dailyMetrics` collection — per-user time series of
@@ -23,13 +25,14 @@ from it, just check the "Known gaps" section below for what's actually left.
   instead of a hardcoded `"beachfront hotels"` placeholder.
 
 **Frontend** (`flutter_app/lib/`):
-- `providers/app_provider.dart` is now the hub for all real-data derivation —
+- `providers/app_provider.dart` is the hub for all real-data derivation —
   `dailyHistory`, `monthlyHistory`, `liveOccupancy/Adr/Revpar/RevenueMtd`,
-  `pricingRecommendations` (real per-room recs, derived by applying the
-  compset-analysis ratio to each real room's rate — no separate backend
-  endpoint needed), `forecastNext14Days`/`forecastAccuracyPct` (day-of-week
-  seasonal model, backtested), `roomsSoldDelta7`, `buildAiContext()` (real
-  context for AI chat instead of hardcoded fake numbers).
+  `liveRoomRevenueMtd`, `pricingRecommendations` (real per-room recs, derived
+  by applying the compset-analysis ratio to each real room's rate — no
+  separate backend endpoint needed), `forecastNext14Days`/
+  `forecastAccuracyPct`/`weekendUpliftPct` (day-of-week seasonal model,
+  backtested), `roomsSoldDelta7`, `buildAiContext()` (real context for AI
+  chat instead of hardcoded fake numbers).
 - Tabs wired to real data: **Overview, Pricing, Forecast, Comp Set, Calendar,
   Revenue** (Revenue partially — channel/segment breakdown has no real data
   source, stays demo with an explicit label).
@@ -48,10 +51,38 @@ from it, just check the "Known gaps" section below for what's actually left.
   charcoal-navy). Most widgets use translucent white-over-background
   gradients rather than opaque surface colors, so this cascaded through the
   whole app from one file (`theme/app_theme.dart`).
-- Fixed real layout bugs found via live testing: comp-set list overflow on
-  long real hotel names + rate text wrapping onto 2 lines and overlapping the
-  row below; 30-Day Rate Calendar collapsing into a single column
-  (`SizedBox(width: 1/7)` was a literal 0.14px, not "1/7 of the row").
+
+**Live-testing bug fixes** (found by actually using the preview deploy, not
+caught by `flutter analyze` — worth remembering static analysis doesn't
+catch layout/async-timing bugs like these):
+- Comp-set list: long real hotel names overflowed through the rate column;
+  3-4 digit rates (`$358`) wrapped onto a second line and overlapped the row
+  below. Fixed with `Flexible`/ellipsis and `FittedBox`.
+- 30-Day Rate Calendar collapsed into a single column —
+  `SizedBox(width: 1 / 7)` is a literal 0.14px, not "1/7 of the row." Needed
+  a `LayoutBuilder` to compute the real cell width.
+- Chart tooltips were unreadable — none of the real-data charts (Overview
+  occupancy/weekly-revenue, Revenue ADR/RevPAR, Forecast demand/room-change)
+  had `lineTouchData`/`barTouchData` configured, so tapping fell back to
+  fl_chart's tiny low-contrast default. Added explicit styled tooltips to all.
+- **Login/register could get stuck open, needing a manual click or refresh**
+  — two compounding bugs: (1) `login()`/`register()` awaited the *entire*
+  `_loadProperty()` chain, which grew to include a comp-set fetch that calls
+  SerpAPI (up to 8s) — the auth dialog's loading spinner waited for all of
+  it before dismissing. Fixed by making history/comp-set analysis load
+  fire-and-forget (`unawaited`) after the core property loads. (2) The
+  dialog's `onClose` callback (which pops using the *parent* screen's stable
+  context, not the dialog's own) was gated behind the dialog's own `mounted`
+  check — if that flag were ever stale, the dialog would silently stay open
+  with zero feedback. Now called unconditionally on success, and the whole
+  submit is wrapped in try/catch so real errors surface instead of a silent
+  hang.
+- **Mobile layout**: the top header (logo, wordmark, hotel name, live clock,
+  user name, sign-out button) was one unwrapped `Row` — overflowed
+  horizontally on phone-width screens. Now collapses non-essential elements
+  (wordmark, hotel name, clock, full name) below 640px width, and shrinks
+  Sign Out/Get Started to compact versions. Body padding also reduced on
+  narrow screens.
 
 ## Deployed / connected services
 - **Preview**: `hotel-iq-preview` on Render (separate from production) — has
@@ -60,10 +91,16 @@ from it, just check the "Known gaps" section below for what's actually left.
   `Test1234`, pre-loaded with the user's real Mariner Inn & Suites data (74
   rooms, 17 room types, 2 years of daily history from PMS CSV exports).
 - **Production**: `main` merged and auto-deployed to `hotel-iq`,
-  `hotel-iq-api`, `hotel-iq-app` on Render — confirmed live on commit
-  `517da6d`. Production does **not** have `MONGODB_URI` or `SERPAPI_KEY` set
-  (same as before this session — not a regression), so in production: data is
-  flat-file (resets on restart/sleep) and comp-set shows demo rates.
+  `hotel-iq-api`, `hotel-iq-app` on Render. Production does **not** have
+  `MONGODB_URI` or `SERPAPI_KEY` set (same as before this session — not a
+  regression), so in production: data is flat-file (resets on
+  restart/sleep) and comp-set shows demo rates.
+- **Both `main` and `preview/rms-core` are up to date with every fix listed
+  above** — each bug fix found via preview testing was committed to `main`
+  first, then cherry-picked onto `preview/rms-core` and redeployed, so the
+  two branches are equivalent (preview just sits behind on the newer
+  feature-tab-wiring work that was merged directly, since that flowed
+  `preview/rms-core` → `main` in one merge commit earlier in the session).
 - Render API key and SerpAPI key were shared in chat this session — user was
   told to rotate them; unclear if done, worth checking before using either
   again.
@@ -91,12 +128,23 @@ from it, just check the "Known gaps" section below for what's actually left.
    preview) if the user wants production data to actually persist and comp-set
    to be live there too — currently intentionally left alone since it wasn't
    asked for.
+6. Mobile has only been spot-checked on the header/body chrome — individual
+   tab content (KPI grids, wide tables like the comp-set list, the 30-day
+   calendar) hasn't been systematically reviewed at phone width yet. Worth a
+   pass if mobile usage matters.
 
 ## Orientation for next session (skip re-exploring)
-- `main` = production, already has everything above. `preview/rms-core`
-  still exists on GitHub (per user's request to keep it) but is now behind
-  `main` — treat `main` as the source of truth going forward.
+- `main` = production, has everything above. `preview/rms-core` also has
+  everything above (kept in sync fix-by-fix) — treat `main` as the primary
+  branch for new work, cherry-pick or merge into `preview/rms-core` if it
+  needs to stay usable as a demo/test environment.
 - Real per-room pricing logic lives in `AppProvider.pricingRecommendations`
   (Dart), not a backend endpoint — it reuses `/api/compset/rates`'s analysis.
 - `AppProvider` is the correct place to add any new derived-from-history
   getter; tabs should stay thin and just read from it.
+- When deploying to Render via the API: env-var changes need a **new
+  deploy** (`POST /v1/services/{id}/deploys`), not just `/restart` — a plain
+  restart does not pick up newly-set env vars. Also: any env-var PUT with
+  `generateValue: true` on `JWT_SECRET` issues a **new** secret each time,
+  invalidating all existing login tokens — re-login after any env-var change
+  that touches `JWT_SECRET`.
