@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import '../../../data/mock_data.dart';
 import '../../../models/models.dart';
 import '../../../providers/app_provider.dart';
-import '../../../services/api_service.dart';
 import '../../../theme/app_theme.dart';
 
 class AiChatPanel extends StatefulWidget {
@@ -52,17 +51,7 @@ class _AiChatPanelState extends State<AiChatPanel> {
     _scrollToBottom();
 
     final prov = context.read<AppProvider>();
-    final user = prov.user;
-    final m = prov.property?.metrics;
-    final p = prov.property?.profile;
-
-    final context_ = '''You are Hotel IQ, an expert hotel revenue management AI analyst.
-Hotel: ${user?.hotelName ?? p?.hotelName ?? 'The Coastal Grand'} | Location: ${p?.location ?? 'N/A'} | Manager: ${user?.firstName ?? ''}
-Current Metrics: Occupancy ${m?.occupancy ?? 73}%, RevPAR \$${m?.revpar ?? 142}, ADR \$${m?.adr ?? 195}, TRevPAR \$${m?.trevpar ?? 168}, GOPPAR \$${m?.goppar ?? 89}, Revenue MTD \$${m?.revenueMtd ?? 89400}.
-Comp set: Grand Regency \$210, The Meridian \$220, Harbor View \$195, Blue Harbor \$175, Coastal Suites \$165.
-Open recs: Standard King \$159→\$179 (+\$2,400), Double Queen \$139→\$155 (+\$1,100), Junior Suite \$229→\$249 (+\$880).
-Weekend demand spike +34% (conference). Forecast accuracy 94.2%.
-Be concise, data-driven, give specific actionable advice with \$ and % figures.''';
+    final context_ = prov.buildAiContext();
 
     final history = _msgs.skip(1).map((m) => {'role': m.role, 'content': m.text}).toList();
     history.add({'role': 'user', 'content': txt});

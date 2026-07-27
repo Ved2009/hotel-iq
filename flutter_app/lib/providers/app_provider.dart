@@ -440,4 +440,96 @@ class AppProvider extends ChangeNotifier {
     _skipped.remove(id);
     notifyListeners();
   }
+
+  // ── AI chat context ────────────────────────────────────────────────────────
+  // Builds the system context sent to the AI from real app state wherever
+  // possible, instead of hardcoded demo numbers, and says so explicitly when
+  // it has to fall back so the AI doesn't present placeholders as real.
+  String buildAiContext() {
+    final p = _property?.profile;
+    final rooms = _property?.rooms ?? [];
+    final hasReal = hasRealHistory;
+
+    final occ    = liveOccupancy;
+    final adr    = liveAdr;
+    final revpar = liveRevpar;
+    final revMtd = liveRevenueMtd;
+    final m = _property?.metrics;
+
+    final buf = StringBuffer();
+    buf.writeln('You are Hotel IQ, an expert hotel revenue management AI analyst.');
+    buf.writeln('Property: ${_user?.hotelName ?? p?.hotelName ?? "Not set"} | '
+        'Location: ${p?.location ?? "Not set"} | Stars: ${p?.stars ?? "N/A"} | '
+        'Rooms: ${p?.totalRooms ?? "N/A"}');
+    buf.writeln();
+
+    if (occ != null || adr != null || revpar != null) {
+      buf.writeln('Current Metrics (real, from imported history through $latestHistoryDate):');
+      if (occ != null) buf.writeln('- Occupancy: ${occ.toStringAsFixed(1)}%');
+      if (adr != null) buf.writeln('- ADR: \$${adr.toStringAsFixed(2)}');
+      if (revpar != null) buf.writeln('- RevPAR: \$${revpar.toStringAsFixed(2)}');
+      if (revMtd != null) buf.writeln('- Revenue MTD: \$${revMtd.toStringAsFixed(0)}');
+    } else if (m?.hasData == true) {
+      buf.writeln('Current Metrics (manually entered by user):');
+      buf.writeln('- Occupancy: ${m!.occupancy}%, ADR: \$${m.adr}, RevPAR: \$${m.revpar}, Revenue MTD: \$${m.revenueMtd}');
+    } else {
+      buf.writeln('NOTE: No real metrics connected yet. User has not imported data or entered metrics — '
+          'do not invent specific numbers; ask them to connect data or give general guidance.');
+    }
+    buf.writeln();
+
+    if (rooms.isNotEmpty) {
+      buf.writeln('Room types (${rooms.length}):');
+      for (final r in rooms.take(20)) {
+        buf.writeln('- ${r.type}: ${r.count} rooms @ \$${r.rate.toStringAsFixed(0)}');
+      }
+      buf.writeln();
+    }
+
+    final analysis = _compsetAnalysis;
+    if (analysis != null) {
+      buf.writeln('Comp Set (${analysis['isLive'] == true ? 'live SerpAPI data' : 'demo data — no SerpAPI key configured'}):');
+      final hotels = (analysis['sorted'] as List<dynamic>?) ?? [];
+      for (final h in hotels.take(6)) {
+        buf.writeln('- ${h['name']}: \$${h['rate']} (${h['stars']}★, score ${h['score']})');
+      }
+      buf.writeln('Your position: #${analysis['position']} of ${hotels.length} | '
+          'Comp avg: \$${analysis['avgComp']} | Parity: ${analysis['parity']}% | '
+          'Suggested rate: \$${analysis['suggestion']}');
+      final reasoning = (analysis['reasoning'] as List<dynamic>?)?.cast<String>();
+      if (reasoning != null && reasoning.isNotEmpty) buf.writeln('Reasoning: ${reasoning.join(' · ')}');
+      buf.writeln();
+    }
+
+    final recs = pricingRecommendations;
+    if (recs.isNotEmpty) {
+      buf.writeln('Open Pricing Recommendations (real, per room type):');
+      final sorted = [...recs]..sort((a, b) => b.impact.abs().compareTo(a.impact.abs()));
+      for (final r in sorted.take(6)) {
+        buf.writeln('- ${r.room}: \$${r.current.toInt()} → \$${r.suggested.toInt()} '
+            '(${r.impact >= 0 ? "+" : ""}\$${r.impact} impact) | ${r.urgency.toUpperCase()} urgency');
+      }
+      buf.writeln();
+    }
+
+    if (hasReal) {
+      final avg7 = forecastNext14Days.take(7)
+          .map((d) => d['demand'] as double?).whereType<double>().toList();
+      final avgDemand = avg7.isEmpty ? null : avg7.reduce((a, b) => a + b) / avg7.length;
+      final accuracy = forecastAccuracyPct;
+      final uplift = weekendUpliftPct;
+      buf.writeln('Demand Forecast (day-of-week seasonal model from ${_dailyHistory.length} days of real history):');
+      if (avgDemand != null) buf.writeln('- 7-day avg forecast demand: ${avgDemand.toStringAsFixed(0)}%');
+      if (accuracy != null) buf.writeln('- Backtested forecast accuracy (last 30 days): ${accuracy.toStringAsFixed(1)}%');
+      if (uplift != null) buf.writeln('- Weekend vs weekday demand uplift: ${uplift >= 0 ? "+" : ""}${uplift.toStringAsFixed(0)}%');
+      buf.writeln('- NOTE: no booking-pace or events/calendar data exists — do not claim to know about '
+          'specific conferences or events, only the seasonal weekday pattern above.');
+      buf.writeln();
+    }
+
+    buf.writeln('Instructions: Be concise, data-driven, and specific — use real \$ and % figures from '
+        'above. Never state a specific number as fact unless it appears above; if data is missing, say so '
+        'and give general guidance instead of inventing figures.');
+    return buf.toString();
+  }
 }

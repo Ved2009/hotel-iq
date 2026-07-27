@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import '../../../data/mock_data.dart';
 import '../../../models/models.dart';
 import '../../../providers/app_provider.dart';
 import '../../../theme/app_theme.dart';
@@ -52,45 +51,7 @@ class _AiAnalystTabState extends State<AiAnalystTab> {
     _scroll();
 
     final prov = context.read<AppProvider>();
-    final user = prov.user;
-    final m    = prov.property?.metrics;
-    final p    = prov.property?.profile;
-
-    final ctx = '''You are Hotel IQ Revenue Analyst, an expert hotel revenue management AI.
-Property: ${user?.hotelName ?? p?.hotelName ?? 'The Grand Coastal'} | Location: ${p?.location ?? 'Not set'} | Stars: ${p?.stars ?? 4} | Rooms: ${p?.totalRooms ?? 292}
-Manager: ${user?.firstName ?? 'Demo User'}
-
-Live Metrics:
-- Occupancy: ${m?.occupancy ?? 73}%
-- ADR: \$${m?.adr ?? 195}
-- RevPAR: \$${m?.revpar ?? 142}
-- TRevPAR: \$${m?.trevpar ?? 168}
-- GOPPAR: \$${m?.goppar ?? 89}
-- Revenue MTD: \$${m?.revenueMtd ?? 89400}
-${m?.hasData == true ? '- Data last updated: ${m!.updatedAt}' : '- NOTE: Using demo metrics. User has not connected live data yet.'}
-
-Comp Set (current rates):
-- Grand Regency (5★): \$210 ↓1.5%
-- The Meridian (5★): \$220 steady
-- Blue Harbor (3★): \$175 ↑5.1%
-- Harbor View (4★): \$195 ↓0.8%
-- Coastal Suites (3★): \$165 ↑2.3%
-Your position: #3 of 6 | Avg comp rate: \$193 | AI target rate: \$195
-
-Demand Forecast:
-- 7-day avg demand: 81% (HIGH)
-- Forecast accuracy: 94.2%
-- Event detected: Regional tech conference Day 6-8 (+34% demand spike)
-- Projected 7-day revenue: \$41,200
-
-Open Pricing Recommendations:
-1. Standard King: \$159 → \$179 (+\$2,400 impact) | HIGH urgency
-2. Double Queen: \$139 → \$155 (+\$1,100 impact) | HIGH urgency
-3. Junior Suite: \$229 → \$249 (+\$880 impact) | HIGH urgency
-4. Ocean View Suite: \$289 → \$269 (-\$800 impact) | MEDIUM urgency (3 comps dropped below)
-Total open opportunity: +\$4,380
-
-Instructions: Be concise, data-driven, and specific. Give concrete \$ and % figures. When the user's question is about pricing, reference the specific room types and competitor context. If metrics show demo data, still give useful guidance based on the demo numbers.''';
+    final ctx = prov.buildAiContext();
 
     final history = _msgs.skip(1)
         .map((m) => {'role': m.role, 'content': m.text})
