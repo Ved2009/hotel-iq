@@ -58,6 +58,10 @@ router.post('/chat', requireAuth, async (req, res) => {
     if (err instanceof Anthropic.RateLimitError) {
       return res.status(429).json({ error: 'AI service is rate limited — try again shortly' });
     }
+    if (err instanceof Anthropic.BadRequestError && /credit balance/i.test(err.message || '')) {
+      console.error('[ai] Anthropic account has insufficient credits');
+      return res.status(503).json({ error: 'AI service is out of credits — add billing at console.anthropic.com' });
+    }
     console.error('[ai] chat error:', err.message || err);
     res.status(500).json({ error: 'Failed to reach AI service' });
   }
