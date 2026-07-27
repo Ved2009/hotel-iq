@@ -159,74 +159,88 @@ class _Header extends StatelessWidget {
     final prov = context.watch<AppProvider>();
     final user = prov.user;
 
-    return Container(
-      height: 62,
-      decoration: BoxDecoration(
-        color: C.bg.withValues(alpha: 0.95),
-        border: const Border(bottom: BorderSide(color: C.border)),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Row(children: [
-        // Logo
-        Container(
-          width: 34, height: 34,
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(colors: [C.violet, C.violetDark]),
-            borderRadius: BorderRadius.circular(10),
-            boxShadow: [BoxShadow(color: C.violet.withValues(alpha: 0.5), blurRadius: 14)],
-          ),
-          child: Center(child: Text('IQ',
-            style: GoogleFonts.syne(fontSize: 13, fontWeight: FontWeight.w800, color: Colors.white))),
+    return LayoutBuilder(builder: (_, c) {
+      final narrow = c.maxWidth < 640;
+      return Container(
+        height: 62,
+        decoration: BoxDecoration(
+          color: C.bg.withValues(alpha: 0.95),
+          border: const Border(bottom: BorderSide(color: C.border)),
         ),
-        const SizedBox(width: 12),
-        RichText(text: TextSpan(children: [
-          TextSpan(text: 'Hotel', style: GoogleFonts.syne(fontSize: 17, fontWeight: FontWeight.w800, color: C.text1, letterSpacing: -0.5)),
-          TextSpan(text: 'IQ', style: GoogleFonts.syne(fontSize: 17, fontWeight: FontWeight.w800, color: C.gold, letterSpacing: -0.5)),
-        ])),
-        if (user != null) ...[
-          const SizedBox(width: 16),
-          Container(width: 1, height: 16, color: C.border),
-          const SizedBox(width: 16),
-          Text(user.hotelName.toUpperCase(),
-            style: GoogleFonts.spaceMono(fontSize: 9, color: C.text4, letterSpacing: 2)),
-        ],
-        const Spacer(),
-        // Clock
-        StreamBuilder<DateTime>(
-          stream: clock,
-          builder: (_, s) {
-            final t = s.data ?? DateTime.now();
-            return Text(
-              '${t.hour.toString().padLeft(2,'0')}:${t.minute.toString().padLeft(2,'0')}:${t.second.toString().padLeft(2,'0')}',
-              style: GoogleFonts.spaceMono(fontSize: 11, color: C.text4, letterSpacing: 0.5),
-            );
-          },
-        ),
-        const SizedBox(width: 20),
-        // User area
-        if (user != null) ...[
+        padding: EdgeInsets.symmetric(horizontal: narrow ? 12 : 24),
+        child: Row(children: [
+          // Logo
           Container(
-            width: 30, height: 30,
+            width: 34, height: 34,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: [C.violet, C.purple]),
-              shape: BoxShape.circle,
-              boxShadow: [BoxShadow(color: C.violet.withValues(alpha: 0.4), blurRadius: 10)],
+              gradient: const LinearGradient(colors: [C.violet, C.violetDark]),
+              borderRadius: BorderRadius.circular(10),
+              boxShadow: [BoxShadow(color: C.violet.withValues(alpha: 0.5), blurRadius: 14)],
             ),
-            child: Center(child: Text(user.initials,
-              style: GoogleFonts.syne(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.white))),
+            child: Center(child: Text('IQ',
+              style: GoogleFonts.syne(fontSize: 13, fontWeight: FontWeight.w800, color: Colors.white))),
           ),
-          const SizedBox(width: 10),
-          Text('${user.firstName}',
-            style: GoogleFonts.inter(fontSize: 13, color: C.text2, fontWeight: FontWeight.w500)),
-          const SizedBox(width: 14),
-          _HeaderBtn('Sign Out', () => context.read<AppProvider>().logout()),
-        ] else ...[
-          _HeaderBtn('Sign In', () => onShowAuth('login'), outlined: true),
-          const SizedBox(width: 8),
-          _PrimaryHeaderBtn('Get Started', () => onShowAuth('register')),
-        ],
-      ]),
-    );
+          const SizedBox(width: 12),
+          if (!narrow)
+            RichText(text: TextSpan(children: [
+              TextSpan(text: 'Hotel', style: GoogleFonts.syne(fontSize: 17, fontWeight: FontWeight.w800, color: C.text1, letterSpacing: -0.5)),
+              TextSpan(text: 'IQ', style: GoogleFonts.syne(fontSize: 17, fontWeight: FontWeight.w800, color: C.gold, letterSpacing: -0.5)),
+            ])),
+          if (user != null && !narrow) ...[
+            const SizedBox(width: 16),
+            Container(width: 1, height: 16, color: C.border),
+            const SizedBox(width: 16),
+            Flexible(child: Text(user.hotelName.toUpperCase(),
+              maxLines: 1, overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.spaceMono(fontSize: 9, color: C.text4, letterSpacing: 2))),
+          ],
+          const Spacer(),
+          // Clock — hidden on narrow screens, not essential
+          if (!narrow) ...[
+            StreamBuilder<DateTime>(
+              stream: clock,
+              builder: (_, s) {
+                final t = s.data ?? DateTime.now();
+                return Text(
+                  '${t.hour.toString().padLeft(2,'0')}:${t.minute.toString().padLeft(2,'0')}:${t.second.toString().padLeft(2,'0')}',
+                  style: GoogleFonts.spaceMono(fontSize: 11, color: C.text4, letterSpacing: 0.5),
+                );
+              },
+            ),
+            const SizedBox(width: 20),
+          ],
+          // User area
+          if (user != null) ...[
+            Container(
+              width: 30, height: 30,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(colors: [C.violet, C.purple]),
+                shape: BoxShape.circle,
+                boxShadow: [BoxShadow(color: C.violet.withValues(alpha: 0.4), blurRadius: 10)],
+              ),
+              child: Center(child: Text(user.initials,
+                style: GoogleFonts.syne(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.white))),
+            ),
+            if (!narrow) ...[
+              const SizedBox(width: 10),
+              Text(user.firstName,
+                style: GoogleFonts.inter(fontSize: 13, color: C.text2, fontWeight: FontWeight.w500)),
+            ],
+            const SizedBox(width: 10),
+            narrow
+                ? GestureDetector(
+                    onTap: () => context.read<AppProvider>().logout(),
+                    child: Text('↩', style: GoogleFonts.inter(fontSize: 16, color: C.text3)),
+                  )
+                : _HeaderBtn('Sign Out', () => context.read<AppProvider>().logout()),
+          ] else ...[
+            _HeaderBtn('Sign In', () => onShowAuth('login'), outlined: true),
+            const SizedBox(width: 8),
+            narrow ? _HeaderBtn('Start', () => onShowAuth('register')) : _PrimaryHeaderBtn('Get Started', () => onShowAuth('register')),
+          ],
+        ]),
+      );
+    });
   }
 }
 
@@ -492,13 +506,16 @@ class _Body extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(28),
-      child: Column(children: [
-        _buildTab(),
-        const SizedBox(height: 60),
-      ]),
-    );
+    return LayoutBuilder(builder: (_, c) {
+      final narrow = c.maxWidth < 640;
+      return SingleChildScrollView(
+        padding: EdgeInsets.all(narrow ? 14 : 28),
+        child: Column(children: [
+          _buildTab(),
+          const SizedBox(height: 60),
+        ]),
+      );
+    });
   }
 
   Widget _buildTab() {
