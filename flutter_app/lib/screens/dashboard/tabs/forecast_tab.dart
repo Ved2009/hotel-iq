@@ -180,6 +180,22 @@ class _RealForecastChart extends StatelessWidget {
           dotData: const FlDotData(show: true),
         ),
       ],
+      lineTouchData: LineTouchData(
+        touchTooltipData: LineTouchTooltipData(
+          getTooltipColor: (_) => C.surf3,
+          tooltipRoundedRadius: 10,
+          tooltipBorder: BorderSide(color: C.blue.withValues(alpha: 0.35)),
+          tooltipPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          getTooltipItems: (spots) => spots.map((spot) {
+            final i = spot.x.toInt();
+            final date = forecast[i]['date'] as DateTime;
+            return LineTooltipItem(
+              '${date.month}/${date.day}: ${spot.y.toStringAsFixed(0)}%',
+              GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: const Color(0xFF7FB4FF)),
+            );
+          }).toList(),
+        ),
+      ),
     ));
   }
 }
@@ -295,6 +311,22 @@ class _RealDeltaChart extends StatelessWidget {
           borderRadius: const BorderRadius.vertical(top: Radius.circular(4))),
       ]);
     }).toList(),
+    barTouchData: BarTouchData(
+      touchTooltipData: BarTouchTooltipData(
+        getTooltipColor: (_) => C.surf3,
+        tooltipRoundedRadius: 10,
+        tooltipPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        getTooltipItem: (group, groupIndex, rod, rodIndex) {
+          final date = DateTime.parse(deltas[group.x]['date'] as String);
+          final delta = rod.toY.toInt();
+          return BarTooltipItem(
+            '${date.month}/${date.day}\n${delta >= 0 ? "+" : ""}$delta rooms',
+            GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700,
+              color: delta >= 0 ? const Color(0xFF6EE7B7) : const Color(0xFFFCA5A5)),
+          );
+        },
+      ),
+    ),
   ));
 }
 

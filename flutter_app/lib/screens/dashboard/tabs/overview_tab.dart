@@ -217,6 +217,24 @@ class _OccupancyChart extends StatelessWidget {
           _line(thisYearSpots, C.violet, 2.5, null, true),
           _line(lastYearSpots, C.text3, 1.5, [4, 4], false),
         ],
+        lineTouchData: LineTouchData(
+          touchTooltipData: LineTouchTooltipData(
+            getTooltipColor: (_) => C.surf3,
+            tooltipRoundedRadius: 10,
+            tooltipBorder: BorderSide(color: C.violet.withValues(alpha: 0.35)),
+            tooltipPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            getTooltipItems: (spots) => spots.map((spot) {
+              final isThisYear = spot.barIndex == 0;
+              return LineTooltipItem(
+                '${isThisYear ? "This year" : "Last year"}: ${spot.y.toStringAsFixed(1)}%',
+                GoogleFonts.inter(
+                  fontSize: 13, fontWeight: FontWeight.w700,
+                  color: isThisYear ? const Color(0xFFC7B8FF) : C.text2,
+                ),
+              );
+            }).toList(),
+          ),
+        ),
       ))),
     );
   }
@@ -287,6 +305,18 @@ class _RevenueBarChart extends StatelessWidget {
             borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
           )],
         )).toList(),
+        barTouchData: BarTouchData(
+          touchTooltipData: BarTouchTooltipData(
+            getTooltipColor: (_) => C.surf3,
+            tooltipRoundedRadius: 10,
+            tooltipBorder: BorderSide(color: C.gold.withValues(alpha: 0.35)),
+            tooltipPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            getTooltipItem: (group, groupIndex, rod, rodIndex) => BarTooltipItem(
+              '${labels[group.x]}\n\$${rod.toY.toStringAsFixed(0)}',
+              GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white),
+            ),
+          ),
+        ),
       ))),
     );
   }
