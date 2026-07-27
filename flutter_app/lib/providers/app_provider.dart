@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../models/models.dart';
 import '../services/api_service.dart';
@@ -303,8 +304,11 @@ class AppProvider extends ChangeNotifier {
     notifyListeners();
 
     if (res.ok) {
-      await _loadMetricsHistory();
-      await _loadCompsetAnalysis();
+      // Fire-and-forget: history + compset analysis (which can take several
+      // seconds — it calls SerpAPI) must not block callers awaiting
+      // _loadProperty (login/register), or the UI appears stuck until they
+      // finish. Each updates the UI via notifyListeners() once it lands.
+      unawaited(_loadMetricsHistory().then((_) => _loadCompsetAnalysis()));
     }
   }
 
