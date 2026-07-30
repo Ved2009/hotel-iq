@@ -13,4 +13,4 @@ jobs:
       - name: Ping hotel-iq-preview
         run: curl -sf --max-time 20 https://hotel-iq-preview.onrender.com/api/health || echo "preview ping failed (may be cold-starting)"
       - name: Ping hotel-iq-api
-        run: curl -sf --max-time 20 https://hotel-iq-api.onrender.com/api/health || echo "api ping failed (may be cold-starting)"
+        run: curl -sf --max-time 20 https://hotel-iq-api-zx5y.onrender.com/api/health || echo "api ping failed (may be cold-starting)"
