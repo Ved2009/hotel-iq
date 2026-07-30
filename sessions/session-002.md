@@ -1,6 +1,6 @@
 # Session 002 — Gap Audit & RMS Core Roadmap
 
-STATUS: HANDOFF → build the real revenue-management core (see plan below)
+STATUS: COMPLETE → superseded by session-003.md, all 6 build steps below shipped
 
 ## What was done this session
 Audited the whole repo (backend routes, db.js, Flutter tabs). No code changed.
